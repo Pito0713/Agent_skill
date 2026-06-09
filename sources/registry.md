@@ -19,5 +19,10 @@
 
 ## 收集清單
 
-<!-- 在此新增 GitHub repo -->
+### [Claude-Pro-Optimizer](https://github.com/Shift2Dev/Claude-Pro-Optimizer)
+- **作者**：Shift2Dev
+- **說明**：Claude Pro token 優化策略，包含 session 初始化、.claudeignore、context 管理
+- **收集狀態**：部分收集
+- **對應分類**：productivity
+- **已收錄 Skills**：`skills/productivity/smart-init.md`
 

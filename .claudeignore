@@ -1,0 +1,15 @@
+# 個人記憶與決策紀錄（避免載入個人資訊）
+memory/
+
+# 尚未處理的收集原料（避免 raw 內容干擾 context）
+skills/_inbox/
+
+# 常見雜訊
+*.log
+logs/
+.DS_Store
+
+# 依賴目錄（預防性）
+node_modules/
+venv/
+__pycache__/

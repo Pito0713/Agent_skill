@@ -15,18 +15,38 @@
 
 ---
 
-## 載入規則
+## 常駐載入（每次 session 自動生效）
+
+@rules/coding-standards.md
+@rules/security.md
+@skills/engineering/coding-workflow-core.md
+
+---
+
+## 按需載入（視任務手動引入）
+
+| 情境 | 載入 |
+|------|------|
+| TypeScript 專案 | `@rules/typescript.md` |
+| Python 專案 | `@rules/python.md` |
+| 提到 commit / PR | `@rules/git.md` |
+| 查實作模式 | `@skills/engineering/coding-workflow-ref.md` |
+| 練習 / 刻意改進 | `@skills/learning/feedback-loop.md` |
+
+---
+
+## 規則索引
 
 ```
 rules/
-├── coding-standards.md   # 通用 coding 規範（必讀）
-├── typescript.md         # TypeScript 規範
-├── react.md              # React 規範
-├── nextjs.md             # Next.js App Router 規範
-├── python.md             # Python 規範
-├── security.md           # 安全規範（必讀）
-├── testing.md            # 測試規範
-└── git.md                # Git workflow 規範
+├── coding-standards.md   # 通用 coding 規範（常駐）
+├── security.md           # 安全規範（常駐）
+├── typescript.md         # TypeScript 規範（按需）
+├── react.md              # React 規範（按需）
+├── nextjs.md             # Next.js App Router 規範（按需）
+├── python.md             # Python 規範（按需）
+├── testing.md            # 測試規範（按需）
+└── git.md                # Git workflow 規範（按需）
 ```
 
 ## Hooks 啟用
@@ -76,11 +96,13 @@ chmod +x .git/hooks/pre-commit
 
 | 需求 | 對應資源 |
 |------|----------|
-| 開始新功能 | `skills/engineering/coding-workflow.md` |
+| 開始新功能 | `skills/engineering/coding-workflow-core.md`（常駐） |
+| 查實作模式 | `skills/engineering/coding-workflow-ref.md` |
 | 除錯問題 | `skills/engineering/debug.md` |
 | 撰寫測試 | `skills/engineering/testing-strategy.md` |
 | 撰寫文件 | `skills/engineering/documentation.md` |
 | 工作交接 | `skills/productivity/handoff.md` |
 | 安全審查 | `agents/04-security/security-auditor.md` |
+| 刻意練習回饋 | `skills/learning/feedback-loop.md` |
 | 查看專案決策 | `memory/project-context.md` |
 | 新增 GitHub Skill | `sources/registry.md` → `skills/convert-skill.md` |
