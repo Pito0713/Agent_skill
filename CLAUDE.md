@@ -32,6 +32,7 @@
 | 提到 commit / PR | `@rules/git.md` |
 | 查實作模式 | `@skills/engineering/coding-workflow-ref.md` |
 | 練習 / 刻意改進 | `@skills/learning/feedback-loop.md` |
+| UI/UX 設計規劃 | `@skills/design/wireframing.md` 或 `@skills/design/information-architecture.md` 或 `@skills/design/ui-visual-design.md` |
 
 ---
 
@@ -104,5 +105,8 @@ chmod +x .git/hooks/pre-commit
 | 工作交接 | `skills/productivity/handoff.md` |
 | 安全審查 | `agents/04-security/security-auditor.md` |
 | 刻意練習回饋 | `skills/learning/feedback-loop.md` |
+| 頁面結構規劃 | `skills/design/wireframing.md` |
+| 視覺風格決策 | `skills/design/ui-visual-design.md` |
+| 導航 / 路由規劃 | `skills/design/information-architecture.md` |
 | 查看專案決策 | `memory/project-context.md` |
 | 新增 GitHub Skill | `sources/registry.md` → `skills/convert-skill.md` |

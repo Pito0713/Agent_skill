@@ -34,6 +34,10 @@ Claude Code 的完整 agent skill 骨架，包含 rules、skills、subagents、h
 │   │   ├── testing-strategy.md        # 測試策略設計
 │   │   └── documentation.md           # 文件撰寫模板
 │   ├── marketing/                     # 行銷相關 skills（待填充）
+│   ├── design/                        # UI/UX 設計規劃 skills（按需）
+│   │   ├── wireframing.md             # 頁面版面結構規劃
+│   │   ├── ui-visual-design.md        # 視覺風格選定與規格輸出
+│   │   └── information-architecture.md # 導航層級與 API 路由規劃
 │   ├── productivity/
 │   │   ├── handoff.md                 # 交接文件生成
 │   │   ├── smart-init.md              # Session 初始化
@@ -122,6 +126,7 @@ chmod +x .git/hooks/pre-commit
 | 按需 | `rules/git.md` | commit / PR 時才需要 |
 | 按需 | `skills/engineering/coding-workflow-ref.md` | 查實作模式時 |
 | 按需 | `skills/learning/feedback-loop.md` | 練習 / 刻意改進特定能力時 |
+| 按需 | `skills/design/*` | UI/UX 設計規劃（wireframe、視覺、IA）|
 
 ---
 
@@ -134,3 +139,4 @@ chmod +x .git/hooks/pre-commit
 | v1.2 | 2026-06-09 | 重構 skills 分類（engineering / marketing / productivity）；新增 GitHub skill 收集系統 |
 | v1.3 | 2026-06-09 | 新增 smart-init、.claudeignore；拆分 coding-workflow-core / ref；CLAUDE.md 常駐/按需架構 |
 | v1.4 | 2026-06-09 | 新增 skills/learning/ 分類；建立 feedback-loop skill；更新 README 與 CLAUDE.md 結構 |
+| v1.5 | 2026-06-09 | 新增 skills/design/ 分類；收錄 wireframing、ui-visual-design、information-architecture |
