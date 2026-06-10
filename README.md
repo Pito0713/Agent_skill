@@ -11,6 +11,8 @@ Claude Code 的完整 agent skill 骨架，包含 rules、skills、subagents、h
 ```
 .
 ├── CLAUDE.md                          # 頂層入口（Claude Code 自動讀取）
+├── setup.sh                           # 一鍵連結 skills 到 ~/.claude/skills/
+├── inject.sh                          # 在目標專案注入常駐 skill 設定
 ├── .claudeignore                      # Claude 工具掃描排除清單
 │
 ├── rules/                             # Coding 規範
@@ -43,7 +45,8 @@ Claude Code 的完整 agent skill 骨架，包含 rules、skills、subagents、h
 │   │   ├── smart-init.md              # Session 初始化
 │   │   └── version-log.md             # 版本紀錄更新
 │   └── learning/                      # 學習 / 練習導向 skills（按需）
-│       └── feedback-loop.md           # 刻意練習立即回饋循環
+│       ├── feedback-loop.md           # 刻意練習立即回饋循環
+│       └── concrete-example.md        # 具體情境舉例（A/B 方案）
 │
 ├── agents/                            # 專責 subagents
 │   ├── 01-core-development/
@@ -60,10 +63,6 @@ Claude Code 的完整 agent skill 骨架，包含 rules、skills、subagents、h
 │       ├── test-engineer.md           # 測試工程師
 │       └── e2e-tester.md              # E2E 測試（Playwright）
 │
-├── hooks/
-│   ├── pre-commit.sh                  # Lint + Type check + Secret scan
-│   └── pre-tool-run.sh                # 危險指令攔截
-│
 ├── sources/
 │   └── registry.md                    # GitHub skill 來源登記清單
 │
@@ -75,41 +74,53 @@ Claude Code 的完整 agent skill 骨架，包含 rules、skills、subagents、h
 
 ## 快速開始
 
-### 1. 安裝 pre-commit hook
+### 1. Clone 並執行 Setup
 
 ```bash
-cp hooks/pre-commit.sh .git/hooks/pre-commit
-chmod +x .git/hooks/pre-commit
+git clone https://github.com/Pito0713/Agent_skill.git
+cd Agent_skill
+bash setup.sh
 ```
 
-### 2. 啟用 Claude Code hooks
+Setup 會將 `skills/` 連結到 `~/.claude/skills/`，讓本機所有專案都能引用。
 
-建立 `.claude/settings.json`：
+---
 
-```json
-{
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [{ "type": "command", "command": "bash hooks/pre-tool-run.sh" }]
-      }
-    ]
-  }
-}
+### 2. 在目標專案注入 CLAUDE.md
+
+進入你要開發的專案目錄，執行 inject.sh：
+
+```bash
+cd ~/my-project
+bash ~/Agent_skill/inject.sh
 ```
 
-### 3. 根據技術堆疊按需載入 rules
+**inject.sh 的行為：**
 
-在對話中引入：
+| 情境 | 行為 |
+|------|------|
+| 專案沒有 CLAUDE.md | 自動生成含常駐 skill 的模板 |
+| 專案已有 CLAUDE.md | 顯示預覽，詢問確認後注入到最上方 |
+| 已注入過 | 跳過，不重複注入 |
 
+注入後的 CLAUDE.md 會包含：
+- **常駐載入**：`coding-standards`、`security`、`coding-workflow-core`（自動生效）
+- **按需載入**：其餘 skills 以註解列出，移除 `#` 即可啟用
+
+---
+
+### 3. 更新 Skills
+
+```bash
+cd Agent_skill
+git pull
 ```
-@rules/typescript.md   # TypeScript 專案
-@rules/python.md       # Python 專案
-@rules/git.md          # 進行 commit / PR 時
-```
 
-### 4. 新增 GitHub Skill
+Symlink 指向原始檔，`git pull` 後**立即生效**，不需重新執行 setup。
+
+---
+
+### 4. 新增 GitHub Skill（可選）
 
 參考 `sources/registry.md` 登記來源，再依照 `skills/convert-skill.md` 流程轉換格式。
 
@@ -140,3 +151,7 @@ chmod +x .git/hooks/pre-commit
 | v1.3 | 2026-06-09 | 新增 smart-init、.claudeignore；拆分 coding-workflow-core / ref；CLAUDE.md 常駐/按需架構 |
 | v1.4 | 2026-06-09 | 新增 skills/learning/ 分類；建立 feedback-loop skill；更新 README 與 CLAUDE.md 結構 |
 | v1.5 | 2026-06-09 | 新增 skills/design/ 分類；收錄 wireframing、ui-visual-design、information-architecture |
+| v1.6 | 2026-06-09 | 新增 concrete-example skill（具體情境舉例 + A/B 方案框架）|
+| v1.7 | 2026-06-09 | 移除 hooks/ 目錄（Claude Code 已內建危險指令防護）|
+| v1.8 | 2026-06-09 | 新增 setup.sh（一鍵 symlink 到 ~/.claude/skills/）；更新 README 安裝與更新說明 |
+| v1.9 | 2026-06-09 | 新增 inject.sh（自動生成或注入 CLAUDE.md 到目標專案）|

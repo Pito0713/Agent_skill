@@ -50,41 +50,12 @@ rules/
 └── git.md                # Git workflow 規範（按需）
 ```
 
-## Hooks 啟用
-
-### Pre-commit Hook
-
-```bash
-cp hooks/pre-commit.sh .git/hooks/pre-commit
-chmod +x .git/hooks/pre-commit
-```
-
-### Pre-tool-run Hook（Claude Code）
-
-在專案根目錄建立 `.claude/settings.json`：
-
-```json
-{
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [{ "type": "command", "command": "bash hooks/pre-tool-run.sh" }]
-      }
-    ]
-  }
-}
-```
-
----
-
 ## 行為準則
 
 1. **回應前先讀 rules/**：所有 coding 任務執行前必須確認適用的 rule 檔
 2. **優先使用 skills/**：重複性工作流程使用對應 skill，不要重新發明
 3. **委派 subagent**：遇到專業子任務時，優先委派對應 agent
-4. **hooks 自動執行**：不得繞過 pre-commit 與 pre-tool-run 檢查
-5. **更新 memory/**：每次重要決策或架構選型後更新 project-context.md
+4. **更新 memory/**：每次重要決策或架構選型後更新 project-context.md
 
 ## 溝通規範
 
@@ -105,6 +76,7 @@ chmod +x .git/hooks/pre-commit
 | 工作交接 | `skills/productivity/handoff.md` |
 | 安全審查 | `agents/04-security/security-auditor.md` |
 | 刻意練習回饋 | `skills/learning/feedback-loop.md` |
+| 邏輯看不懂 / 反覆出錯 | `skills/learning/concrete-example.md` |
 | 頁面結構規劃 | `skills/design/wireframing.md` |
 | 視覺風格決策 | `skills/design/ui-visual-design.md` |
 | 導航 / 路由規劃 | `skills/design/information-architecture.md` |
