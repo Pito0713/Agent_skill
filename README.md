@@ -133,6 +133,7 @@ Symlink 指向原始檔，`git pull` 後**立即生效**，不需重新執行 se
 | 常駐 | `rules/coding-standards.md` | 語言無關，每次都適用 |
 | 常駐 | `rules/security.md` | 安全規範，不可省略 |
 | 常駐 | `skills/engineering/coding-workflow-core.md` | 四階段實作守則 |
+| 常駐（實驗）| `skills/engineering/gemini-assist.md` | AI 分工協作（網路搜尋 / 大檔掃描 / 交叉驗證）|
 | 按需 | `rules/typescript.md` / `python.md` | 依語言選一 |
 | 按需 | `rules/git.md` | commit / PR 時才需要 |
 | 按需 | `skills/engineering/coding-workflow-ref.md` | 查實作模式時 |
@@ -155,3 +156,4 @@ Symlink 指向原始檔，`git pull` 後**立即生效**，不需重新執行 se
 | v1.7 | 2026-06-09 | 移除 hooks/ 目錄（Claude Code 已內建危險指令防護）|
 | v1.8 | 2026-06-09 | 新增 setup.sh（一鍵 symlink 到 ~/.claude/skills/）；更新 README 安裝與更新說明 |
 | v1.9 | 2026-06-09 | 新增 inject.sh（自動生成或注入 CLAUDE.md 到目標專案）|
+| v2.0 | 2026-06-12 | 新增 gemini-assist skill（AI 分工協作：網路搜尋 / 大檔掃描 / 對抗式審查）；設為常駐實驗性載入 |

@@ -20,6 +20,7 @@
 @rules/coding-standards.md
 @rules/security.md
 @skills/engineering/coding-workflow-core.md
+@skills/engineering/gemini-assist.md
 
 ---
 
