@@ -6,7 +6,8 @@
 #
 # 功能：
 #   - 沒有 CLAUDE.md → 自動生成含常駐 skill 的模板
-#   - 已有 CLAUDE.md → 詢問確認後注入常駐 skill 區塊
+#   - 已有 CLAUDE.md，未注入過 → 詢問確認後注入常駐 skill 區塊
+#   - 已有 CLAUDE.md，已注入過 → 顯示現有區塊，詢問是否更新
 
 set -euo pipefail
 
@@ -42,6 +43,7 @@ INJECT_BLOCK="## 常駐載入（Agent Skill）
 ${SKILLS_BASE}/rules/coding-standards.md
 ${SKILLS_BASE}/rules/security.md
 ${SKILLS_BASE}/engineering/coding-workflow-core.md
+${SKILLS_BASE}/engineering/gemini-assist.md
 
 ## 按需載入（視任務加入）
 
@@ -84,7 +86,7 @@ EOF
   echo -e "${GREEN}✅ 已生成 CLAUDE.md${NC}"
   echo "   路徑：$CLAUDE_MD"
   echo ""
-  echo -e "${CYAN}📌 常駐載入已設定（3 個 skills）${NC}"
+  echo -e "${CYAN}📌 常駐載入已設定（4 個 skills）${NC}"
   echo "   按需載入項目已列出（預設註解，移除 # 即可啟用）"
   exit 0
 fi
@@ -95,10 +97,67 @@ fi
 echo "📄 找到現有 CLAUDE.md"
 echo ""
 
-# 檢查是否已注入過
+# 檢查是否已注入過 → 若是，進入更新流程
 if grep -q "Agent Skill" "$CLAUDE_MD" 2>/dev/null; then
-  echo -e "${YELLOW}⚠️  CLAUDE.md 已包含 Agent Skill 設定，略過注入。${NC}"
-  echo "   如需更新，請手動編輯 $CLAUDE_MD"
+  echo -e "${YELLOW}⚠️  CLAUDE.md 已包含 Agent Skill 設定${NC}"
+  echo ""
+
+  # 抓出現有的常駐區塊（從 ## 常駐載入 到下一個 --- 或檔案結尾）
+  echo "─────────────────────────────────────────"
+  echo "📋 現有 Agent Skill 區塊："
+  echo ""
+  awk '/## 常駐載入（Agent Skill）/{found=1} found{print} found && /^---$/{exit}' "$CLAUDE_MD"
+  echo "─────────────────────────────────────────"
+  echo ""
+  echo "📋 新版區塊將替換為："
+  echo ""
+  echo "$INJECT_BLOCK"
+  echo "─────────────────────────────────────────"
+  echo ""
+
+  read -r -p "確認更新？(y/N) " confirm
+  if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+    echo "已取消。"
+    exit 0
+  fi
+
+  # 用 Python 替換現有區塊（從 ## 常駐載入（Agent Skill） 到下一個 --- 之間）
+  python3 - "$CLAUDE_MD" "$INJECT_BLOCK" <<'PYEOF'
+import sys
+
+filepath = sys.argv[1]
+new_block = sys.argv[2]
+
+with open(filepath, 'r') as f:
+    content = f.read()
+
+# 找到區塊起點
+start_marker = "## 常駐載入（Agent Skill）"
+start_idx = content.find(start_marker)
+if start_idx == -1:
+    print("找不到區塊起點，取消。")
+    sys.exit(1)
+
+# 找到區塊結尾（下一個 --- 或檔案結尾）
+end_idx = content.find("\n---", start_idx)
+if end_idx == -1:
+    end_idx = len(content)
+else:
+    end_idx += 1  # 保留換行符
+
+new_content = content[:start_idx] + new_block + "\n" + content[end_idx:]
+
+with open(filepath, 'w') as f:
+    f.write(new_content)
+
+print("✅ 區塊已更新")
+PYEOF
+
+  echo ""
+  echo -e "${GREEN}✅ 更新完成${NC}"
+  echo "   路徑：$CLAUDE_MD"
+  echo ""
+  echo -e "${CYAN}📌 常駐載入已更新（4 個 skills）${NC}"
   exit 0
 fi
 
@@ -130,5 +189,5 @@ echo ""
 echo -e "${GREEN}✅ 注入完成${NC}"
 echo "   路徑：$CLAUDE_MD"
 echo ""
-echo -e "${CYAN}📌 常駐載入已設定（3 個 skills）${NC}"
+echo -e "${CYAN}📌 常駐載入已設定（4 個 skills）${NC}"
 echo "   按需載入項目已列出（預設註解，移除 # 即可啟用）"
