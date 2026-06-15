@@ -73,7 +73,7 @@ rules/
 
 | 需求 | 對應資源 |
 |------|----------|
-| 開始新功能 | `skills/engineering/coding-workflow-core.md`（常駐） |
+| 開始新功能 | `skills/engineering/new-feature.md` |
 | Code Review | `skills/engineering/code-review.md` |
 | 查實作模式 | `skills/engineering/coding-workflow-ref.md` |
 | 除錯問題 | `skills/engineering/debug.md` |
