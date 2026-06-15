@@ -28,9 +28,13 @@
 
 | 情境 | 載入 |
 |------|------|
-| TypeScript 專案 | `@rules/typescript.md` |
-| Python 專案 | `@rules/python.md` |
-| 提到 commit / PR | `@rules/git.md` |
+| TypeScript 專案（自動偵測）| `@rules/typescript.md` |
+| React 專案（自動偵測）| `@rules/react.md` |
+| Next.js 專案（自動偵測）| `@rules/nextjs.md` |
+| Python 專案（自動偵測）| `@rules/python.md` |
+| 撰寫 / 執行測試（自動偵測）| `@rules/testing.md` |
+| 提到 commit / PR（自動偵測）| `@rules/git.md` |
+| 前端審查 / review / XSS / CORS / PII | `@rules/frontend-security.md` |
 | 查實作模式 | `@skills/engineering/coding-workflow-ref.md` |
 | 練習 / 刻意改進 | `@skills/learning/feedback-loop.md` |
 | UI/UX 設計規劃 | `@skills/design/wireframing.md` 或 `@skills/design/information-architecture.md` 或 `@skills/design/ui-visual-design.md` |
@@ -70,6 +74,7 @@ rules/
 | 需求 | 對應資源 |
 |------|----------|
 | 開始新功能 | `skills/engineering/coding-workflow-core.md`（常駐） |
+| Code Review | `skills/engineering/code-review.md` |
 | 查實作模式 | `skills/engineering/coding-workflow-ref.md` |
 | 除錯問題 | `skills/engineering/debug.md` |
 | 撰寫測試 | `skills/engineering/testing-strategy.md` |
