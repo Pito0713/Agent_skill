@@ -107,11 +107,12 @@ Python → agents/02-language-specialists/python-expert.md（Python 專案）
 
 ## Phase 5：測試
 
-委派 `skills/engineering/testing-strategy.md`：
+委派 `skills/engineering/testing-strategy.md` 設計測試策略，
+再依規模委派 `agents/05-quality-assurance/test-engineer.md` 執行：
 
 ```
-[ ] 撰寫 unit test（核心邏輯）
-[ ] 撰寫 integration test（API 層）
+[ ] 撰寫 unit test（核心邏輯）← test-engineer
+[ ] 撰寫 integration test（API 層）← test-engineer
 [ ] 涵蓋 happy path + error case + edge case
 [ ] 若有 UI → 委派 agents/05-quality-assurance/e2e-tester.md
 ```
@@ -195,7 +196,7 @@ Gemini 驗證：[通過 / 發現 N 個問題已修正]
 | `backend-engineer` | Phase 3-4 後端實作 |
 | `frontend-engineer` | Phase 3-4 前端實作 |
 | `typescript-expert` / `python-expert` | Phase 3-4 語言專項問題 |
-| `testing-strategy` + `e2e-tester` | Phase 5 測試 |
+| `testing-strategy` + `test-engineer` + `e2e-tester` | Phase 5 測試 |
 | `documentation` | Phase 6 文件 |
 | `version-log` | Phase 7 版本記錄 |
 | `gemini-assist` | Phase 7 交叉驗證 |

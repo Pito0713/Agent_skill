@@ -18,7 +18,10 @@ description: 接手新專案協調器。當使用者說「幫我了解這個專�
 
 ---
 
-## Phase 0：基本環境掃描
+## Phase 0：Session 初始化 + 基本環境掃描
+
+首先觸發 `skills/productivity/smart-init.md` 讀取現有記憶與工作狀態，
+確認是否有前一次 session 留下的專案摘要可供參考。
 
 ```bash
 # 專案基本資訊
@@ -137,6 +140,7 @@ grep -s '"react"\|"vue"\|"next"\|"express"\|"fastapi"' package.json 2>/dev/null
 | 角色 | 負責 Phase |
 |------|------|
 | Orchestrator（本 skill）| 全流程控制、摘要整合 |
+| `smart-init` | Phase 0 讀取既有記憶與工作狀態 |
 | `gemini-assist` 模式 B | Phase 1 大型 codebase 掃描 |
 | `coding-workflow-core` Phase 0 | Phase 2 技術堆疊自動偵測 |
 | `information-architecture` | Phase 4 功能地圖與路由整理 |
