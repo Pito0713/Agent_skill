@@ -146,7 +146,7 @@ Python → agents/02-language-specialists/python-expert.md（Python 專案）
 
 **y：**
 ```bash
-git diff HEAD | gemini -p "
+git diff HEAD | agy -p "
 這是一個新功能的實作 diff，請審查：
 1. 邏輯是否正確，有無邊界條件遺漏
 2. 安全風險（注入、權限、資料洩漏）

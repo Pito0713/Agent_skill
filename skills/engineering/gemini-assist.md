@@ -1,12 +1,12 @@
 ---
-name: gemini-assist
-description: 將資料密集型任務委派給 Gemini CLI 執行，節省 Claude token 並提供交叉驗證。當使用者說「幫我搜尋」、「這個檔案太大」、「掃一下整個專案」、「給我第二個意見」、「交叉驗證」時觸發。
+name: agy-assist
+description: 將資料密集型任務委派給 Antigravity CLI（agy）執行，節省 Claude token 並提供交叉驗證。當使用者說「幫我搜尋」、「這個檔案太大」、「掃一下整個專案」、「給我第二個意見」、「交叉驗證」時觸發。
 ---
 
-# Gemini Assist（AI 分工協作）
+# AGY Assist（AI 分工協作）
 
-將三類任務委派給 Gemini CLI：網路搜尋、大檔案掃描、對抗式審查。
-Claude 負責決策與整合，Gemini 負責資料密集工作。
+將三類任務委派給 Antigravity CLI（agy）：網路搜尋、大檔案掃描、對抗式審查。
+Claude 負責決策與整合，agy 負責資料密集工作。
 
 ---
 
@@ -15,21 +15,21 @@ Claude 負責決策與整合，Gemini 負責資料密集工作。
 ### Step 1：確認 Gemini CLI 是否安裝
 
 ```bash
-gemini --version
+agy --version
 ```
 
 **若未安裝：**
-> 詢問使用者：「Gemini CLI 尚未安裝，是否現在安裝？(y/n)」
-> - **y**：執行 `npm install -g @google/gemini-cli`，完成後提示執行 `gemini` 進行 OAuth 認證
+> 詢問使用者：「Antigravity CLI 尚未安裝，是否現在安裝？(y/n)」
+> - **y**：執行 `curl -fsSL https://antigravity.google/cli/install.sh | bash`，完成後執行 `agy` 進行 OAuth 認證
 > - **n**：終止，不執行後續任何模式
 
 ### Step 2：確認安全設定
 
 ```bash
 # 檔案不存在 → 自動建立
-if [ ! -f ~/.gemini/settings.json ]; then
-  mkdir -p ~/.gemini
-  cat > ~/.gemini/settings.json <<'EOF'
+if [ ! -f ~/.agents/settings.json ]; then
+  mkdir -p ~/.agents
+  cat > ~/.agents/settings.json <<'EOF'
 {
   "excludeTools": [
     "write_file",
@@ -39,12 +39,12 @@ if [ ! -f ~/.gemini/settings.json ]; then
   ]
 }
 EOF
-  echo "✅ 已建立 ~/.gemini/settings.json 並設定安全限制"
+  echo "✅ 已建立 ~/.agents/settings.json 並設定安全限制"
 else
   # 檔案已存在，確認 excludeTools 是否設定
   python3 -c "
 import json, sys
-with open('$HOME/.gemini/settings.json') as f:
+with open('$HOME/.agents/settings.json') as f:
     cfg = json.load(f)
 if 'excludeTools' not in cfg:
     print('⚠️  缺少 excludeTools，請手動加入安全限制')
@@ -87,7 +87,7 @@ fi
 ### 指令模板
 
 ```bash
-gemini -p "請使用 google_web_search 搜尋：'<關鍵字>'
+agy -p "請使用 google_web_search 搜尋：'<關鍵字>'
 
 回傳格式（每筆）：
 - 標題：
@@ -128,11 +128,11 @@ gemini -p "請使用 google_web_search 搜尋：'<關鍵字>'
 
 ```bash
 # 單一大檔案
-gemini -p "閱讀這份檔案，提取：<架構概覽 / 核心邏輯 / 外部依賴>
+agy -p "閱讀這份檔案，提取：<架構概覽 / 核心邏輯 / 外部依賴>
 條列式輸出，不超過 20 行。不要建議修改。繁體中文。" < 檔案路徑
 
 # 多檔案 / 整個目錄
-find ./src -name "*.ts" | xargs cat | gemini -p "分析整體架構，
+find ./src -name "*.ts" | xargs cat | agy -p "分析整體架構，
 條列主要模組與職責，不超過 20 行。不要建議修改。繁體中文。"
 ```
 
@@ -165,7 +165,7 @@ find ./src -name "*.ts" | xargs cat | gemini -p "分析整體架構，
 
 ```bash
 # 審查 git diff
-git diff HEAD | gemini -p "審查這個 diff，僅回報問題，不提供修改方案。
+git diff HEAD | agy -p "審查這個 diff，僅回報問題，不提供修改方案。
 
 審查維度：邏輯漏洞、邊界條件缺失、安全風險
 每個問題格式：
@@ -176,7 +176,7 @@ git diff HEAD | gemini -p "審查這個 diff，僅回報問題，不提供修改
 繁體中文。"
 
 # 審查單一檔案
-gemini -p "審查以下程式碼，僅回報問題，不提供修改方案。
+agy -p "審查以下程式碼，僅回報問題，不提供修改方案。
 [同上格式]" < 檔案路徑
 ```
 

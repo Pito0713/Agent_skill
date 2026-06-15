@@ -1,3 +1,9 @@
+---
+description: 前端資安規範。當使用者說「審查前端」、「review 這個 component」、「這個安全嗎」、
+  「有沒有 XSS」、「token 怎麼存」、「CSP 設定」、「CORS 問題」、「前端 PR」、
+  「PII 保護」、「供應鏈攻擊」時載入。也適用於所有含 React / Vue / Next.js 的專案。
+---
+
 # Frontend Security Rules
 
 > 前端專屬資安規範，補充通用 security.md 未涵蓋的攻擊面。

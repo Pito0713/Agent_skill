@@ -37,7 +37,7 @@
 | 前端審查 / review / XSS / CORS / PII | `@rules/frontend-security.md` |
 | 查實作模式 | `@skills/engineering/coding-workflow-ref.md` |
 | 練習 / 刻意改進 | `@skills/learning/feedback-loop.md` |
-| UI/UX 設計規劃 | `@skills/design/wireframing.md` 或 `@skills/design/information-architecture.md` 或 `@skills/design/ui-visual-design.md` |
+| UI/UX 設計規劃 | `@skills/design/ui-design-flow.md` |
 
 ---
 
@@ -76,9 +76,10 @@ rules/
 | 開始新功能 | `skills/engineering/new-feature.md` |
 | Code Review | `skills/engineering/code-review.md` |
 | 查實作模式 | `skills/engineering/coding-workflow-ref.md` |
-| 除錯問題 | `skills/engineering/debug.md` |
+| 除錯問題 | `skills/engineering/debug-flow.md` |
 | 撰寫測試 | `skills/engineering/testing-strategy.md` |
 | 撰寫文件 | `skills/engineering/documentation.md` |
+| 上線前檢查 | `skills/engineering/deploy-prep.md` |
 | 工作交接 | `skills/productivity/handoff.md` |
 | 安全審查 | `agents/04-security/security-auditor.md` |
 | 刻意練習回饋 | `skills/learning/feedback-loop.md` |
@@ -86,5 +87,6 @@ rules/
 | 頁面結構規劃 | `skills/design/wireframing.md` |
 | 視覺風格決策 | `skills/design/ui-visual-design.md` |
 | 導航 / 路由規劃 | `skills/design/information-architecture.md` |
+| 接手 / 了解專案 | `skills/productivity/onboarding.md` |
 | 查看專案決策 | `memory/project-context.md` |
 | 新增 GitHub Skill | `sources/registry.md` → `skills/convert-skill.md` |

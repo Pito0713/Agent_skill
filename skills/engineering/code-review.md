@@ -104,7 +104,7 @@ PR 格式：...
 
 **範圍為 git diff：**
 ```bash
-git diff HEAD | gemini -p "
+git diff HEAD | agy -p "
 以下是另一個 reviewer 的初步審查報告：
 ---
 [貼入初步報告]
@@ -121,7 +121,7 @@ git diff HEAD | gemini -p "
 
 **範圍為特定檔案：**
 ```bash
-cat [filepath] | gemini -p "
+cat [filepath] | agy -p "
 以下是另一個 reviewer 的初步審查報告：
 ---
 [貼入初步報告]
@@ -130,7 +130,7 @@ cat [filepath] | gemini -p "
 格式同上。繁體中文。"
 
 # 多檔案
-cat src/a.ts src/b.ts | gemini -p "..."
+cat src/a.ts src/b.ts | agy -p "..."
 ```
 
 ### Step 3：Claude 裁決 Gemini 輸出
