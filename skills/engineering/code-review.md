@@ -53,6 +53,14 @@ grep -s '"react"\|"vue"\|"next"' package.json 2>/dev/null
 
 ## Phase 2：安全審查
 
+> ⏭ **跳過本 Phase**：滿足以下任一條件即跳過，直接進入 Phase 3
+> - 審查範圍只有文件檔（.md / .txt / .json 靜態設定）
+> - 審查範圍只有測試檔案（*.test.* / *.spec.*）
+> - 使用者明確說「只看邏輯可讀性，跳過安全審查」
+>
+> 🚫 **CRITICAL GATE**：若發現 CRITICAL 安全問題
+> → 詢問「發現 CRITICAL 安全問題，是否繼續？(y 繼續記錄 / n 停止並輸出問題清單）」
+
 依專案類型選擇 agent：
 
 ```
@@ -65,6 +73,11 @@ grep -s '"react"\|"vue"\|"next"' package.json 2>/dev/null
 
 ## Phase 3：測試覆蓋審查
 
+> ⏭ **跳過本 Phase**：滿足以下任一條件即跳過，直接進入 Phase 4
+> - 審查範圍本身就是測試檔案
+> - 純 refactor，無新增/修改公開 API 或業務邏輯
+> - 使用者明確說「不需要測試覆蓋意見」
+
 依據 `rules/testing.md`：
 
 - [ ] 新增功能是否有對應測試
@@ -75,6 +88,11 @@ grep -s '"react"\|"vue"\|"next"' package.json 2>/dev/null
 ---
 
 ## Phase 4：Git / PR 格式審查（有 PR 時）
+
+> ⏭ **跳過本 Phase**：滿足以下任一條件即跳過，直接進入 Phase 5
+> - 審查範圍為貼上的程式碼片段（非 git diff，無 PR 脈絡）
+> - 使用者未提及 PR / commit / 分支合併
+> - 使用者明確說「只看程式碼邏輯」
 
 依據 `rules/git.md`：
 

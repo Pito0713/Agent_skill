@@ -34,7 +34,7 @@ Claude Code 的完整 agent skill 骨架，包含 rules、skills、subagents、m
 │   │   ├── coding-workflow-core.md    # 核心流程守則（常駐，Phase 0-4）
 │   │   ├── coding-workflow-ref.md     # 實作模式速查（按需）
 │   │   ├── coding-workflow.md         # 完整版（參考用）
-│   │   ├── agy-assist.md              # AI 分工協作 — Antigravity CLI（常駐實驗）
+│   │   ├── gemini-assist.md           # AI 分工協作 — Antigravity CLI（常駐實驗）
 │   │   ├── code-review.md             # ★ Code Review 協調器（Orchestrator）
 │   │   ├── new-feature.md             # ★ 新功能開發協調器（Orchestrator）
 │   │   ├── debug-flow.md              # ★ 除錯流程協調器（Orchestrator）
@@ -114,7 +114,7 @@ bash ~/Agent_skill/inject.sh
 | 已注入過舊版 | 顯示現有 vs 新版對比，詢問確認後精確替換區塊 |
 
 注入後的 CLAUDE.md 會包含：
-- **常駐載入**：`coding-standards`、`security`、`coding-workflow-core`、`agy-assist`（自動生效）
+- **常駐載入**：`coding-standards`、`security`、`coding-workflow-core`、`gemini-assist`（自動生效）
 - **按需載入**：其餘 skills 以註解列出，移除 `#` 即可啟用
 
 ---
@@ -168,11 +168,16 @@ agy
       ↓
 Orchestrator Skill（入口）
       ↓
-Phase 0 → Phase 1 → ... → Phase N
-   ↓          ↓                ↓
-rules      agents           agy 交叉驗證
-載入       委派              最終輸出
+Phase 0 → Phase 1 ──→ Phase N
+   ↓          ↓     ↑       ↓
+rules      agents  ⏭       agy 交叉驗證
+載入       委派   跳過條件   最終輸出
+              ↓
+           🚫 CRITICAL GATE
+         （發現嚴重問題 → 停止）
 ```
+
+每個 Phase 開頭皆標注 **⏭ 跳過條件**，滿足條件時自動略過該 phase，避免不必要的 token 消耗。安全相關 Phase 額外設有 **🚫 CRITICAL GATE**，發現 CRITICAL 問題時強制詢問是否繼續。
 
 ### 可用 Orchestrators
 
@@ -194,7 +199,7 @@ rules      agents           agy 交叉驗證
 | 常駐 | `rules/coding-standards.md` | 語言無關，每次都適用 |
 | 常駐 | `rules/security.md` | 安全規範，不可省略 |
 | 常駐 | `skills/engineering/coding-workflow-core.md` | Phase 0-4 實作守則（含自動偵測）|
-| 常駐（實驗）| `skills/engineering/agy-assist.md` | AI 分工協作（agy）|
+| 常駐（實驗）| `skills/engineering/gemini-assist.md` | AI 分工協作（agy）|
 | 自動偵測 | `rules/typescript.md` | tsconfig.json 存在時 |
 | 自動偵測 | `rules/react.md` / `nextjs.md` | package.json 含 react / next 時 |
 | 自動偵測 | `rules/python.md` | requirements.txt / pyproject.toml 存在時 |
@@ -254,3 +259,4 @@ rules      agents           agy 交叉驗證
 | v2.1 | 2026-06-15 | 新增 frontend-security rule + auditor agent；coding-workflow-core 加入 Phase 0 自動偵測堆疊 |
 | v2.2 | 2026-06-15 | 新增 5 個 Orchestrator skills（code-review / new-feature / debug-flow / deploy-prep / ui-design-flow / onboarding）|
 | v2.3 | 2026-06-15 | Gemini CLI → Antigravity CLI（agy）全面遷移；新增 agy 安裝說明；更新 README 架構說明 |
+| v2.4 | 2026-06-16 | 為全部 6 個 Orchestrator 加入 Phase 跳過條件（17 條）及 CRITICAL Gate（5 個）；agy 交叉驗證確認設計合理性；預估節省 15–20% token 消耗 |

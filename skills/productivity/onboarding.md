@@ -75,6 +75,13 @@ grep -s '"react"\|"vue"\|"next"\|"express"\|"fastapi"' package.json 2>/dev/null
 
 ## Phase 3：關鍵模組深度閱讀
 
+> ⏭ **跳過本 Phase**：滿足以下任一條件即跳過，直接進入 Phase 4
+> - Phase 1 agy 已輸出詳細摘要，**且**使用者目標為「了解架構概覽」（非立即開發）
+> - 專案 README 已有完整模組說明，且已涵蓋當前任務所需細節（使用者確認）
+> - 使用者明確說「只需要架構概覽，不需要深入每個模組」
+>
+> ⚠️ **注意**：若接下來要立即進行開發任務，不建議跳過——agy 摘要可能缺少實作細節
+
 依 Phase 1 找出的核心模組，Claude 逐一讀取：
 
 ```
@@ -90,6 +97,11 @@ grep -s '"react"\|"vue"\|"next"\|"express"\|"fastapi"' package.json 2>/dev/null
 ---
 
 ## Phase 4：資訊架構理解
+
+> ⏭ **跳過本 Phase**：滿足以下任一條件即跳過，直接進入 Phase 5
+> - 純後端 API 專案（無前端路由 / 頁面，不需要 IA）
+> - 使用者明確說「只需要了解後端架構，不需要 IA 整理」
+> - 已有現成的路由文件 / sitemap（使用者確認）
 
 委派 `skills/design/information-architecture.md`（閱讀模式）：
 

@@ -21,6 +21,11 @@ description: UI 設計規劃協調器。當使用者說「幫我規劃這個頁�
 
 ## Phase 1：資訊架構（IA）
 
+> ⏭ **跳過本 Phase**：滿足以下任一條件即跳過，直接進入 Phase 2
+> - 使用者確認「IA 已確定 / 現有路由不異動，直接進 wireframe」
+> - 只修改單一 UI component 樣式，不影響導航 / 路由結構
+> - 使用者說「只改這個按鈕 / 表單 / 顏色」（純視覺微調）
+
 委派 `skills/design/information-architecture.md`：
 
 ```
@@ -35,6 +40,11 @@ description: UI 設計規劃協調器。當使用者說「幫我規劃這個頁�
 ---
 
 ## Phase 2：版面骨架（Wireframe）
+
+> ⏭ **跳過本 Phase**：滿足以下任一條件即跳過，直接進入 Phase 3
+> - 使用者提供現有設計稿或 Figma 連結
+> - 使用者明確說「跳過 wireframe，直接給視覺規格」
+> - 只改視覺樣式（顏色 / 字型 / 間距），版面不異動
 
 委派 `skills/design/wireframing.md`：
 
@@ -51,6 +61,11 @@ description: UI 設計規劃協調器。當使用者說「幫我規劃這個頁�
 
 ## Phase 3：視覺風格（Visual Design）
 
+> ⏭ **跳過本 Phase**：滿足以下任一條件即跳過，直接進入 Phase 4
+> - 使用者確認「已有設計系統 / Tailwind config」，只輸出對應 class 映射
+> - 使用者明確說「只需要 wireframe，不需要視覺規格」
+> - 使用者說「先做 layout，視覺後面再定」
+
 委派 `skills/design/ui-visual-design.md`：
 
 ```
@@ -66,6 +81,11 @@ description: UI 設計規劃協調器。當使用者說「幫我規劃這個頁�
 ---
 
 ## Phase 4：實作交接
+
+> ⏭ **跳過本 Phase**：滿足以下任一條件即跳過，直接進入 Phase 5
+> - 使用者明確說「只需要設計規格，不需要實作交接」
+> - 使用者說「有工程師會自己看 wireframe 實作」
+> - 本次目的為探索 / 研究（非實作）
 
 依確認的 wireframe + 視覺規格，交接給前端實作：
 

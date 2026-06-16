@@ -54,6 +54,11 @@ grep -s '"react"\|"vue"\|"next"' package.json 2>/dev/null
 
 ## Phase 2：API 設計（有後端時執行）
 
+> ⏭ **跳過本 Phase**：滿足以下任一條件即跳過，直接進入 Phase 3
+> - 使用者確認「純前端功能，不涉及資料新增/修改」
+> - 使用者確認「複用既有 API，無需新增 endpoint」
+> - Phase 0 偵測為純前端專案（無任何後端設定檔）
+
 委派 `agents/01-core-development/api-architect.md`：
 
 ```
@@ -107,6 +112,11 @@ Python → agents/02-language-specialists/python-expert.md（Python 專案）
 
 ## Phase 5：測試
 
+> ⏭ **跳過本 Phase**：滿足以下任一條件即跳過，直接進入 Phase 6
+> - 使用者明確說「這是 prototype / 先不寫測試」
+> - 使用者明確說「hotfix，緊急，後補測試」
+> - 本次變更行數 < 15 行且為純設定調整（非邏輯修改）
+
 委派 `skills/engineering/testing-strategy.md` 設計測試策略，
 再依規模委派 `agents/05-quality-assurance/test-engineer.md` 執行：
 
@@ -120,6 +130,12 @@ Python → agents/02-language-specialists/python-expert.md（Python 專案）
 ---
 
 ## Phase 6：文件更新
+
+> ⏭ **跳過本 Phase**：滿足以下任一條件即跳過，直接進入 Phase 7
+> - Phase 2 已跳過且無新 API endpoint（純 UI 功能）
+> - 本次修改不改變公開介面 / 使用方式（純內部重構）
+> - 使用者明確說「不需要文件更新」
+> - 本次變更行數 < 15 行
 
 委派 `skills/engineering/documentation.md`：
 

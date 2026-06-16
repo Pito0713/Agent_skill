@@ -36,6 +36,11 @@ git status            # 確認無未提交的變更
 
 ## Phase 1：Code Review
 
+> ⏭ **跳過本 Phase**：滿足以下任一條件即跳過，直接進入 Phase 2
+> - 本 session 已完成 code-review，且發現的問題已全數修正
+> - 使用者確認「上週已做過 code-review，問題已修正」
+> - 純設定檔 / 環境變數變更（無邏輯修改）
+
 觸發 `skills/engineering/code-review.md`（精簡模式）：
 
 ```
@@ -44,11 +49,15 @@ git status            # 確認無未提交的變更
 [ ] 測試覆蓋（Phase 3）
 ```
 
-若已做過 code-review → 確認問題都已修正後跳過。
-
 ---
 
 ## Phase 2：安全合規審查
+
+> ⚡ **Staging 精簡模式**：若目標環境為 staging
+> → 只執行 secrets / .env 洩漏檢查，跳過完整合規審查，直接進入 Phase 3
+>
+> 🚫 **CRITICAL GATE**：若發現 CRITICAL 安全問題（如 hardcoded secret / SQL injection）
+> → 強制停止，輸出問題清單，**不建議繼續上線程序直到修正完成**
 
 依專案類型執行：
 
@@ -72,6 +81,12 @@ git status            # 確認無未提交的變更
 
 ## Phase 3：測試驗證
 
+> ⏭ **跳過本 Phase**：滿足以下任一條件即跳過，直接進入 Phase 4
+> - 純設定檔 / 環境變數變更（無邏輯修改，無需重跑測試）
+> - 目標為 staging 且使用者確認「CI 已通過，主流程手動驗證完畢」
+>
+> ⚡ **無 DB Migration 精簡模式**：跳過 migration 相關 checklist 三項
+
 委派 `agents/05-quality-assurance/e2e-tester.md`：
 
 ```
@@ -91,6 +106,10 @@ git status            # 確認無未提交的變更
 
 ## Phase 4：設定與環境確認
 
+> ⏭ **跳過本 Phase**：滿足以下任一條件即跳過，直接進入 Phase 5
+> - 使用者確認「.env 未異動，無新增第三方服務，CORS 未更動」
+> - 純 bug fix，無任何環境設定變動
+
 ```
 [ ] production .env 所有必要變數已設定
 [ ] .env.example 是否與 production 同步（無多餘 / 缺少的 key）
@@ -103,6 +122,10 @@ git status            # 確認無未提交的變更
 ---
 
 ## Phase 5：Git / Release 確認
+
+> ⏭ **跳過本 Phase**：滿足以下任一條件即跳過，直接進入 Phase 6
+> - 目標環境為 staging（無需打 tag / 更新 CHANGELOG）
+> - 緊急 hotfix，使用者確認「先上線，事後補 changelog」
 
 依據 `rules/git.md`：
 
