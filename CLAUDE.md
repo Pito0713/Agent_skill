@@ -69,24 +69,28 @@ rules/
 - 指出邏輯漏洞、不為友善而同意
 - 涉及數字與風險時先看基率
 
-## 快速入口
+## 快速入口（觸發詞 → Skill）
 
-| 需求 | 對應資源 |
+> 使用者說出以下關鍵詞時，載入對應 skill 執行完整流程。
+
+| 觸發詞 | 對應資源 |
 |------|----------|
-| 開始新功能 | `skills/engineering/new-feature.md` |
-| Code Review | `skills/engineering/code-review.md` |
-| 查實作模式 | `skills/engineering/coding-workflow-ref.md` |
-| 除錯問題 | `skills/engineering/debug-flow.md` |
-| 撰寫測試 | `skills/engineering/testing-strategy.md` |
-| 撰寫文件 | `skills/engineering/documentation.md` |
-| 上線前檢查 | `skills/engineering/deploy-prep.md` |
-| 工作交接 | `skills/productivity/handoff.md` |
-| 安全審查 | `agents/04-security/security-auditor.md` |
-| 刻意練習回饋 | `skills/learning/feedback-loop.md` |
-| 邏輯看不懂 / 反覆出錯 | `skills/learning/concrete-example.md` |
-| 頁面結構規劃 | `skills/design/wireframing.md` |
-| 視覺風格決策 | `skills/design/ui-visual-design.md` |
-| 導航 / 路由規劃 | `skills/design/information-architecture.md` |
-| 接手 / 了解專案 | `skills/productivity/onboarding.md` |
-| 查看專案決策 | `memory/project-context.md` |
-| 新增 GitHub Skill | `sources/registry.md` → `skills/convert-skill.md` |
+| 「新增功能」、「實作 X」、「建立 Y 功能」、「我要做 Z」 | `skills/engineering/new-feature.md` |
+| 「code review」、「PR review」、「審查這段 code」、「有沒有問題」、「merge 前」 | `skills/engineering/code-review.md` |
+| 「bug」、「壞掉了」、「為什麼錯」、「不如預期」、「找不到原因」 | `skills/engineering/debug-flow.md` |
+| 「要上線了」、「deploy 前」、「release 前」、「上線檢查」 | `skills/engineering/deploy-prep.md` |
+| 「規劃 UI」、「設計這個頁面」、「這個畫面要怎麼做」、「UI 架構」 | `skills/design/ui-design-flow.md` |
+| 「接手專案」、「了解這個 repo」、「幫我看這個 codebase」 | `skills/productivity/onboarding.md` |
+| 「幫我搜尋」、「查一下最新」、「給我第二個意見」、「交叉驗證」 | `skills/engineering/gemini-assist.md` |
+| 「查實作模式」、「怎麼寫 API」、「component 怎麼做」 | `skills/engineering/coding-workflow-ref.md` |
+| 「幫我寫測試」、「這個怎麼測」、「test plan」 | `skills/engineering/testing-strategy.md` |
+| 「幫我寫文件」、「更新 README」、「API docs」 | `skills/engineering/documentation.md` |
+| 「交接」、「handoff」、「總結一下」、「下次繼續」 | `skills/productivity/handoff.md` |
+| 「安全審查」、「OWASP」、「後端有漏洞嗎」 | `agents/04-security/security-auditor.md` |
+| 「前端安全」、「XSS」、「CORS 問題」、「token 怎麼存」 | `agents/04-security/frontend-security-auditor.md` |
+| 「練習」、「幫我改進」、「給我回饋」、「feedback loop」 | `skills/learning/feedback-loop.md` |
+| 「我看不懂」、「為什麼還是錯」、「邏輯是什麼」 | `skills/learning/concrete-example.md` |
+| 「接手 / 了解專案」、「session 開始」、「smart init」 | `skills/productivity/smart-init.md` |
+| 「更新版本」、「記錄版本」、「準備 commit」 | `skills/productivity/version-log.md` |
+| 「查看專案決策」、「架構選型記錄」 | `memory/project-context.md` |
+| 「新增 GitHub Skill」、「收集這個 skill」 | `sources/registry.md` → `skills/convert-skill.md` |
