@@ -38,6 +38,8 @@
 | 查實作模式 | `@skills/engineering/coding-workflow-ref.md` |
 | 練習 / 刻意改進 | `@skills/learning/feedback-loop.md` |
 | UI/UX 設計規劃 | `@skills/design/ui-design-flow.md` |
+| 精簡程式碼 / 反 over-engineering | `@skills/engineering/lazyengineer.md` |
+| 過度設計掃描 / 找可刪的程式碼 | `@skills/engineering/lazyengineer-review.md` |
 
 ---
 
@@ -136,3 +138,5 @@ rules/
 | 「完善」、「優化」、「讓它更好」、「改進這個功能」 | 意圖不明確 → 詢問使用者選擇 A/B/C/D |
 | 「查看專案決策」、「架構選型記錄」 | `memory/project-context.md` |
 | 「新增 GitHub Skill」、「收集這個 skill」 | `sources/registry.md` → `skills/convert-skill.md` |
+| 「精簡一下」、「有更簡單的寫法嗎」、「不要 over-engineering」、「lazyengineer」、「能不能更少」 | `skills/engineering/lazyengineer.md` |
+| 「有沒有過度設計」、「可以刪什麼」、「lazyengineer review」、「找多餘的程式碼」 | `skills/engineering/lazyengineer-review.md` |

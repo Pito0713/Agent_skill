@@ -51,6 +51,24 @@ grep -s '"react"\|"vue"\|"next"' package.json 2>/dev/null
 
 ---
 
+## Phase 1.5：Over-Engineering 掃描（可選）
+
+> ⏭ **跳過本 Phase**：滿足以下任一條件即跳過，直接進入 Phase 2
+> - 使用者未提到「精簡」、「過度設計」、「可以刪什麼」
+> - 審查範圍為 hotfix / 微小變更（< 20 行）
+
+若使用者有提到「lazyengineer」或「太複雜了」，觸發 `skills/engineering/lazyengineer-review.md`：
+
+```
+[ ] 掃描五種 over-engineering 類型（delete / stdlib / native / yagni / shrink）
+[ ] 輸出每筆：L行號: [tag] 描述。替換方案。
+[ ] 最終輸出：net: -N lines possible
+```
+
+此 phase 輸出**不影響**後續 Phase 2-5 的安全 / 測試審查。
+
+---
+
 ## Phase 2：安全審查
 
 > ⏭ **跳過本 Phase**：滿足以下任一條件即跳過，直接進入 Phase 3

@@ -12,16 +12,41 @@ Claude 負責決策與整合，agy 負責資料密集工作。
 
 ## 前置確認（每次執行前必須通過）
 
-### Step 1：確認 Gemini CLI 是否安裝
+### Step 1：偵測可用的 CLI 工具
+
+依優先順序偵測，找到第一個可用的即設為 `$CLI_CMD`：
 
 ```bash
-agy --version
+# 優先順序：agy（PATH） → ~/.local/bin/agy（常見安裝路徑）→ gemini（相容舊版）
+if command -v agy &>/dev/null; then
+  CLI_CMD="agy"
+  echo "✅ 使用 agy (Antigravity CLI)"
+elif [ -x "$HOME/.local/bin/agy" ]; then
+  CLI_CMD="$HOME/.local/bin/agy"
+  echo "✅ 使用 ~/.local/bin/agy（建議加入 PATH）"
+elif command -v gemini &>/dev/null; then
+  CLI_CMD="gemini"
+  echo "⚠️  使用 gemini CLI（舊版相容，建議遷移至 agy）"
+else
+  CLI_CMD=""
+fi
 ```
 
-**若未安裝：**
-> 詢問使用者：「Antigravity CLI 尚未安裝，是否現在安裝？(y/n)」
-> - **y**：執行 `curl -fsSL https://antigravity.google/cli/install.sh | bash`，完成後執行 `agy` 進行 OAuth 認證
+**若 `$CLI_CMD` 為空（三者均未找到）：**
+> 詢問使用者：「找不到 agy 或 gemini CLI，是否現在安裝 Antigravity CLI？(y/n)」
+> - **y**：執行以下指令：
+>   ```bash
+>   curl -fsSL https://antigravity.google/cli/install.sh | bash
+>   echo 'export PATH="$PATH:$HOME/.local/bin"' >> ~/.zshrc && source ~/.zshrc
+>   agy  # OAuth 認證
+>   ```
 > - **n**：終止，不執行後續任何模式
+
+> 💡 **PATH 修正提示**（若使用 `~/.local/bin/agy`）：
+> 執行 `echo 'export PATH="$PATH:$HOME/.local/bin"' >> ~/.zshrc && source ~/.zshrc`
+> 可讓後續 session 直接用 `agy` 指令。
+
+**後續所有指令模板中的 `agy` 請替換為 `$CLI_CMD` 的實際值。**
 
 ### Step 2：確認安全設定
 
@@ -65,7 +90,7 @@ fi
 「幫我搜尋」、「查一下最新」、「有沒有相關資料」
 
 **觸發後先詢問：**
-> 「這個任務可以透過 Gemini CLI 進行網路搜尋，是否啟用 Gemini 協作？(y/n)」
+> 「這個任務可以透過 AI CLI（agy / gemini）進行網路搜尋，是否啟用協作？(y/n)」
 > - **y**：繼續執行以下流程
 > - **n**：改由 Claude 以現有知識回答，不呼叫 Gemini
 
@@ -87,7 +112,8 @@ fi
 ### 指令模板
 
 ```bash
-agy -p "請使用 google_web_search 搜尋：'<關鍵字>'
+# $CLI_CMD = agy / ~/.local/bin/agy / gemini（Step 1 偵測結果）
+$CLI_CMD -p "請使用 google_web_search 搜尋：'<關鍵字>'
 
 回傳格式（每筆）：
 - 標題：
@@ -107,7 +133,7 @@ agy -p "請使用 google_web_search 搜尋：'<關鍵字>'
 「這個檔案太大」、「掃一下整個專案」、「幫我理解這個 codebase」
 
 **觸發後先詢問：**
-> 「這個任務可以透過 Gemini CLI 的大上下文視窗進行掃描，是否啟用 Gemini 協作？(y/n)」
+> 「這個任務可以透過 AI CLI（agy / gemini）的大上下文視窗進行掃描，是否啟用協作？(y/n)」
 > - **y**：繼續執行以下流程
 > - **n**：由 Claude 直接讀取，token 消耗較高
 
@@ -127,12 +153,14 @@ agy -p "請使用 google_web_search 搜尋：'<關鍵字>'
 ### 指令模板
 
 ```bash
+# $CLI_CMD = agy / ~/.local/bin/agy / gemini（Step 1 偵測結果）
+
 # 單一大檔案
-agy -p "閱讀這份檔案，提取：<架構概覽 / 核心邏輯 / 外部依賴>
+$CLI_CMD -p "閱讀這份檔案，提取：<架構概覽 / 核心邏輯 / 外部依賴>
 條列式輸出，不超過 20 行。不要建議修改。繁體中文。" < 檔案路徑
 
 # 多檔案 / 整個目錄
-find ./src -name "*.ts" | xargs cat | agy -p "分析整體架構，
+find ./src -name "*.ts" | xargs cat | $CLI_CMD -p "分析整體架構，
 條列主要模組與職責，不超過 20 行。不要建議修改。繁體中文。"
 ```
 
@@ -144,7 +172,7 @@ find ./src -name "*.ts" | xargs cat | agy -p "分析整體架構，
 「幫我 review」、「給我第二個意見」、「交叉驗證」、「有沒有漏洞」
 
 **觸發後先詢問：**
-> 「這個任務可以透過 Gemini CLI 進行獨立的對抗式審查，是否啟用 Gemini 協作？(y/n)」
+> 「這個任務可以透過 AI CLI（agy / gemini）進行獨立的對抗式審查，是否啟用協作？(y/n)」
 > - **y**：繼續執行以下流程
 > - **n**：由 Claude 自行審查，無第二模型交叉驗證
 
@@ -164,8 +192,10 @@ find ./src -name "*.ts" | xargs cat | agy -p "分析整體架構，
 ### 指令模板
 
 ```bash
+# $CLI_CMD = agy / ~/.local/bin/agy / gemini（Step 1 偵測結果）
+
 # 審查 git diff
-git diff HEAD | agy -p "審查這個 diff，僅回報問題，不提供修改方案。
+git diff HEAD | $CLI_CMD -p "審查這個 diff，僅回報問題，不提供修改方案。
 
 審查維度：邏輯漏洞、邊界條件缺失、安全風險
 每個問題格式：
@@ -176,27 +206,36 @@ git diff HEAD | agy -p "審查這個 diff，僅回報問題，不提供修改方
 繁體中文。"
 
 # 審查單一檔案
-agy -p "審查以下程式碼，僅回報問題，不提供修改方案。
+$CLI_CMD -p "審查以下程式碼，僅回報問題，不提供修改方案。
 [同上格式]" < 檔案路徑
 ```
 
 ---
 
+## CLI 優先順序
+
+| 優先 | CLI | 說明 |
+|------|-----|------|
+| 1 | `agy`（PATH） | Antigravity CLI，推薦版本 |
+| 2 | `~/.local/bin/agy` | agy 安裝但未加入 PATH |
+| 3 | `gemini`（PATH） | 舊版 Gemini CLI，介面相容 |
+| — | 均不可用 | 提示安裝 agy，或 Claude 自行處理 |
+
 ## 執行限制
 
 | 限制 | 說明 |
 |------|------|
-| 每分鐘上限 60 次 | 同時不超過 2 個 Gemini 任務 |
-| 模式 B 無工具權限 | 使用 `< 路徑` 傳入，不依賴 Gemini 讀檔工具 |
-| 結果整合 | Gemini 輸出作為參考，最終判斷由 Claude 負責 |
+| 每分鐘上限 60 次 | 同時不超過 2 個 CLI 任務 |
+| 模式 B 無工具權限 | 使用 `< 路徑` 傳入，不依賴 CLI 讀檔工具 |
+| 結果整合 | CLI 輸出作為參考，最終判斷由 Claude 負責 |
 
 ---
 
 ## 分工原則
 
 ```
-Claude  → 決策、規劃、整合、最終輸出
-Gemini  → 資料收集、大量讀取、第二意見
+Claude       → 決策、規劃、整合、最終輸出
+agy / gemini → 資料收集、大量讀取、第二意見
 ```
 
-Gemini 的輸出不直接使用，Claude 必須驗證後再整合。
+CLI 的輸出不直接使用，Claude 必須驗證後再整合。

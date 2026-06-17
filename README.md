@@ -39,6 +39,8 @@ Claude Code 的完整 agent skill 骨架，包含 rules、skills、subagents、m
 │   │   ├── new-feature.md             # ★ 新功能開發協調器（Orchestrator）
 │   │   ├── debug-flow.md              # ★ 除錯流程協調器（Orchestrator）
 │   │   ├── deploy-prep.md             # ★ 上線前檢查協調器（Orchestrator）
+│   │   ├── lazyengineer.md            # Lazy Senior Dev 模式（決策梯 + token 節省）
+│   │   ├── lazyengineer-review.md     # Over-Engineering 偵測（可刪清單）
 │   │   ├── debug.md                   # 系統性除錯流程（被 debug-flow 協調）
 │   │   ├── testing-strategy.md        # 測試策略設計（被 Orchestrator 協調）
 │   │   └── documentation.md           # 文件撰寫模板（被 Orchestrator 協調）
@@ -184,11 +186,57 @@ rules      agents  ⏭       agy 交叉驗證
 | Orchestrator | 觸發詞 | 協調資源 |
 |------|------|------|
 | `new-feature.md` | 「新增功能」、「實作 X」 | api-architect、backend/frontend-engineer、testing-strategy、documentation、agy |
-| `code-review.md` | 「code review」、「PR review」 | security-auditor、frontend-security-auditor、testing、git、agy |
+| `code-review.md` | 「code review」、「PR review」 | security-auditor、frontend-security-auditor、lazyengineer-review（Phase 1.5）、testing、git、agy |
 | `debug-flow.md` | 「bug」、「為什麼錯」、「找不到原因」 | debug、concrete-example、agy 模式B/C |
 | `deploy-prep.md` | 「要上線了」、「deploy 前」 | code-review、security-auditor、e2e-tester、version-log、agy |
 | `ui-design-flow.md` | 「規劃 UI」、「設計這個頁面」 | information-architecture、wireframing、ui-visual-design、frontend-engineer、agy |
 | `onboarding.md` | 「接手專案」、「幫我了解這個 repo」 | agy 模式B、information-architecture、handoff |
+
+---
+
+## Lazy Engineer 模式
+
+靈感來自 [Ponytail](https://github.com/DietrichGebert/ponytail)，針對本專案重新設計的「最小化實作」規範。
+
+### 決策梯
+
+每次生成程式碼前，AI 必須依序通過六關：
+
+```
+1. 這個需要存在嗎？       → YAGNI
+2. stdlib 有提供嗎？      → 用標準庫
+3. 平台原生功能有嗎？     → 用內建
+4. 現有套件能做嗎？       → 複用依賴
+5. 一行能搞定嗎？         → 最小化
+6. 才寫最小必要程式碼
+```
+
+### 實測 Token 節省（agy 實際測量）
+
+| 任務類型 | 正常模式 | lazyengineer | 節省 |
+|---|---|---|---|
+| Email 驗證 | 590 行（含測試）/ ~4,500 tokens | 9 行 / ~425 tokens | **↓ 90%** |
+| Debounce 函式 | 168 行 / ~1,844 tokens | 89 行 / ~954 tokens | **↓ 48%** |
+| 加權平均 | — | — | **↓ 65–70%** |
+
+> Output token 比 input token 貴 3–5 倍，此數字直接反映 API 費用節省。
+
+### 使用方式
+
+```
+說出「lazyengineer」或「精簡一下」→ 啟用決策梯（full 模式）
+說出「有沒有過度設計」或「可以刪什麼」→ 啟用 lazyengineer-review
+
+lazyengineer [lite|full|ultra|off]
+```
+
+### 適用場景
+
+| ✅ 適合 | ❌ 不適合 |
+|---|---|
+| Prototype / MVP | 上線功能（邊界條件要完整）|
+| 內部工具 / script | 對外 library（型別需完整）|
+| 需求明確的小功能 | 安全敏感功能 |
 
 ---
 
@@ -207,6 +255,8 @@ rules      agents  ⏭       agy 交叉驗證
 | 自動偵測 | `rules/git.md` | 任務涉及 commit / PR / branch 時 |
 | 自動偵測 | `rules/frontend-security.md` | package.json 含 react / vue / next 時 |
 | 按需 | `skills/engineering/coding-workflow-ref.md` | 查實作模式時 |
+| 按需 | `skills/engineering/lazyengineer.md` | 精簡程式碼 / 反 over-engineering 時（實測 -65–90% output tokens）|
+| 按需 | `skills/engineering/lazyengineer-review.md` | 掃描過度設計 / 找可刪的程式碼時 |
 | 按需 | `skills/learning/feedback-loop.md` | 刻意練習 / 改進特定能力時 |
 | 按需 | `skills/learning/concrete-example.md` | 邏輯看不懂 / 反覆出錯時 |
 
@@ -260,3 +310,4 @@ rules      agents  ⏭       agy 交叉驗證
 | v2.2 | 2026-06-15 | 新增 5 個 Orchestrator skills（code-review / new-feature / debug-flow / deploy-prep / ui-design-flow / onboarding）|
 | v2.3 | 2026-06-15 | Gemini CLI → Antigravity CLI（agy）全面遷移；新增 agy 安裝說明；更新 README 架構說明 |
 | v2.4 | 2026-06-16 | 為全部 6 個 Orchestrator 加入 Phase 跳過條件（17 條）及 CRITICAL Gate（5 個）；agy 交叉驗證確認設計合理性；預估節省 15–20% token 消耗 |
+| v2.5 | 2026-06-17 | 新增 lazyengineer / lazyengineer-review skill（靈感來自 Ponytail）；gemini-assist 加入三層 CLI 偵測（agy → ~/.local/bin/agy → gemini）；code-review 加入 Phase 1.5 over-engineering 掃描；實測節省 65–90% output token |
