@@ -39,10 +39,11 @@ Claude Code 的完整 agent skill 骨架，包含 rules、skills、subagents、m
 │   │   ├── new-feature.md             # ★ 新功能開發協調器（Orchestrator）
 │   │   ├── debug-flow.md              # ★ 除錯流程協調器（Orchestrator）
 │   │   ├── deploy-prep.md             # ★ 上線前檢查協調器（Orchestrator）
+│   │   ├── security-review.md         # ★ 安全審查協調器（Orchestrator）
 │   │   ├── lazyengineer.md            # Lazy Senior Dev 模式（決策梯 + token 節省）
 │   │   ├── lazyengineer-review.md     # Over-Engineering 偵測（可刪清單）
 │   │   ├── debug.md                   # 系統性除錯流程（被 debug-flow 協調）
-│   │   ├── testing-strategy.md        # 測試策略設計（被 Orchestrator 協調）
+│   │   ├── testing-strategy.md        # 測試策略規劃，只輸出計畫（被 Orchestrator 協調）
 │   │   └── documentation.md           # 文件撰寫模板（被 Orchestrator 協調）
 │   ├── marketing/                     # 行銷相關 skills（待填充）
 │   ├── design/                        # UI/UX 設計規劃 skills
@@ -68,11 +69,11 @@ Claude Code 的完整 agent skill 骨架，包含 rules、skills、subagents、m
 │   │   ├── typescript-expert.md       # TS 型別系統專家
 │   │   └── python-expert.md           # Python 專家（FastAPI / pytest）
 │   ├── 04-security/
-│   │   ├── security-auditor.md        # 安全審計（OWASP Top 10）
-│   │   ├── owasp-reviewer.md          # OWASP 合規報告
+│   │   ├── security-auditor.md        # 後端快速安全掃描（PR/commit 前）
+│   │   ├── owasp-reviewer.md          # OWASP 整體合規報告（上線前 / security sprint）
 │   │   └── frontend-security-auditor.md # 前端資安審計（XSS / CORS / CSP / PII）
 │   └── 05-quality-assurance/
-│       ├── test-engineer.md           # 測試工程師
+│       ├── test-engineer.md           # 測試工程師（依計畫實作，不設計策略）
 │       └── e2e-tester.md              # E2E 測試（Playwright）
 │
 ├── sources/
@@ -189,6 +190,7 @@ rules      agents  ⏭       agy 交叉驗證
 | `code-review.md` | 「code review」、「PR review」 | security-auditor、frontend-security-auditor、lazyengineer-review（Phase 1.5）、testing、git、agy |
 | `debug-flow.md` | 「bug」、「為什麼錯」、「找不到原因」 | debug、concrete-example、agy 模式B/C |
 | `deploy-prep.md` | 「要上線了」、「deploy 前」 | code-review、security-auditor、e2e-tester、version-log、agy |
+| `security-review.md` | 「安全審查」、「OWASP」、「XSS」、「前端安全」 | security-auditor、frontend-security-auditor、owasp-reviewer |
 | `ui-design-flow.md` | 「規劃 UI」、「設計這個頁面」 | information-architecture、wireframing、ui-visual-design、frontend-engineer、agy |
 | `onboarding.md` | 「接手專案」、「幫我了解這個 repo」 | agy 模式B、information-architecture、handoff |
 
@@ -311,3 +313,4 @@ lazyengineer [lite|full|ultra|off]
 | v2.3 | 2026-06-15 | Gemini CLI → Antigravity CLI（agy）全面遷移；新增 agy 安裝說明；更新 README 架構說明 |
 | v2.4 | 2026-06-16 | 為全部 6 個 Orchestrator 加入 Phase 跳過條件（17 條）及 CRITICAL Gate（5 個）；agy 交叉驗證確認設計合理性；預估節省 15–20% token 消耗 |
 | v2.5 | 2026-06-17 | 新增 lazyengineer / lazyengineer-review skill（靈感來自 Ponytail）；gemini-assist 加入三層 CLI 偵測（agy → ~/.local/bin/agy → gemini）；code-review 加入 Phase 1.5 over-engineering 掃描；實測節省 65–90% output token |
+| v2.6 | 2026-06-20 | 修復三個工程邊界問題：新增 security-review orchestrator 統一安全審查入口；釐清 security-auditor（快速掃描）vs owasp-reviewer（合規報告）職責邊界；切分 testing-strategy（只輸出計畫）vs test-engineer（只負責實作）；修正 CLAUDE.md 雙路徑委派問題 |

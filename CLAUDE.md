@@ -87,7 +87,7 @@ rules/
 | 使用者說 | 命中 skill | 詢問重點 |
 |------|------|------|
 | 「新增這個畫面的功能」 | new-feature + ui-design-flow | 要先設計 UI 還是直接實作？ |
-| 「review 這個 component 有沒有安全問題」 | code-review + frontend-security-auditor | 走完整 review 還是只做安全審查？ |
+| 「review 這個 component 有沒有安全問題」 | code-review + security-review | 走完整 review 還是只做安全審查？ |
 | 「這個 bug 我看不懂」 | debug-flow + concrete-example | 要除錯還是要解釋邏輯？ |
 
 ## 意圖不明確處理規則
@@ -129,8 +129,7 @@ rules/
 | 「幫我寫測試」、「這個怎麼測」、「test plan」 | `skills/engineering/testing-strategy.md` |
 | 「幫我寫文件」、「更新 README」、「API docs」 | `skills/engineering/documentation.md` |
 | 「交接」、「handoff」、「總結一下」、「下次繼續」 | `skills/productivity/handoff.md` |
-| 「安全審查」、「OWASP」、「後端有漏洞嗎」 | `agents/04-security/security-auditor.md` |
-| 「前端安全」、「XSS」、「CORS 問題」、「token 怎麼存」 | `agents/04-security/frontend-security-auditor.md` |
+| 「安全審查」、「OWASP」、「後端有漏洞嗎」、「前端安全」、「XSS」、「CORS 問題」、「token 怎麼存」 | `skills/engineering/security-review.md` |
 | 「練習」、「幫我改進」、「給我回饋」、「feedback loop」 | `skills/learning/feedback-loop.md` |
 | 「我看不懂」、「為什麼還是錯」、「邏輯是什麼」 | `skills/learning/concrete-example.md` |
 | 「接手 / 了解專案」、「session 開始」、「smart init」 | `skills/productivity/smart-init.md` |
