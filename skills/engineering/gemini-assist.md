@@ -40,7 +40,9 @@ fi
 >   echo 'export PATH="$PATH:$HOME/.local/bin"' >> ~/.zshrc && source ~/.zshrc
 >   agy  # OAuth 認證
 >   ```
-> - **n**：終止，不執行後續任何模式
+> - **n**：
+>   - 模式 A（網路搜尋）/ 模式 B（大檔掃描）→ 終止，改由 Claude 以現有知識處理
+>   - 模式 C（對抗式審查）→ **不得直接跳過**，自動改用 Claude Subagent Fallback（見下方）
 
 > 💡 **PATH 修正提示**（若使用 `~/.local/bin/agy`）：
 > 執行 `echo 'export PATH="$PATH:$HOME/.local/bin"' >> ~/.zshrc && source ~/.zshrc`
@@ -174,7 +176,7 @@ find ./src -name "*.ts" | xargs cat | $CLI_CMD -p "分析整體架構，
 **觸發後先詢問：**
 > 「這個任務可以透過 AI CLI（agy / gemini）進行獨立的對抗式審查，是否啟用協作？(y/n)」
 > - **y**：繼續執行以下流程
-> - **n**：由 Claude 自行審查，無第二模型交叉驗證
+> - **n** 或 agy 不可用：**不得直接跳過**，改用 Claude Subagent Fallback（見下方）
 
 ### Prompt 規範
 
@@ -212,6 +214,64 @@ $CLI_CMD -p "審查以下程式碼，僅回報問題，不提供修改方案。
 
 ---
 
+## 模式 C Fallback：Claude Subagent 冷啟動審查
+
+> 當 agy 不可用、或使用者選擇不啟用 agy 時強制執行。
+> **交叉驗證不得直接跳過**，至少要有一次獨立第二意見。
+
+### 原理
+
+Subagent 以**冷啟動**方式接收材料：不持有主 agent 的分析脈絡，確保審查獨立性。
+主 agent 完成自身分析後，才將原始材料（非分析結論）交給 subagent。
+
+### 執行流程
+
+```
+Step 1：主 agent 完成自身分析，暫不輸出結論
+
+Step 2：整理「審查材料包」
+  - diff 內容 或 檔案內容（原始碼）
+  - 審查維度（邏輯漏洞 / 邊界條件 / 安全風險）
+  - 不含主 agent 的任何分析或推測
+
+Step 3：以 Agent tool 啟動 subagent，傳入材料包
+  prompt 格式見下方
+
+Step 4：收到 subagent 輸出後，主 agent 裁決
+  - Subagent 發現但主 agent 未提到 → 驗證後決定是否納入
+  - 雙方一致 → 信心提升，直接採用
+  - 意見相左 → 主 agent 說明選擇理由
+```
+
+### Subagent Prompt 模板
+
+```
+你是一個獨立的 code reviewer，對以下程式碼進行審查。
+你沒有看過任何其他 reviewer 的意見，只根據原始碼回報問題。
+
+審查維度：邏輯漏洞、邊界條件缺失、安全風險
+每個問題格式：
+[嚴重度] 位置：描述 → 潛在影響
+
+嚴重度：CRITICAL / HIGH / MEDIUM / LOW
+無問題時輸出：「未發現問題」
+只回報問題，不提供修改方案。
+繁體中文。
+
+---
+[貼入 diff 或檔案內容]
+```
+
+### 與 agy 的差異標示
+
+輸出報告中標記來源，讓使用者知道用了哪種模式：
+
+```
+交叉驗證：Claude Subagent（agy 不可用）⚠️ 同模型，獨立性低於異模型交叉驗證
+```
+
+---
+
 ## CLI 優先順序
 
 | 優先 | CLI | 說明 |
@@ -219,7 +279,7 @@ $CLI_CMD -p "審查以下程式碼，僅回報問題，不提供修改方案。
 | 1 | `agy`（PATH） | Antigravity CLI，推薦版本 |
 | 2 | `~/.local/bin/agy` | agy 安裝但未加入 PATH |
 | 3 | `gemini`（PATH） | 舊版 Gemini CLI，介面相容 |
-| — | 均不可用 | 提示安裝 agy，或 Claude 自行處理 |
+| — | 均不可用 | 模式 A/B：提示安裝 agy；模式 C：強制改用 Claude Subagent Fallback |
 
 ## 執行限制
 
@@ -234,8 +294,11 @@ $CLI_CMD -p "審查以下程式碼，僅回報問題，不提供修改方案。
 ## 分工原則
 
 ```
-Claude       → 決策、規劃、整合、最終輸出
-agy / gemini → 資料收集、大量讀取、第二意見
+Claude               → 決策、規劃、整合、最終輸出
+agy / gemini         → 資料收集、大量讀取、第二意見（異模型，獨立性高）
+Claude Subagent      → 模式 C 的 fallback，冷啟動審查（同模型，獨立性較低但不可省略）
 ```
 
-CLI 的輸出不直接使用，Claude 必須驗證後再整合。
+無論使用哪種模式，第二意見的輸出都不直接採用，Claude 主 agent 必須裁決後再整合。
+
+**模式 C 鐵律：交叉驗證不得跳過，agy 不可用時強制走 Subagent Fallback。**
