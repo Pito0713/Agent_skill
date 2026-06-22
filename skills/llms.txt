@@ -1,0 +1,165 @@
+# Agent Skills Index
+# 當使用者需求符合觸發條件時，載入對應 SKILL.md 執行完整流程。
+# 格式：name | path | triggers | description
+
+---
+
+## Engineering — 核心工程
+
+name: coding-workflow-core
+path: skills/engineering/coding-workflow-core.md
+triggers: 每次 session 自動生效（常駐）
+description: 實作任何功能的強制四階段流程（理解→計畫→實作→驗證）與 commit 前 checklist。
+
+name: new-feature
+path: skills/engineering/new-feature.md
+triggers: 新增功能、實作 X、建立 Y 功能、我要做 Z、幫我做一個功能、新增 feature
+description: 新功能開發協調器，從需求確認 → API 設計 → 實作 → 測試 → 文件 → 版本記錄的完整流程。
+
+name: coding-workflow-ref
+path: skills/engineering/coding-workflow-ref.md
+triggers: 查實作模式、怎麼寫 API、component 怎麼做、有沒有範本
+description: 常見實作模式速查手冊（API endpoint / React 元件 / bug 修復）。
+
+name: debug-flow
+path: skills/engineering/debug-flow.md
+triggers: bug、壞掉了、為什麼錯、不如預期、找不到原因、一直出錯、error、為什麼會這樣
+description: 除錯協調器，系統性縮小問題範圍，必要時切換具體舉例或委派 agy 交叉驗證。
+
+name: deploy-prep
+path: skills/engineering/deploy-prep.md
+triggers: 要上線了、deploy 前、release 前、上線檢查、準備 deploy、要 release 了
+description: 上線前安全檢查協調器，涵蓋 build / 環境變數 / migration / rollback 確認。
+
+---
+
+## Quality & Security — 品質與安全
+
+name: code-review
+path: skills/engineering/code-review.md
+triggers: code review、PR review、審查這段 code、有沒有問題、幫我看一下、merge 前
+description: Code Review 協調器，自動偵測專案類型，依序執行邏輯→安全→測試→PR 格式審查。
+
+name: security-review
+path: skills/engineering/security-review.md
+triggers: 安全審查、OWASP、後端有漏洞嗎、前端安全、XSS、CORS 問題、token 怎麼存
+description: 安全審查協調器，依前後端情境委派對應 security agent，輸出統一報告。
+
+name: testing-strategy
+path: skills/engineering/testing-strategy.md
+triggers: 幫我寫測試、這個怎麼測、test plan、幫我規劃測試
+description: 測試策略設計，只輸出測試計畫文件，不寫程式碼（實作交 test-engineer agent）。
+
+name: lazyengineer
+path: skills/engineering/lazyengineer.md
+triggers: 精簡一下、有更簡單的寫法嗎、不要 over-engineering、能不能更少、lazyengineer、lazy mode、這段太複雜了
+description: Lazy Senior 模式，強制走完六關決策梯，確保只寫必要的最小程式碼。
+
+name: lazyengineer-review
+path: skills/engineering/lazyengineer-review.md
+triggers: 有沒有過度設計、可以刪什麼、lazyengineer review、找多餘的程式碼、掃一下有沒有過度設計
+description: Over-Engineering 偵測，掃描現有程式碼找出可刪除或簡化的部分，輸出 net: -N lines。
+
+---
+
+## Documentation — 文件
+
+name: documentation
+path: skills/engineering/documentation.md
+triggers: 幫我寫文件、更新 README、API docs、建立 runbook、寫 API docs
+description: 撰寫技術文件，支援 README / API docs / runbook / inline 說明。
+
+name: version-log
+path: skills/productivity/version-log.md
+triggers: 更新版本、記錄版本、準備 commit、version log
+description: commit 前記錄版本號與變更摘要到 README.md 的版本紀錄表。
+
+---
+
+## Design — 設計
+
+name: ui-design-flow
+path: skills/design/ui-design-flow.md
+triggers: 規劃 UI、設計這個頁面、這個畫面要怎麼做、UI 架構、幫我規劃這個頁面、設計這個功能的 UI
+description: UI 設計規劃協調器，從 IA → wireframe → 視覺風格 → 實作交接的完整流程。
+
+name: information-architecture
+path: skills/design/information-architecture.md
+triggers: 幫我規劃導航、這些功能怎麼分類、資訊架構、IA、API 路由結構
+description: 規劃內容層級與導航結構，也適用於 API 路由結構設計。
+
+name: wireframing
+path: skills/design/wireframing.md
+triggers: 幫我規劃頁面結構、這個畫面要放什麼、wireframe
+description: 用文字快速規劃頁面版面與資訊層級骨架。
+
+name: ui-visual-design
+path: skills/design/ui-visual-design.md
+triggers: 幫我決定視覺風格、UI 風格建議、這個產品應該用什麼設計風格
+description: 根據產品類型與目標用戶推薦顏色、字型、間距視覺風格方向。
+
+---
+
+## Learning — 學習
+
+name: concrete-example
+path: skills/learning/concrete-example.md
+triggers: 我看不懂、為什麼還是錯、這什麼意思、邏輯是什麼
+description: 用具體情境舉例說明正確邏輯的每一步，提供正常解法與跳脫框架替代解法。
+
+name: feedback-loop
+path: skills/learning/feedback-loop.md
+triggers: 練習、幫我改進、給我回饋、feedback loop
+description: 刻意練習的立即回饋循環，每輪只指出一個最優先修改點。
+
+---
+
+## Productivity — 生產力
+
+name: smart-init
+path: skills/productivity/smart-init.md
+triggers: 接手專案、了解專案、session 開始、smart init
+description: 初始化新的工作 session，掃描專案結構建立工作上下文。
+
+name: onboarding
+path: skills/productivity/onboarding.md
+triggers: 接手新專案、幫我了解這個 repo、我剛加入這個專案、幫我看這個 codebase
+description: 新專案接手協調器，系統性了解架構、依賴、核心邏輯。
+
+name: handoff
+path: skills/productivity/handoff.md
+triggers: 交接、handoff、總結一下、下次繼續
+description: 將當前對話壓縮成交接文件，供下一個 session 或 agent 接手。
+
+---
+
+## Collaboration — 協作
+
+name: agy-assist
+path: skills/engineering/gemini-assist.md
+triggers: 幫我搜尋、查一下最新、給我第二個意見、交叉驗證、這個檔案太大、掃一下整個專案
+description: 將網路搜尋、大檔案掃描、對抗式審查委派給 agy CLI，節省 token 並提供交叉驗證。
+
+---
+
+## Meta — 系統維護
+
+name: convert-skill
+path: skills/convert-skill.md
+triggers: 新增 GitHub Skill、收集這個 skill、把這個加進來
+description: 將 GitHub 原始 workflow/prompt 文件轉換為本專案標準 skill 格式。
+
+---
+
+## 歧義處理提示
+
+當使用者訊息同時命中多個 skill 時，列出命中項目並詢問使用者選擇：
+
+常見衝突：
+- 「新增這個畫面的功能」→ new-feature vs ui-design-flow
+- 「review 這個 component 有沒有安全問題」→ code-review vs security-review
+- 「這個 bug 我看不懂」→ debug-flow vs concrete-example
+
+模糊觸發詞（需詢問使用者意圖）：
+「完善」、「優化」、「讓它更好」、「改進這個功能」、「怎麼讓這個更好」、「有什麼可以加強的」
+→ 詢問：A. 修 bug（debug-flow）B. 審查品質（code-review）C. 新增功能（new-feature）D. 改進建議（feedback-loop）

@@ -314,3 +314,4 @@ lazyengineer [lite|full|ultra|off]
 | v2.4 | 2026-06-16 | 為全部 6 個 Orchestrator 加入 Phase 跳過條件（17 條）及 CRITICAL Gate（5 個）；agy 交叉驗證確認設計合理性；預估節省 15–20% token 消耗 |
 | v2.5 | 2026-06-17 | 新增 lazyengineer / lazyengineer-review skill（靈感來自 Ponytail）；gemini-assist 加入三層 CLI 偵測（agy → ~/.local/bin/agy → gemini）；code-review 加入 Phase 1.5 over-engineering 掃描；實測節省 65–90% output token |
 | v2.6 | 2026-06-20 | 修復三個工程邊界問題：新增 security-review orchestrator 統一安全審查入口；釐清 security-auditor（快速掃描）vs owasp-reviewer（合規報告）職責邊界；切分 testing-strategy（只輸出計畫）vs test-engineer（只負責實作）；修正 CLAUDE.md 雙路徑委派問題 |
+| v2.7 | 2026-06-22 | 對標 gsap-skills 架構：新增 skills/llms.txt（25 個 skill 統一索引）；新增多平台 agent 入口（AGENTS.md / GEMINI.md / .github/copilot-instructions.md）；5 個核心 skill 加入 ✅/❌ 對照區塊（debug-flow / code-review / security-review / new-feature / lazyengineer）；CLAUDE.md 快速入口大表精簡為 llms.txt 單行引用 |

@@ -216,3 +216,19 @@ Gemini 驗證：[通過 / 發現 N 個問題已修正]
 | `documentation` | Phase 6 文件 |
 | `version-log` | Phase 7 版本記錄 |
 | `gemini-assist` | Phase 7 交叉驗證 |
+
+---
+
+## ✅ 正確做法 / ❌ 常見錯誤
+
+```
+✅ Phase 1 先輸出需求摘要並等待確認，再進入實作
+✅ 實作順序：Types/Schema → 核心邏輯 → API 層 → UI 層（由內而外）
+✅ 每個 Phase 輸出後等待使用者確認，不連續跳 Phase
+✅ 每個檔案完成後跑 tsc --noEmit + linter，不留到最後一起修
+
+❌ 跳過 Phase 1 直接開始寫 code（導致實作完才發現需求理解有誤）
+❌ 先做 UI 後補型別（容易導致型別與 UI 不一致，需大幅重寫）
+❌ 「能跑就好」直接交出，沒有確認 TypeScript 錯誤與 linter 警告
+❌ 功能完成後忘記更新版本記錄，導致 git history 不反映功能對應關係
+```

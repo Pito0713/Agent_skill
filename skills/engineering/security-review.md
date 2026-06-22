@@ -31,3 +31,19 @@ description: 安全審查協調器。當使用者說「安全審查」、「OWAS
 | `security-auditor` | 後端快速掃描，不修改程式碼 | 問題清單（CRITICAL/HIGH/MEDIUM/LOW）|
 | `frontend-security-auditor` | 瀏覽器端漏洞，不修改程式碼 | 前端漏洞清單 |
 | `owasp-reviewer` | 整體合規評估，可使用 WebSearch 查最新 OWASP | OWASP 合規報告表格 |
+
+---
+
+## ✅ 正確做法 / ❌ 常見錯誤
+
+```
+✅ 依前後端分類，各用正確的審查角度（不用後端視角審查 CSP / CORS 設定）
+✅ 每個問題對應 OWASP 項目（A01-A10），讓修復有明確標準
+✅ 只回報問題清單，不直接提修法（修法由 Claude 與使用者決定）
+✅ 確認後端 API 是否真的有做伺服器端驗證，不只看前端有沒有擋
+
+❌ 只掃表面語法（有沒有 eval、innerHTML），忽略業務邏輯的授權流程
+❌ 把「建議優化」（效能、UX）和「安全漏洞」混為一談
+❌ 沒有確認 token / secret 是否進了 git history 或 log
+❌ 審查範圍只看新增程式碼，忽略被修改的現有安全邊界
+```

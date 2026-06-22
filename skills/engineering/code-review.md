@@ -223,3 +223,19 @@ cat src/a.ts src/b.ts | agy -p "..."
 | `frontend-security-auditor` | 前端安全深度審查（Phase 2）|
 | `gemini-assist` | 獨立交叉驗證，持有完整程式碼脈絡（Phase 5）|
 | 各 rules | 各 phase 審查標準基準 |
+
+---
+
+## ✅ 正確做法 / ❌ 常見錯誤
+
+```
+✅ 先確認審查維度（邏輯 / 安全 / 測試 / PR 格式）再開始，不一次全掃
+✅ 每個問題標明嚴重度 CRITICAL / HIGH / MEDIUM / LOW 與具體位置
+✅ 邏輯 bug 和 style 建議分開列，不放在同一嚴重度層級
+✅ 看修改後對現有程式碼的影響（regression risk），不只看新增的部分
+
+❌ 把命名格式、indent 等 style 問題列為 HIGH（應為 LOW 或 suggestion）
+❌ 只說「這裡有問題」，沒有說明根因與潛在影響
+❌ 沒有說明根因就直接建議修法（應先確認問題再討論修法）
+❌ 只看當前 diff，沒有確認修改是否破壞現有行為
+```
