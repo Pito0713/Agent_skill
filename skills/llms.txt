@@ -116,6 +116,11 @@ description: 刻意練習的立即回饋循環，每輪只指出一個最優先�
 
 ## Productivity — 生產力
 
+name: rag-search
+path: skills/productivity/rag-search.md
+triggers: 查知識庫、rag、knowledge base、查一下我們的規範、這個我們有沒有記錄、有沒有相關規範
+description: 搜尋 knowledge/ 知識庫，找出相關規範或模式後回答，來源會標注檔案路徑。
+
 name: smart-init
 path: skills/productivity/smart-init.md
 triggers: 接手專案、了解專案、session 開始、smart init
@@ -155,10 +160,16 @@ description: 將 GitHub 原始 workflow/prompt 文件轉換為本專案標準 sk
 
 當使用者訊息同時命中多個 skill 時，列出命中項目並詢問使用者選擇：
 
-常見衝突：
+常見衝突與判斷樹：
 - 「新增這個畫面的功能」→ new-feature vs ui-design-flow
 - 「review 這個 component 有沒有安全問題」→ code-review vs security-review
-- 「這個 bug 我看不懂」→ debug-flow vs concrete-example
+- 「準備 commit / commit 之前確認一下」
+    → 有提版本號 / README / 變更記錄 → version-log
+    → 只問 commit 格式 / branch 命名 → 只載入 git.md（不執行 skill）
+- 「我看不懂 / 為什麼還是錯」
+    → 有 error message / stack trace / 測試失敗 → debug-flow
+    → 沒有具體錯誤，想理解邏輯 → concrete-example
+    → 兩者都有 → 詢問使用者選擇
 
 模糊觸發詞（需詢問使用者意圖）：
 「完善」、「優化」、「讓它更好」、「改進這個功能」、「怎麼讓這個更好」、「有什麼可以加強的」

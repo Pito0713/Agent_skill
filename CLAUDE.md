@@ -40,6 +40,7 @@
 | UI/UX 設計規劃 | `@skills/design/ui-design-flow.md` |
 | 精簡程式碼 / 反 over-engineering | `@skills/engineering/lazyengineer.md` |
 | 過度設計掃描 / 找可刪的程式碼 | `@skills/engineering/lazyengineer-review.md` |
+| 查詢內部規範 / knowledge base | `@skills/productivity/rag-search.md` |
 
 ---
 
@@ -89,6 +90,8 @@ rules/
 | 「新增這個畫面的功能」 | new-feature + ui-design-flow | 要先設計 UI 還是直接實作？ |
 | 「review 這個 component 有沒有安全問題」 | code-review + security-review | 走完整 review 還是只做安全審查？ |
 | 「這個 bug 我看不懂」 | debug-flow + concrete-example | 要除錯還是要解釋邏輯？ |
+| 「準備 commit / commit 之前確認一下」 | version-log + git.md | 有提到版本號 / README / 變更記錄 → version-log；只確認 commit 格式 / branch 命名 → 只載入 git.md |
+| 「我看不懂 / 為什麼還是錯」 | debug-flow + concrete-example | 有 error message / stack trace / 測試失敗 → debug-flow；沒有具體錯誤、想理解邏輯 → concrete-example；兩者都有 → 詢問使用者 |
 
 ## 意圖不明確處理規則
 

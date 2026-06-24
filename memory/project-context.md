@@ -5,6 +5,29 @@
 
 ---
 
+## RAG 知識庫（v3.0）
+
+- 採用 Grep-based 檢索，不引入外部 vector DB
+- 知識庫路徑：`knowledge/`，分三類：engineering / security / workflow
+- 搜尋 skill：`skills/productivity/rag-search.md`
+- 決策原因：符合現有 Bash + Markdown 架構，零依賴，可立即使用
+
+### TODO：評估升級至 Embedding + Vector DB
+
+**觸發條件（滿足任一才考慮做）：**
+- `knowledge/` 文件超過 30-50 個，關鍵字搜尋開始難以管理
+- 出現「明明有這個規範但 grep 找不到」的回報
+- 使用者問法多變、中英混用導致命中率低
+
+**技術選項（已評估）：**
+- Option A 本地：Chroma + Ollama `nomic-embed-text`（零費用、資料不出去）
+- Option B 雲端：OpenAI `text-embedding-3-small` + Pinecone 免費方案（快速驗證）
+- Option C DB 整合：PostgreSQL + pgvector extension（已有 PG 時首選）
+
+**現況判斷（2026-06-24）：** 4 個文件，Grep 已足夠，暫不執行。
+
+---
+
 ## 架構概覽
 
 ```
