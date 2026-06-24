@@ -47,15 +47,15 @@ ${SKILLS_BASE}/engineering/gemini-assist.md
 
 ## 按需載入（視任務加入）
 
-# ${SKILLS_BASE}/rules/typescript.md         # TypeScript 專案
-# ${SKILLS_BASE}/rules/python.md             # Python 專案
-# ${SKILLS_BASE}/rules/git.md                # commit / PR 時
-# ${SKILLS_BASE}/engineering/coding-workflow-ref.md   # 查實作模式
-# ${SKILLS_BASE}/learning/feedback-loop.md            # 刻意練習
-# ${SKILLS_BASE}/learning/concrete-example.md         # 邏輯舉例說明
-# ${SKILLS_BASE}/design/wireframing.md                # 頁面規劃
-# ${SKILLS_BASE}/design/ui-visual-design.md           # 視覺風格
-# ${SKILLS_BASE}/design/information-architecture.md   # 導航架構"
+# ${SKILLS_BASE}/rules/typescript.md
+# ${SKILLS_BASE}/rules/python.md
+# ${SKILLS_BASE}/rules/git.md
+# ${SKILLS_BASE}/engineering/coding-workflow-ref.md
+# ${SKILLS_BASE}/learning/feedback-loop.md
+# ${SKILLS_BASE}/learning/concrete-example.md
+# ${SKILLS_BASE}/design/wireframing.md
+# ${SKILLS_BASE}/design/ui-visual-design.md
+# ${SKILLS_BASE}/design/information-architecture.md
 
 # ─────────────────────────────────────────
 # 情境 1：沒有 CLAUDE.md → 生成新檔案

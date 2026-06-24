@@ -115,7 +115,8 @@ fi
 
 ```bash
 # $CLI_CMD = agy / ~/.local/bin/agy / gemini（Step 1 偵測結果）
-$CLI_CMD -p "請使用 google_web_search 搜尋：'<關鍵字>'
+# Bash tool timeout: 120s（agy --print-timeout 90s + 30s 緩衝）
+$CLI_CMD --print-timeout 90s -p "請使用 google_web_search 搜尋：'<關鍵字>'
 
 回傳格式（每筆）：
 - 標題：
@@ -156,13 +157,14 @@ $CLI_CMD -p "請使用 google_web_search 搜尋：'<關鍵字>'
 
 ```bash
 # $CLI_CMD = agy / ~/.local/bin/agy / gemini（Step 1 偵測結果）
+# Bash tool timeout: 270s（agy --print-timeout 4m + 30s 緩衝）
 
 # 單一大檔案
-$CLI_CMD -p "閱讀這份檔案，提取：<架構概覽 / 核心邏輯 / 外部依賴>
+$CLI_CMD --print-timeout 4m -p "閱讀這份檔案，提取：<架構概覽 / 核心邏輯 / 外部依賴>
 條列式輸出，不超過 20 行。不要建議修改。繁體中文。" < 檔案路徑
 
 # 多檔案 / 整個目錄
-find ./src -name "*.ts" | xargs cat | $CLI_CMD -p "分析整體架構，
+find ./src -name "*.ts" | xargs cat | $CLI_CMD --print-timeout 4m -p "分析整體架構，
 條列主要模組與職責，不超過 20 行。不要建議修改。繁體中文。"
 ```
 
@@ -195,9 +197,10 @@ find ./src -name "*.ts" | xargs cat | $CLI_CMD -p "分析整體架構，
 
 ```bash
 # $CLI_CMD = agy / ~/.local/bin/agy / gemini（Step 1 偵測結果）
+# Bash tool timeout: 210s（agy --print-timeout 3m + 30s 緩衝）
 
 # 審查 git diff
-git diff HEAD | $CLI_CMD -p "審查這個 diff，僅回報問題，不提供修改方案。
+git diff HEAD | $CLI_CMD --print-timeout 3m -p "審查這個 diff，僅回報問題，不提供修改方案。
 
 審查維度：邏輯漏洞、邊界條件缺失、安全風險
 每個問題格式：
@@ -208,7 +211,7 @@ git diff HEAD | $CLI_CMD -p "審查這個 diff，僅回報問題，不提供修�
 繁體中文。"
 
 # 審查單一檔案
-$CLI_CMD -p "審查以下程式碼，僅回報問題，不提供修改方案。
+$CLI_CMD --print-timeout 3m -p "審查以下程式碼，僅回報問題，不提供修改方案。
 [同上格式]" < 檔案路徑
 ```
 
@@ -288,6 +291,8 @@ Step 4：收到 subagent 輸出後，主 agent 裁決
 | 每分鐘上限 60 次 | 同時不超過 2 個 CLI 任務 |
 | 模式 B 無工具權限 | 使用 `< 路徑` 傳入，不依賴 CLI 讀檔工具 |
 | 結果整合 | CLI 輸出作為參考，最終判斷由 Claude 負責 |
+| **Timeout 規範** | 模式 A：agy 90s / Bash 120s；模式 B：agy 4m / Bash 270s；模式 C：agy 3m / Bash 210s |
+| Timeout 原則 | Bash tool timeout 必須 > agy `--print-timeout`，讓 agy 先超時結束，避免被強制 kill |
 
 ---
 
