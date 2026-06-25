@@ -82,15 +82,31 @@ source: <原始 GitHub URL>
 
 ---
 
-## Step 5：歸檔
+## Step 5：歸檔與同步
 
 ```bash
 # 移動到對應分類
 mv skills/_inbox/<filename>.md skills/<category>/<new-name>.md
-
-# 更新 sources/registry.md 的「已收錄 Skills」欄位
-# 更新 CLAUDE.md 的快速入口表格（如需要）
 ```
+
+完成後必須同步更新以下四個地方，缺一不可：
+
+```
+[ ] skills/llms.txt              → 在對應分類區塊加入 name / path / triggers / description
+[ ] CLAUDE.md                   → 在「按需載入」表格加一行
+[ ] inject.sh INJECT_BLOCK      → 決定此 skill 是否應進客戶專案
+                                   是 → 在對應分類區塊加入（預設以 # 註解）
+                                   否 → 記錄原因（Agent_skill 內部使用）
+[ ] README.md 版本紀錄           → 執行 version-log skill 更新版本號
+```
+
+**inject.sh 判斷標準：**
+
+| Skill 類型 | 是否加入 inject.sh |
+|-----------|------------------|
+| 所有使用者都會用到的工作流（handoff、version-log、rag-search）| ✅ 加入（按需，預設 # 註解）|
+| Agent_skill 專屬維護工具（convert-skill、onboarding Agent_skill 用）| ❌ 不加入 |
+| 有專案相依性的 skill（需要該專案有特定格式）| ⚠️ 加入但 skill 內部要加前置判斷 |
 
 ---
 
