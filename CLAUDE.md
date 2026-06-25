@@ -41,6 +41,7 @@
 | 精簡程式碼 / 反 over-engineering | `@skills/engineering/lazyengineer.md` |
 | 過度設計掃描 / 找可刪的程式碼 | `@skills/engineering/lazyengineer-review.md` |
 | 查詢內部規範 / knowledge base | `@skills/productivity/rag-search.md` |
+| 查看跨專案進度 | `@skills/productivity/project-dashboard.md` |
 
 ---
 

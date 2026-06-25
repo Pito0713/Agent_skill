@@ -79,3 +79,13 @@ git add README.md
 - 版本紀錄只追蹤**功能層級**的變更，不記錄拼字修正等微調
 - 同一天的多次 commit 可合併為一個版本條目
 - major bump 前請確認使用者同意
+
+---
+
+## Step 6：寫入跨專案進度快照
+
+README.md 版本條目確認後，同步寫入 `~/.agent-sessions/<project>/latest.md`（完整格式，觸發來源標記為 `commit`）。
+
+格式與欄位同 `handoff` skill 的 Phase 最終，狀態根據當前對話判斷填入。
+
+完成後輸出確認：「✅ 已更新 ~/.agent-sessions/<project>/latest.md」

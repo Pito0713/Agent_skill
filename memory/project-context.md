@@ -5,6 +5,16 @@
 
 ---
 
+## 跨專案進度追蹤（v3.1）
+
+- 快照路徑：`~/.agent-sessions/<project>/latest.md`
+- 完整寫入觸發：`handoff` skill、`version-log` skill（commit）
+- 輕量寫入觸發：git post-commit hook（metadata only，無 Claude）
+- 聚合 skill：`skills/productivity/project-dashboard.md`
+- hook 安裝方式：`inject.sh` 執行時自動安裝至 `.git/hooks/post-commit`
+
+---
+
 ## RAG 知識庫（v3.0）
 
 - 採用 Grep-based 檢索，不引入外部 vector DB

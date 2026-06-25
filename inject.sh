@@ -21,6 +21,32 @@ YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
+install_hook() {
+  if [[ ! -d "$PROJECT_DIR/.git" ]]; then
+    echo "⚠️  非 git 專案，略過 post-commit hook 安裝"
+    return
+  fi
+
+  HOOK_SRC="$(cd "$(dirname "$0")" && pwd)/bin/post-commit-hook.sh"
+  HOOK_DEST="$PROJECT_DIR/.git/hooks/post-commit"
+
+  if [[ ! -f "$HOOK_SRC" ]]; then
+    echo "⚠️  找不到 $HOOK_SRC，略過 hook 安裝"
+    return
+  fi
+
+  if [[ -f "$HOOK_DEST" ]]; then
+    echo ""
+    read -r -p "已存在 post-commit hook，是否覆蓋？(y/N) " hook_confirm
+    [[ ! "$hook_confirm" =~ ^[Yy]$ ]] && echo "略過 hook 安裝。" && return
+  fi
+
+  cp "$HOOK_SRC" "$HOOK_DEST"
+  chmod +x "$HOOK_DEST"
+  echo -e "${GREEN}✅ 已安裝 post-commit hook${NC}"
+  echo "   路徑：$HOOK_DEST"
+}
+
 echo "🔧 Agent Skill Inject"
 echo "   專案目錄：$PROJECT_DIR"
 echo ""
@@ -88,6 +114,7 @@ EOF
   echo ""
   echo -e "${CYAN}📌 常駐載入已設定（4 個 skills）${NC}"
   echo "   按需載入項目已列出（預設註解，移除 # 即可啟用）"
+  install_hook
   exit 0
 fi
 
@@ -158,6 +185,7 @@ PYEOF
   echo "   路徑：$CLAUDE_MD"
   echo ""
   echo -e "${CYAN}📌 常駐載入已更新（4 個 skills）${NC}"
+  install_hook
   exit 0
 fi
 
@@ -191,3 +219,4 @@ echo "   路徑：$CLAUDE_MD"
 echo ""
 echo -e "${CYAN}📌 常駐載入已設定（4 個 skills）${NC}"
 echo "   按需載入項目已列出（預設註解，移除 # 即可啟用）"
+install_hook

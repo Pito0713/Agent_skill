@@ -116,6 +116,11 @@ description: 刻意練習的立即回饋循環，每輪只指出一個最優先�
 
 ## Productivity — 生產力
 
+name: project-dashboard
+path: skills/productivity/project-dashboard.md
+triggers: project dashboard、看一下所有專案、跨專案狀態、專案總覽
+description: 讀取 ~/.agent-sessions/ 下所有專案的 latest.md，輸出跨專案進度總覽表。
+
 name: rag-search
 path: skills/productivity/rag-search.md
 triggers: 查知識庫、rag、knowledge base、查一下我們的規範、這個我們有沒有記錄、有沒有相關規範

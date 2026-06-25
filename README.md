@@ -318,3 +318,4 @@ lazyengineer [lite|full|ultra|off]
 | v2.8 | 2026-06-22 | gemini-assist 模式 C 加入 Claude Subagent Fallback：agy 不可用時強制走冷啟動 subagent 審查，交叉驗證不得直接跳過；補充 Subagent prompt 模板與輸出標示規範 |
 | v2.9 | 2026-06-23 | gemini-assist 三個模式加入明確 timeout 機制：模式 A agy 90s/Bash 120s、模式 B agy 4m/Bash 270s、模式 C agy 3m/Bash 210s；修正 agy 預設 5m 與 Bash 預設 2m 衝突導致靜默 kill 的問題 |
 | v3.0 | 2026-06-24 | 新增 RAG 知識庫（knowledge/）與 rag-search skill；Grep-based 檢索，零外部依賴 |
+| v3.1 | 2026-06-25 | 新增跨專案進度追蹤：~/.agent-sessions/ 快照機制、project-dashboard skill、inject.sh 安裝 post-commit hook |

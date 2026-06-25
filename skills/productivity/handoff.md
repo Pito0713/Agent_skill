@@ -113,3 +113,45 @@ description: 將當前對話壓縮成交接文件，供下一個 session 或 age
 - ✅ 知道什麼已經試過、什麼沒試過
 - ✅ 知道哪些決策是重要的、不要輕易改動
 - ✅ 5 分鐘內上手
+
+---
+
+## Phase 最終：寫入跨專案進度快照
+
+交接文件確認後，執行以下步驟將本次 session 狀態寫入 `~/.agent-sessions/<project>/latest.md`：
+
+1. 取得專案名稱：`basename $PWD`
+2. 確認目錄存在：`mkdir -p ~/.agent-sessions/<project>`
+3. 依以下格式寫入（觸發來源標記為 `handoff`）：
+
+```markdown
+# <project-name>
+
+> 路徑：<$PWD>
+> 最後更新：<YYYY-MM-DD HH:mm>
+> 觸發來源：handoff
+> 狀態：🟢 順暢 | 🟡 進行中 | 🔴 卡住 | ⚫ 暫停
+
+## 當前焦點
+
+<這輪工作的核心主題，一句話>
+
+## 進行中
+
+- [ ] <未完成任務>
+- [x] <已完成任務>
+
+## 下一步
+
+1. <下次 session 第一件要做的事>
+
+## 卡住的點
+
+<若無則填「無」>
+
+## 本輪決策
+
+- <決策及原因>
+```
+
+4. 完成後輸出確認：「✅ 已更新 ~/.agent-sessions/<project>/latest.md」
