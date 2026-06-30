@@ -323,3 +323,5 @@ lazyengineer [lite|full|ultra|off]
 | v3.3 | 2026-06-29 | 新增 Obsidian 整合：obsidian-query（搜尋歷史筆記）+ obsidian-save（寫入知識） |
 | v3.4 | 2026-06-30 | VAULT_PATH 改為 .env 讀取（移除 hardcode）；新增 .env.example 範本與 .gitignore；skill 內建 .env 缺失教學，適合公開專案 |
 | v3.5 | 2026-06-30 | 新增 academic-mentor skill：學術導師模式，四段結構（機制→文獻→社會影響→深化提問），確定性分級（✅⚠️❓🚫），主動糾正常見迷思，絕不捏造文獻 |
+| v3.6 | 2026-06-30 | obsidian-save 新增 academic-mentor 專屬學術模板（Phase 0 自動偵測來源、欄位對應、存入 knowledge/<領域>/ 而非 inbox/）|
+| v3.7 | 2026-06-30 | academic-mentor 強化規格：介入確定性上限原則（機制確定性不移轉介入）、解剖範圍聲明規則、期刊改名標注、Checklist 擴充至 12 項 |
