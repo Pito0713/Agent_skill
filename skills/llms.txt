@@ -141,6 +141,16 @@ path: skills/productivity/handoff.md
 triggers: 交接、handoff、總結一下、下次繼續
 description: 將當前對話壓縮成交接文件，供下一個 session 或 agent 接手。
 
+name: obsidian-query
+path: skills/productivity/obsidian-query.md
+triggers: 查我的筆記、Obsidian 有沒有記錄、之前有記過嗎、搜 Obsidian、查歷史筆記
+description: 從 Obsidian vault 搜尋相關歷史筆記並納入回答，來源會標注檔案路徑。需先設定 VAULT_PATH。
+
+name: obsidian-save
+path: skills/productivity/obsidian-save.md
+triggers: 記起來、存到 Obsidian、幫我記錄、結束並儲存、整理我的 Obsidian、分類 inbox
+description: 將本次對話重點整理成結構化筆記存入 Obsidian vault，自動分類並標注標籤。需先設定 VAULT_PATH。
+
 ---
 
 ## Collaboration — 協作

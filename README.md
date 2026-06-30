@@ -320,3 +320,5 @@ lazyengineer [lite|full|ultra|off]
 | v3.0 | 2026-06-24 | 新增 RAG 知識庫（knowledge/）與 rag-search skill；Grep-based 檢索，零外部依賴 |
 | v3.1 | 2026-06-25 | 新增跨專案進度追蹤：~/.agent-sessions/ 快照機制、project-dashboard skill、inject.sh 安裝 post-commit hook |
 | v3.2 | 2026-06-25 | inject.sh 全面升級（heredoc 修復、prompt_productivity 互動、Python 保留使用者啟用項）；git.md / handoff.md / version-log.md 升常駐；convert-skill.md 四處同步 checklist；version-log 加前置判斷 |
+| v3.3 | 2026-06-29 | 新增 Obsidian 整合：obsidian-query（搜尋歷史筆記）+ obsidian-save（寫入知識） |
+| v3.4 | 2026-06-30 | VAULT_PATH 改為 .env 讀取（移除 hardcode）；新增 .env.example 範本與 .gitignore；skill 內建 .env 缺失教學，適合公開專案 |

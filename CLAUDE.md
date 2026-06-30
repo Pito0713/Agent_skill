@@ -42,6 +42,8 @@
 | 過度設計掃描 / 找可刪的程式碼 | `@skills/engineering/lazyengineer-review.md` |
 | 查詢內部規範 / knowledge base | `@skills/productivity/rag-search.md` |
 | 查看跨專案進度 | `@skills/productivity/project-dashboard.md` |
+| 從 Obsidian 搜尋歷史筆記 | `@skills/productivity/obsidian-query.md` |
+| 將對話重點存入 Obsidian | `@skills/productivity/obsidian-save.md` |
 
 ---
 

@@ -148,6 +148,8 @@ ${SKILLS_BASE}/productivity/version-log.md
 # ${SKILLS_BASE}/design/wireframing.md
 # ${SKILLS_BASE}/design/ui-visual-design.md
 # ${SKILLS_BASE}/design/information-architecture.md
+# ${SKILLS_BASE}/productivity/obsidian-query.md
+# ${SKILLS_BASE}/productivity/obsidian-save.md
 BLOCK
 )
 
