@@ -68,26 +68,55 @@ echo "✅ vault：$VAULT_PATH"
 
 ### Phase 2：搜尋 vault
 
-```bash
-# 搜尋含關鍵字的筆記（-l 只列出檔名）
-grep -r "<關鍵字>" "$VAULT_PATH" --include="*.md" -l -i 2>/dev/null | head -5
+多關鍵字依序搜尋，合併命中結果：
 
-# 對命中的檔案提取上下文（關鍵字前後 5 行）
-grep -r "<關鍵字>" "$VAULT_PATH" --include="*.md" -i -A 5 -B 2 2>/dev/null | head -60
+```bash
+# 多關鍵字：逐一搜尋，收集命中檔案清單
+KEYWORDS=("關鍵字1" "關鍵字2" "關鍵字3")
+HIT_FILES=()
+
+for kw in "${KEYWORDS[@]}"; do
+  while IFS= read -r f; do
+    HIT_FILES+=("$f")
+  done < <(grep -r "$kw" "$VAULT_PATH" --include="*.md" -l -i 2>/dev/null)
+done
+
+# 去重、取前 5 筆最相關
+UNIQUE_FILES=($(printf '%s\n' "${HIT_FILES[@]}" | sort | uniq -c | sort -rn | awk '{print $2}' | head -5))
+
+# 對每筆命中檔提取上下文
+for f in "${UNIQUE_FILES[@]}"; do
+  echo "=== $f ==="
+  grep -i -A 5 -B 2 "${KEYWORDS[0]}" "$f" 2>/dev/null | head -20
+done
 ```
 
 ### Phase 3：整合輸出
 
 - 命中 1–3 筆：摘要每筆相關內容，標注來源路徑
 - 命中 0 筆：告知「vault 中尚無相關記錄」，直接以現有知識回答
-- 命中 > 5 筆：只取最相關的 3 筆（依關鍵字密度判斷）
+- 命中 > 5 筆：只取出現次數最多的 3 筆（跨關鍵字命中次數越多越相關）
 
+**一般筆記輸出格式：**
 ```
 📓 從 Obsidian 找到相關筆記：
-  • Docker 設定筆記（vault/tech/docker-notes.md）
+  • Docker 設定筆記（knowledge/tech/2026-06-30-docker-notes.md）
     → 上次記錄：使用 .env 檔搭配 --env-file 旗標
 
 以下回答結合歷史筆記與當前知識：
+...
+```
+
+**學術筆記輸出格式**（來源為 academic-mentor，含 `#academic` 標籤）：
+```
+📚 從 Obsidian 找到學術筆記：
+  • 多巴胺與動機迴路（knowledge/neuro/2026-06-30-dopamine.md）
+    最高確定性：✅
+    → 核心機制：多巴胺是預測與渴望系統，非快樂本身
+    → 文獻：Schultz et al.（1997）✅、Twenge et al.（2018）⚠️
+    → 深化問題（未解）：戒除手機設計策略應如何改變？
+
+以下回答結合歷史學術筆記與當前知識：
 ...
 ```
 
