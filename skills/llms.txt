@@ -112,6 +112,11 @@ path: skills/learning/feedback-loop.md
 triggers: 練習、幫我改進、給我回饋、feedback loop
 description: 刻意練習的立即回饋循環，每輪只指出一個最優先修改點。
 
+name: academic-mentor
+path: skills/learning/academic-mentor.md
+triggers: 學術角度、有科學根據嗎、這個機制是什麼、研究怎麼說、幫我理解這個研究、academic mentor、有沒有文獻、這是真的嗎（涉及科學主張）、可以跟我介紹、跟我解釋、這原理是什麼、為什麼會這樣、背後的原理（以上通用詞需結合科學/學術主題才觸發）
+description: 切換為學術導師模式，四段結構回覆（機制→文獻→社會影響→深化提問），每個論點標注確定性等級，主動糾正常見迷思，絕不捏造文獻。
+
 ---
 
 ## Productivity — 生產力
@@ -185,6 +190,11 @@ description: 將 GitHub 原始 workflow/prompt 文件轉換為本專案標準 sk
     → 有 error message / stack trace / 測試失敗 → debug-flow
     → 沒有具體錯誤，想理解邏輯 → concrete-example
     → 兩者都有 → 詢問使用者選擇
+- 「跟我解釋 / 可以介紹 / 這原理是什麼 / 為什麼會這樣」
+    → 主題是科學、認知、醫學、心理、生理、社會現象 → academic-mentor
+    → 主題是程式邏輯、code 行為、技術概念 → concrete-example
+    → 主題是 bug / 錯誤訊息 → debug-flow
+    → 無法判斷主題類型 → 詢問使用者：「這是技術問題還是想了解科學原理？」
 
 模糊觸發詞（需詢問使用者意圖）：
 「完善」、「優化」、「讓它更好」、「改進這個功能」、「怎麼讓這個更好」、「有什麼可以加強的」
