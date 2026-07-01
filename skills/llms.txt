@@ -114,8 +114,13 @@ description: 刻意練習的立即回饋循環，每輪只指出一個最優先�
 
 name: academic-mentor
 path: skills/learning/academic-mentor.md
-triggers: 學術角度、有科學根據嗎、這個機制是什麼、研究怎麼說、幫我理解這個研究、academic mentor、有沒有文獻、這是真的嗎（涉及科學主張）、可以跟我介紹、跟我解釋、這原理是什麼、為什麼會這樣、背後的原理（以上通用詞需結合科學/學術主題才觸發）
+triggers: 學術角度、有科學根據嗎、這個機制是什麼、研究怎麼說、幫我理解這個研究、academic mentor、有沒有文獻、這是真的嗎（涉及科學主張）、可以跟我介紹、跟我解釋、這原理是什麼、為什麼會這樣、背後的原理（以上通用詞需結合科學/學術主題才觸發；神經科學主題優先走 mentor-neuro）
 description: 切換為學術導師模式，四段結構回覆（機制→文獻→社會影響→深化提問），每個論點標注確定性等級，主動糾正常見迷思，絕不捏造文獻。
+
+name: mentor-neuro
+path: skills/learning/mentor-neuro.md
+triggers: 大腦、神經、多巴胺、血清素、皮質醇、前額葉、記憶機制、學習的神經機制、神經可塑性、成癮機制、情緒調節的神經機制、睡眠與大腦、神經科學、腦區、迴路（需涉及神經科學主題）
+description: 神經科學專屬導師。自動讀取 knowledge/neuro/ 既有筆記作為上下文，在使用者已知節點上延伸，永遠聲明路徑覆蓋範圍，機制確定性與介入確定性嚴格分離，內建神經迷思雷達，最後提示存入 vault 形成知識圖譜。
 
 ---
 
@@ -191,7 +196,8 @@ description: 將 GitHub 原始 workflow/prompt 文件轉換為本專案標準 sk
     → 沒有具體錯誤，想理解邏輯 → concrete-example
     → 兩者都有 → 詢問使用者選擇
 - 「跟我解釋 / 可以介紹 / 這原理是什麼 / 為什麼會這樣」
-    → 主題是科學、認知、醫學、心理、生理、社會現象 → academic-mentor
+    → 主題是神經科學、大腦、認知機制、記憶、情緒神經科學 → mentor-neuro
+    → 主題是其他科學、心理、生理、社會現象（非神經機制）→ academic-mentor
     → 主題是程式邏輯、code 行為、技術概念 → concrete-example
     → 主題是 bug / 錯誤訊息 → debug-flow
     → 無法判斷主題類型 → 詢問使用者：「這是技術問題還是想了解科學原理？」

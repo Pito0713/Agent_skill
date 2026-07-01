@@ -326,3 +326,4 @@ lazyengineer [lite|full|ultra|off]
 | v3.6 | 2026-06-30 | obsidian-save 新增 academic-mentor 專屬學術模板（Phase 0 自動偵測來源、欄位對應、存入 knowledge/<領域>/ 而非 inbox/）|
 | v3.7 | 2026-06-30 | academic-mentor 強化規格：介入確定性上限原則（機制確定性不移轉介入）、解剖範圍聲明規則、期刊改名標注、Checklist 擴充至 12 項 |
 | v3.8 | 2026-07-01 | gemini-assist 模式 A 搜尋/格式化分離（agy 只取英文原始資料，Claude 負責翻譯與整合）；全模式 timeout 拉到 Bash 上限：A agy 5m/Bash 360s、B/C agy 9m/Bash 570s |
+| v3.9 | 2026-07-01 | 新增 mentor-neuro 神經科學專屬導師：Phase 0 自動讀取 knowledge/neuro/ vault 上下文、六區塊回覆結構（定位聲明→機制鏈→文獻定錨→行為橋接→知識圖譜節點）、神經迷思雷達（7 條）、確定性三鐵律（fMRI≠因果 / 動物跨物種降級 / 機制不移轉介入）|
