@@ -325,3 +325,4 @@ lazyengineer [lite|full|ultra|off]
 | v3.5 | 2026-06-30 | 新增 academic-mentor skill：學術導師模式，四段結構（機制→文獻→社會影響→深化提問），確定性分級（✅⚠️❓🚫），主動糾正常見迷思，絕不捏造文獻 |
 | v3.6 | 2026-06-30 | obsidian-save 新增 academic-mentor 專屬學術模板（Phase 0 自動偵測來源、欄位對應、存入 knowledge/<領域>/ 而非 inbox/）|
 | v3.7 | 2026-06-30 | academic-mentor 強化規格：介入確定性上限原則（機制確定性不移轉介入）、解剖範圍聲明規則、期刊改名標注、Checklist 擴充至 12 項 |
+| v3.8 | 2026-07-01 | gemini-assist 模式 A 搜尋/格式化分離（agy 只取英文原始資料，Claude 負責翻譯與整合）；全模式 timeout 拉到 Bash 上限：A agy 5m/Bash 360s、B/C agy 9m/Bash 570s |

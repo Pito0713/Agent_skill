@@ -96,36 +96,68 @@ fi
 > - **y**：繼續執行以下流程
 > - **n**：改由 Claude 以現有知識回答，不呼叫 Gemini
 
+### 分工原則（搜尋與格式化分離）
+
+> **根本原則：agy 只負責取得原始資料，Claude 負責翻譯與格式化。**
+> 兩件事同時交給 agy 會使工作量超過 timeout 上限。
+
+```
+agy  → 英文關鍵字搜尋 → 回傳原始英文結果（title + URL + 1句摘要）
+Claude → 取得原始結果後 → 翻譯、整理、補充分析、整合輸出
+```
+
 ### Prompt 規範
 
 ```
 必須包含：
-  ✅ 明確的搜尋關鍵字（英文效果較佳）
+  ✅ 英文搜尋關鍵字（中文關鍵字效果較差且增加 agy 工作量）
   ✅ 限定回傳筆數（3-5 筆）
-  ✅ 結構化輸出格式（標題 / URL / 摘要 / 是否有具體指令）
-  ✅ 若有具體指令，截取指令內容回傳
-  ✅ 語言指定（繁體中文輸出）
+  ✅ 要求只回傳 title + URL + 1句英文摘要（不要求翻譯、不要求格式化）
+  ✅ 找不到時說 "NOT FOUND"
 
 禁止：
+  ❌ 要求 agy 翻譯成繁體中文（翻譯由 Claude 負責）
+  ❌ 要求複雜結構輸出（多欄位、Markdown 表格）
   ❌ 讓 Gemini 自行決定搜尋關鍵字
-  ❌ 找不到時自行補充知識庫內容（要求明確說「未找到」）
+  ❌ 找不到時自行補充知識庫內容
 ```
 
-### 指令模板
+### 指令模板（兩步驟）
+
+**Step 1：agy 搜尋，只取原始英文資料**
 
 ```bash
 # $CLI_CMD = agy / ~/.local/bin/agy / gemini（Step 1 偵測結果）
-# Bash tool timeout: 120s（agy --print-timeout 90s + 30s 緩衝）
-$CLI_CMD --print-timeout 90s -p "請使用 google_web_search 搜尋：'<關鍵字>'
+# Bash tool timeout: 360s（agy --print-timeout 5m + 60s 緩衝）
+$CLI_CMD --print-timeout 5m -p "Use google_web_search to search: '<English keywords>'.
+Return ONLY: title, URL, one-line English summary for each result.
+Do NOT translate. Do NOT add markdown formatting. Do NOT add commentary.
+Limit: 3-5 results. If not found, output: NOT FOUND."
+```
 
-回傳格式（每筆）：
-- 標題：
-- URL：
-- 核心概念：（2-3 句）
-- 具體指令或步驟：（有則截取，無則填「無」）
+**Step 2：Claude 接收原始結果後執行**
 
-限制：3-5 筆結果，找不到請直接說找不到，不要補充其他內容。
-輸出語言：繁體中文。"
+```
+1. 翻譯摘要為繁體中文
+2. 補充相關背景知識（來自 Claude 訓練資料）
+3. 整合輸出最終回答
+4. 標注哪些來自 agy 搜尋、哪些來自 Claude 分析
+```
+
+**輸出格式（Claude 整理後）**：
+
+```
+📡 agy 搜尋結果（原始 → 翻譯整理）：
+
+1. <標題>
+   URL：<url>
+   摘要：<翻譯後的摘要>
+   
+2. ...
+
+---
+Claude 分析整合：
+<基於搜尋結果 + 現有知識的綜合回答>
 ```
 
 ---
@@ -157,14 +189,14 @@ $CLI_CMD --print-timeout 90s -p "請使用 google_web_search 搜尋：'<關鍵�
 
 ```bash
 # $CLI_CMD = agy / ~/.local/bin/agy / gemini（Step 1 偵測結果）
-# Bash tool timeout: 270s（agy --print-timeout 4m + 30s 緩衝）
+# Bash tool timeout: 570s（agy --print-timeout 9m + 30s 緩衝）
 
 # 單一大檔案
-$CLI_CMD --print-timeout 4m -p "閱讀這份檔案，提取：<架構概覽 / 核心邏輯 / 外部依賴>
+$CLI_CMD --print-timeout 9m -p "閱讀這份檔案，提取：<架構概覽 / 核心邏輯 / 外部依賴>
 條列式輸出，不超過 20 行。不要建議修改。繁體中文。" < 檔案路徑
 
 # 多檔案 / 整個目錄
-find ./src -name "*.ts" | xargs cat | $CLI_CMD --print-timeout 4m -p "分析整體架構，
+find ./src -name "*.ts" | xargs cat | $CLI_CMD --print-timeout 9m -p "分析整體架構，
 條列主要模組與職責，不超過 20 行。不要建議修改。繁體中文。"
 ```
 
@@ -197,10 +229,10 @@ find ./src -name "*.ts" | xargs cat | $CLI_CMD --print-timeout 4m -p "分析整�
 
 ```bash
 # $CLI_CMD = agy / ~/.local/bin/agy / gemini（Step 1 偵測結果）
-# Bash tool timeout: 210s（agy --print-timeout 3m + 30s 緩衝）
+# Bash tool timeout: 570s（agy --print-timeout 9m + 30s 緩衝）
 
 # 審查 git diff
-git diff HEAD | $CLI_CMD --print-timeout 3m -p "審查這個 diff，僅回報問題，不提供修改方案。
+git diff HEAD | $CLI_CMD --print-timeout 9m -p "審查這個 diff，僅回報問題，不提供修改方案。
 
 審查維度：邏輯漏洞、邊界條件缺失、安全風險
 每個問題格式：
@@ -211,7 +243,7 @@ git diff HEAD | $CLI_CMD --print-timeout 3m -p "審查這個 diff，僅回報問
 繁體中文。"
 
 # 審查單一檔案
-$CLI_CMD --print-timeout 3m -p "審查以下程式碼，僅回報問題，不提供修改方案。
+$CLI_CMD --print-timeout 9m -p "審查以下程式碼，僅回報問題，不提供修改方案。
 [同上格式]" < 檔案路徑
 ```
 
@@ -291,8 +323,9 @@ Step 4：收到 subagent 輸出後，主 agent 裁決
 | 每分鐘上限 60 次 | 同時不超過 2 個 CLI 任務 |
 | 模式 B 無工具權限 | 使用 `< 路徑` 傳入，不依賴 CLI 讀檔工具 |
 | 結果整合 | CLI 輸出作為參考，最終判斷由 Claude 負責 |
-| **Timeout 規範** | 模式 A：agy 90s / Bash 120s；模式 B：agy 4m / Bash 270s；模式 C：agy 3m / Bash 210s |
-| Timeout 原則 | Bash tool timeout 必須 > agy `--print-timeout`，讓 agy 先超時結束，避免被強制 kill |
+| **Timeout 規範** | 模式 A：agy 5m / Bash 360s；模式 B：agy 9m / Bash 570s；模式 C：agy 9m / Bash 570s |
+| Timeout 原則 | Bash tool 上限 600s；agy `--print-timeout` 必須 < Bash timeout，讓 agy 先超時，避免被 Bash 強制 kill |
+| 模式 A 分工 | agy 只負責搜尋（英文原始輸出），Claude 負責翻譯與格式化；兩者合併給 agy 會超時 |
 
 ---
 
