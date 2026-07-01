@@ -40,6 +40,7 @@
 | 學術深度解析 / 科學根據查詢 | `@skills/learning/academic-mentor.md` |
 | 神經科學 / 大腦機制 / neuro vault 主題 | `@skills/learning/mentor-neuro.md` |
 | 社會現象 / 科技與社會 / 傳播 / 教育制度 | `@skills/learning/mentor-society.md` |
+| 物理 / 化學 / 生物 / 自然科學原理 | `@skills/learning/mentor-science.md` |
 | UI/UX 設計規劃 | `@skills/design/ui-design-flow.md` |
 | 精簡程式碼 / 反 over-engineering | `@skills/engineering/lazyengineer.md` |
 | 過度設計掃描 / 找可刪的程式碼 | `@skills/engineering/lazyengineer-review.md` |
@@ -98,7 +99,7 @@ rules/
 | 「這個 bug 我看不懂」 | debug-flow + concrete-example | 要除錯還是要解釋邏輯？ |
 | 「準備 commit / commit 之前確認一下」 | version-log + git.md | 有提到版本號 / README / 變更記錄 → version-log；只確認 commit 格式 / branch 命名 → 只載入 git.md |
 | 「我看不懂 / 為什麼還是錯」 | debug-flow + concrete-example | 有 error message / stack trace / 測試失敗 → debug-flow；沒有具體錯誤、想理解邏輯 → concrete-example；兩者都有 → 詢問使用者 |
-| 「跟我解釋 / 這原理是什麼 / 為什麼會這樣」 | academic-mentor + mentor-neuro + mentor-society + concrete-example + debug-flow | 主題是神經科學 / 大腦機制 → mentor-neuro；主題是社會現象 / 傳播 / 教育 → mentor-society；主題是其他科學 → academic-mentor；主題是程式邏輯 → concrete-example；主題是 bug → debug-flow；無法判斷 → 詢問使用者 |
+| 「跟我解釋 / 這原理是什麼 / 為什麼會這樣」 | mentor-neuro + mentor-society + mentor-science + concrete-example + debug-flow | 主題是神經科學 / 大腦機制 → mentor-neuro；主題是社會現象 / 傳播 / 教育 → mentor-society；主題是物理 / 化學 / 生物基礎原理 → mentor-science；主題是程式邏輯 → concrete-example；主題是 bug → debug-flow；無法判斷 → 詢問使用者 |
 
 ## 意圖不明確處理規則
 
