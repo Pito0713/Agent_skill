@@ -122,6 +122,11 @@ path: skills/learning/mentor-neuro.md
 triggers: 大腦、神經、多巴胺、血清素、皮質醇、前額葉、記憶機制、學習的神經機制、神經可塑性、成癮機制、情緒調節的神經機制、睡眠與大腦、神經科學、腦區、迴路（需涉及神經科學主題）
 description: 神經科學專屬導師。自動讀取 knowledge/neuro/ 既有筆記作為上下文，在使用者已知節點上延伸，永遠聲明路徑覆蓋範圍，機制確定性與介入確定性嚴格分離，內建神經迷思雷達，最後提示存入 vault 形成知識圖譜。
 
+name: mentor-society
+path: skills/learning/mentor-society.md
+triggers: 社群媒體影響、數位社會、媒體識讀、教育制度、階級流動、群體行為、文化差異、科技對社會的影響、社會現象、傳播、輿論、政策效果、社會科學（需涉及社會科學主題；神經機制方向優先 mentor-neuro）
+description: 社會科學專屬導師。確定性天花板為 ⚠️（觀察性研究為主流），自動讀取 knowledge/society/ 上下文，永遠說明研究方法限制，呈現至少兩個競爭解釋框架，主動聲明脈絡邊界（文化/時期/人口），內建社會迷思雷達（7 條），提示存入 vault 形成知識節點。
+
 ---
 
 ## Productivity — 生產力
@@ -197,7 +202,8 @@ description: 將 GitHub 原始 workflow/prompt 文件轉換為本專案標準 sk
     → 兩者都有 → 詢問使用者選擇
 - 「跟我解釋 / 可以介紹 / 這原理是什麼 / 為什麼會這樣」
     → 主題是神經科學、大腦、認知機制、記憶、情緒神經科學 → mentor-neuro
-    → 主題是其他科學、心理、生理、社會現象（非神經機制）→ academic-mentor
+    → 主題是社會現象、傳播、教育制度、科技影響、群體行為 → mentor-society
+    → 主題是其他科學、心理、生理（非神經、非社會）→ academic-mentor
     → 主題是程式邏輯、code 行為、技術概念 → concrete-example
     → 主題是 bug / 錯誤訊息 → debug-flow
     → 無法判斷主題類型 → 詢問使用者：「這是技術問題還是想了解科學原理？」

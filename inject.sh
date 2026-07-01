@@ -147,6 +147,7 @@ ${SKILLS_BASE}/productivity/version-log.md
 # ${SKILLS_BASE}/learning/concrete-example.md
 # ${SKILLS_BASE}/learning/academic-mentor.md
 # ${SKILLS_BASE}/learning/mentor-neuro.md
+# ${SKILLS_BASE}/learning/mentor-society.md
 # ${SKILLS_BASE}/design/wireframing.md
 # ${SKILLS_BASE}/design/ui-visual-design.md
 # ${SKILLS_BASE}/design/information-architecture.md
