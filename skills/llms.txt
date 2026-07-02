@@ -122,6 +122,11 @@ path: skills/learning/mentor-neuro.md
 triggers: 大腦、神經、多巴胺、血清素、皮質醇、前額葉、記憶機制、學習的神經機制、神經可塑性、成癮機制、情緒調節的神經機制、睡眠與大腦、神經科學、腦區、迴路（需涉及神經科學主題）
 description: 神經科學專屬導師。自動讀取 knowledge/neuro/ 既有筆記作為上下文，在使用者已知節點上延伸，永遠聲明路徑覆蓋範圍，機制確定性與介入確定性嚴格分離，內建神經迷思雷達，最後提示存入 vault 形成知識圖譜。
 
+name: mentor-invest
+path: skills/learning/mentor-invest.md
+triggers: 投資、股票、ETF、資產配置、投資組合、市場走勢、報酬率、風險管理、退休規劃、被動投資、主動投資、行為偏誤（投資脈絡）、損失規避、過度自信（投資決策）
+description: 投資策略專屬導師。行為偏誤掃描優先於策略討論，四鐵律（過去報酬≠未來 / 報酬必須附風險 / 時間軸改變結論 / 市場預測永遠❓），行為偏誤表（7 條，含 Nobel 研究引用），投資迷思雷達（7 條），讀取 knowledge/invest/ vault 上下文，跨域連結 neuro（偏誤機制）/ society（總經脈絡），每次回覆附個人情境聲明與免責說明。
+
 name: mentor-tech
 path: skills/learning/mentor-tech.md
 triggers: 架構設計、技術選型、這兩個技術差在哪、什麼時候該用、系統設計、分散式系統、資料庫選擇、效能優化、這個技術原理是什麼、微服務、雲端架構、API 設計概念（概念層，非實作）

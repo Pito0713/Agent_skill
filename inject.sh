@@ -150,6 +150,7 @@ ${SKILLS_BASE}/productivity/version-log.md
 # ${SKILLS_BASE}/learning/mentor-society.md
 # ${SKILLS_BASE}/learning/mentor-science.md
 # ${SKILLS_BASE}/learning/mentor-tech.md
+# ${SKILLS_BASE}/learning/mentor-invest.md
 # ${SKILLS_BASE}/design/wireframing.md
 # ${SKILLS_BASE}/design/ui-visual-design.md
 # ${SKILLS_BASE}/design/information-architecture.md

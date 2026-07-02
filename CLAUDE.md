@@ -42,6 +42,7 @@
 | 社會現象 / 科技與社會 / 傳播 / 教育制度 | `@skills/learning/mentor-society.md` |
 | 物理 / 化學 / 生物 / 自然科學原理 | `@skills/learning/mentor-science.md` |
 | 技術架構 / 系統設計 / 技術選型 / 工程權衡 | `@skills/learning/mentor-tech.md` |
+| 投資策略 / 資產配置 / 行為偏誤 / 財務規劃 | `@skills/learning/mentor-invest.md` |
 | UI/UX 設計規劃 | `@skills/design/ui-design-flow.md` |
 | 精簡程式碼 / 反 over-engineering | `@skills/engineering/lazyengineer.md` |
 | 過度設計掃描 / 找可刪的程式碼 | `@skills/engineering/lazyengineer-review.md` |
