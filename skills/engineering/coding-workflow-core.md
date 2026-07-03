@@ -57,6 +57,12 @@ find . -maxdepth 2 -name "*.test.*" -o -name "jest.config.*" -o -name "pytest.in
 
 ---
 
+**Phase 2.5：Tech Lead Mode 判斷（可選）**
+
+若符合 `skills/engineering/tech-lead-mode.md` 啟用條件（預估 >3 檔案 / 曾卡關 / 高風險 / 易 scope creep），詢問使用者是否切換為 tech-lead-mode 執行 Phase 3（工單化 + 委派 executor + close gate），取代直接實作。不符合條件則略過，直接進入 Phase 3。
+
+---
+
 ## Phase 3：實作（Implement）
 
 ```

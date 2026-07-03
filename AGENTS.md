@@ -1,85 +1,46 @@
 # Agent Skills — Universal Entry Point
 
-> 這份文件是本 skill 體系的通用入口，適用於所有支援 AGENTS.md 的 AI agent 平台（Gemini CLI、Cursor、Copilot 等）。
-> Claude Code 用戶請參閱 CLAUDE.md。
+> 本 skill 體系的通用入口，適用於所有支援 AGENTS.md 的 AI agent 平台（Cursor、Copilot 等）。
+> Claude Code 用戶請參閱 CLAUDE.md。本檔不依賴 @file 語法，核心規則 inline，其餘用路徑引用。
 
 ---
 
-## 專案概覽
+## 常駐核心規則（inline，任何任務都適用）
 
-這是一個標準化的 AI coding agent 行為規範庫，提供：
-
-- **Rules**：語言與框架規範（TypeScript / React / Next.js / Python / 安全 / 測試 / Git）
-- **Skills**：可呼叫的工作流程（功能開發 / 除錯 / 審查 / 設計 / 生產力）
-- **Agents**：專責子任務的 subagent 定義
-
----
-
-## 常駐規範（每次 session 自動生效）
-
-以下規範適用於所有任務，執行前必須遵守：
-
-### 核心 Coding 原則
-
-- 命名使用意圖揭示命名，禁止縮寫（除 url、id、api）
-- 函式單一職責，長度上限 50 行，參數上限 3 個
+### Coding
+- 意圖揭示命名，禁止縮寫（除 url、id、api）
+- 函式單一職責，< 50 行，參數 ≤ 3 個，提前 return 取代巢狀 if
 - 不吞錯誤：catch 內必須有處理邏輯或 re-throw
-- 禁止 `console.log` 進入 production
-- 禁止 hardcode secrets / API keys
+- 禁止 `console.log` 進 production、禁止 hardcode secrets、禁止 `any`（TypeScript）
 
-### 安全基準（OWASP Top 10）
-
+### 安全（OWASP 基準）
 - 所有外部輸入視為不可信任，必須驗證
-- 禁止字串拼接 SQL query，使用 parameterized query
-- 禁止 `innerHTML = userInput`，使用 textContent 或 DOMPurify
-- JWT 有效期最長 24h，禁止在 URL 中傳遞 token
-- 禁止 hardcode secrets，從環境變數讀取並做 runtime validation
+- SQL 一律 parameterized query；禁止 `innerHTML = userInput`
+- secrets 從環境變數讀取並做 runtime validation，`.env` 進 `.gitignore`
 
 ---
 
-## Skill 索引
+## 核心鐵律
 
-完整的 skill 清單、觸發詞與說明請參閱：
-
-```
-skills/llms.txt
-```
-
-### 常用 Skill 快速對照
-
-| 需求 | 載入 |
-|------|------|
-| 新增功能 | `skills/engineering/new-feature.md` |
-| 除錯 | `skills/engineering/debug-flow.md` |
-| Code Review | `skills/engineering/code-review.md` |
-| 安全審查 | `skills/engineering/security-review.md` |
-| 上線前檢查 | `skills/engineering/deploy-prep.md` |
-| UI 設計規劃 | `skills/design/ui-design-flow.md` |
-| 精簡程式碼 | `skills/engineering/lazyengineer.md` |
+1. **驗證不自驗**：自己產出的東西不能自己驗收——檔案用 read-back、程式碼用實跑測試（貼輸出）
+2. **不猜意圖**：命中多個 skill 觸發詞或出現模糊詞（「優化」「完善」）→ 列出選項問使用者
+3. **卡住就停**：同一件事重試兩輪失敗 → 停下，帶失敗軌跡升級或問使用者
+4. **動 repo 前先 `git status`**：非預期變更 → 停下來問，不默默覆蓋
+5. **完成要有證據**：「應該會過」「邏輯上正確」= 進行中，不是完成
 
 ---
 
-## 按需載入規範
+## 路由表（需要時讀對應檔案）
 
-依偵測條件自動載入：
-
-| 偵測條件 | 載入規範 |
-|---------|---------|
-| `tsconfig.json` 或 `*.ts` 存在 | `rules/typescript.md` |
-| `package.json` 含 react | `rules/react.md` |
-| `next.config.*` 存在 | `rules/nextjs.md` |
-| `requirements.txt` / `*.py` 存在 | `rules/python.md` |
-| 任務涉及 commit / PR | `rules/git.md` |
-| 任務涉及前端 / XSS / CORS | `rules/frontend-security.md` |
-
----
-
-## 行為準則
-
-1. 所有 coding 任務執行前確認適用的 rules/
-2. 遇到重複性工作流程，優先使用 skills/ 對應 skill
-3. 遇到多個 skill 命中時，列出選項詢問使用者而非自行猜測
-4. 每次重要決策後更新 memory/project-context.md
+| 情境 | 讀這份 |
+|------|--------|
+| 查 skill 觸發詞與完整索引 | `skills/llms.txt` |
+| 語言/框架 rules 偵測條件 | `skills/engineering/coding-workflow-core.md` Phase 0 |
+| 委派、模型選擇、升降級 | `governance/model-orchestration.md` |
+| 完成判準、何時問人、何時換路 | `governance/judgment-rubrics.md` |
+| 派工 prompt 模板 | `governance/delegation-templates.md` |
+| 卡關/跨檔案/高風險實作 | `skills/engineering/tech-lead-mode.md` |
+| 修改制度檔的權限 | `governance/maintenance-protocol.md` |
 
 ---
 

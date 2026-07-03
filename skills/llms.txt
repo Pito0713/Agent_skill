@@ -11,6 +11,11 @@ path: skills/engineering/coding-workflow-core.md
 triggers: 每次 session 自動生效（常駐）
 description: 實作任何功能的強制四階段流程（理解→計畫→實作→驗證）與 commit 前 checklist。
 
+name: tech-lead-mode
+path: skills/engineering/tech-lead-mode.md
+triggers: tech lead 模式、照工單跑、這個任務容易 scope creep、orchestrator 模式
+description: Orchestrator 執行策略切換，不直接寫 code，改為切工單→委派 executor→仲裁 reviewer 發現→跑 close gate，適合卡關、跨檔案、高風險、易 scope creep 的任務。掛在 coding-workflow-core / new-feature / debug-flow 之上，非新任務類型入口。
+
 name: new-feature
 path: skills/engineering/new-feature.md
 triggers: 新增功能、實作 X、建立 Y 功能、我要做 Z、幫我做一個功能、新增 feature

@@ -133,13 +133,13 @@ ${SKILLS_BASE}/rules/coding-standards.md
 ${SKILLS_BASE}/rules/security.md
 ${SKILLS_BASE}/rules/git.md
 ${SKILLS_BASE}/engineering/coding-workflow-core.md
+${SKILLS_BASE}/engineering/gemini-assist.md
 ${SKILLS_BASE}/productivity/handoff.md
 ${SKILLS_BASE}/productivity/version-log.md
 
 ## 按需載入（視任務加入）
 ## 按需載入項目已列出（預設註解，移除 # 即可啟用）
 
-# ${SKILLS_BASE}/engineering/gemini-assist.md
 # ${SKILLS_BASE}/rules/typescript.md
 # ${SKILLS_BASE}/rules/python.md
 # ${SKILLS_BASE}/engineering/coding-workflow-ref.md
@@ -194,7 +194,7 @@ EOF
   echo -e "${GREEN}✅ 已生成 CLAUDE.md${NC}"
   echo "   路徑：$CLAUDE_MD"
   echo ""
-  echo -e "${CYAN}📌 常駐載入已設定（6 個 skills）${NC}"
+  echo -e "${CYAN}📌 常駐載入已設定（4 個 skills）${NC}"
   echo "   按需載入項目已列出（預設註解，移除 # 即可啟用）"
   install_hook
   exit 0
@@ -296,7 +296,7 @@ PYEOF
   echo -e "${GREEN}✅ 更新完成${NC}"
   echo "   路徑：$CLAUDE_MD"
   echo ""
-  echo -e "${CYAN}📌 常駐載入已更新（6 個 skills）${NC}"
+  echo -e "${CYAN}📌 常駐載入已更新（4 個 skills）${NC}"
   install_hook
   exit 0
 fi
@@ -336,6 +336,6 @@ echo ""
 echo -e "${GREEN}✅ 注入完成${NC}"
 echo "   路徑：$CLAUDE_MD"
 echo ""
-echo -e "${CYAN}📌 常駐載入已設定（6 個 skills）${NC}"
+echo -e "${CYAN}📌 常駐載入已設定（4 個 skills）${NC}"
 echo "   按需載入項目已列出（預設註解，移除 # 即可啟用）"
 install_hook

@@ -16,6 +16,15 @@ Claude Code 的完整 agent skill 骨架，包含 rules、skills、subagents、m
 ├── inject.sh                          # 在目標專案注入常駐 skill 設定
 ├── .claudeignore                      # Claude 工具掃描排除清單
 │
+├── governance/                        # 制度層（v4.5）：調度守則、判斷 rubrics、派工模板、維護協議
+│   ├── harness-diagnosis.md           # 診斷依據（為什麼這樣設計）
+│   ├── model-orchestration.md         # 模型調度守則（指揮官不下場、派工三件套、升降級）
+│   ├── judgment-rubrics.md            # 判斷力外化（R1-R5，附正反例）
+│   ├── delegation-templates.md        # 五種任務型態派工模板
+│   ├── maintenance-protocol.md        # 制度檔修改權限分級（🟢🟡🔴）
+│   ├── lessons.md                     # 踩坑教訓日誌（append-only）
+│   └── letter-to-future-sessions.md   # 交接與退化預防
+│
 ├── rules/                             # Coding 規範（自動偵測載入）
 │   ├── coding-standards.md            # 通用規範（常駐）
 │   ├── security.md                    # 安全規範 OWASP（常駐）
@@ -32,6 +41,7 @@ Claude Code 的完整 agent skill 骨架，包含 rules、skills、subagents、m
 │   ├── _inbox/                        # 待處理的原始收集素材
 │   ├── engineering/
 │   │   ├── coding-workflow-core.md    # 核心流程守則（常駐，Phase 0-4）
+│   │   ├── tech-lead-mode.md          # Orchestrator 執行策略切換（工單化 + executor 委派 + close gate，按需）
 │   │   ├── coding-workflow-ref.md     # 實作模式速查（按需）
 │   │   ├── coding-workflow.md         # 完整版（參考用）
 │   │   ├── gemini-assist.md           # AI 分工協作 — Antigravity CLI（常駐實驗）
@@ -249,7 +259,7 @@ lazyengineer [lite|full|ultra|off]
 | 常駐 | `rules/coding-standards.md` | 語言無關，每次都適用 |
 | 常駐 | `rules/security.md` | 安全規範，不可省略 |
 | 常駐 | `skills/engineering/coding-workflow-core.md` | Phase 0-4 實作守則（含自動偵測）|
-| 常駐（實驗）| `skills/engineering/gemini-assist.md` | AI 分工協作（agy）|
+| 按需（v4.5 起）| `skills/engineering/gemini-assist.md` | 搜尋 / 掃大檔 / 交叉驗證時載入（原常駐，降級原因見 governance/harness-diagnosis.md）|
 | 自動偵測 | `rules/typescript.md` | tsconfig.json 存在時 |
 | 自動偵測 | `rules/react.md` / `nextjs.md` | package.json 含 react / next 時 |
 | 自動偵測 | `rules/python.md` | requirements.txt / pyproject.toml 存在時 |
@@ -257,6 +267,7 @@ lazyengineer [lite|full|ultra|off]
 | 自動偵測 | `rules/git.md` | 任務涉及 commit / PR / branch 時 |
 | 自動偵測 | `rules/frontend-security.md` | package.json 含 react / vue / next 時 |
 | 按需 | `skills/engineering/coding-workflow-ref.md` | 查實作模式時 |
+| 按需 | `skills/engineering/tech-lead-mode.md` | 卡關 / 跨檔案 / 高風險任務容易 scope creep 時（工單化 + executor 委派 + close gate）|
 | 按需 | `skills/engineering/lazyengineer.md` | 精簡程式碼 / 反 over-engineering 時（實測 -65–90% output tokens）|
 | 按需 | `skills/engineering/lazyengineer-review.md` | 掃描過度設計 / 找可刪的程式碼時 |
 | 按需 | `skills/learning/feedback-loop.md` | 刻意練習 / 改進特定能力時 |
@@ -331,3 +342,5 @@ lazyengineer [lite|full|ultra|off]
 | v4.1 | 2026-07-01 | 新增 mentor-science 自然科學專屬導師：定律/理論/模型/假說嚴格區分、第一原理推導鏈、適用範圍與邊界條件聲明、科學三鐵律（模型≠現實 / 自然≠安全 / 相關≠因果）、科學迷思雷達（8 條）、概念層次知識圖譜 |
 | v4.2 | 2026-07-02 | 新增 mentor-tech 科技與工程專屬導師：tradeoff 矩陣為核心、技術知識七分類（標準/演算法/benchmark/模式/慣例/趨勢/廠商宣稱）、三鐵律（效能比較附條件 / Best Practice 有時效 / 技術可行≠工程適合）、工程迷思雷達（8 條）、與 coding-workflow 的概念/實作分工界線 |
 | v4.3 | 2026-07-02 | 新增 mentor-invest 投資策略專屬導師：行為偏誤掃描優先於策略討論、四鐵律（過去報酬≠未來 / 報酬附風險 / 時間軸改變結論 / 市場預測永遠❓）、7 條行為偏誤表（含 Nobel 研究）、投資迷思雷達（7 條）、跨域連結 neuro/society、個人情境聲明與免責說明 |
+| v4.4 | 2026-07-03 | 新增 tech-lead-mode 執行策略 skill：工單化（範圍/禁區/驗收條件）、executor 委派（subagent worktree / agy 臨時授權）、reviewer 發現逐條仲裁、close gate 三選一（CLOSE/REOPEN/ESCALATE）；接線至 coding-workflow-core / new-feature / debug-flow |
+| v4.5 | 2026-07-03 | 新增 governance/ 制度層（7 檔）：harness 診斷、模型調度守則、判斷力 rubrics（R1-R5）、派工模板、維護協議、lessons 日誌、給未來 session 的信；CLAUDE.md 精簡為 48 行純路由；gemini-assist 由常駐降為按需；經冷啟動 subagent 對抗審查修正 7 項 |
