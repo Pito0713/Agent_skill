@@ -117,11 +117,6 @@ description: 根據產品類型與目標用戶推薦顏色、字型、間距視�
 
 ## Learning — 學習
 
-name: hermes-extractor
-path: skills/learning/hermes-extractor.md
-triggers: 提煉經驗、寫入知識庫、這個 bug 記下來、hermes extractor、這是一個很好的教訓
-description: Hermes 風格的自我學習與經驗提煉迴圈。自動將複雜 bug 或重構經驗提煉為通用法則，並寫入 knowledge/ 知識庫。
-
 name: concrete-example
 path: skills/learning/concrete-example.md
 triggers: 我看不懂、為什麼還是錯、這什麼意思、邏輯是什麼
