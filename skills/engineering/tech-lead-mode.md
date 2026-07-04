@@ -77,7 +77,11 @@ description:
 
 ## Phase 2：委派 Executor
 
-### Path A：Agent tool subagent（預設，無需改動安全設定）
+### Path A：harness subagent（預設，無需改動安全設定）
+
+**委派參數依 harness 而異，發送前先對照 `governance/model-orchestration.md` 第 2 節適配表，禁止照抄非本環境的參數名。**
+
+Claude Code 語法：
 
 ```
 Agent({
@@ -88,7 +92,11 @@ Agent({
 })
 ```
 
+Antigravity 等價參數：`TypeName: "self"` + `Workspace: "branch"`（隔離），prompt 內容相同。其他 harness：以當前工具 schema 為準找「全工具 subagent + 隔離工作區」的等價組合。
+
 適用：大部分情境。同模型執行，但 executor 本來就不負責判斷對錯，只照工單做，風險可控。
+
+**派發後等待紀律**：executor 在背景執行時不要輪詢、不要用無意義工具呼叫原地等。事件驅動 harness 完成時會喚醒你（Claude Code 自動通知；Antigravity 結束回合交還控制權或用 `/schedule` 設 TimerCondition），醒來直接進 Phase 3/4。
 
 ### Path B：agy 作為 executor（需臨時放寬權限，僅限明確要求異質模型執行時使用）
 
@@ -229,7 +237,7 @@ coding-workflow-core.md  Phase 2（計畫）完成後 → 同上邏輯
 | 角色         | 對應本專案元件                                                                               |
 | ------------ | -------------------------------------------------------------------------------------------- |
 | Orchestrator | Claude 本身，本 skill 全流程控制                                                             |
-| Executor     | `Agent` tool subagent + `isolation: worktree`（預設）或 agy（需臨時授權，見 Phase 2 Path B） |
+| Executor     | harness subagent + 隔離工作區（預設，參數查 model-orchestration §2 適配表）或 agy CLI（需臨時授權，見 Phase 2 Path B） |
 | Reviewer     | `gemini-assist.md` Mode C（agy 或 Claude Subagent Fallback）                                 |
 | 人類終審     | ESCALATE 結果的唯一裁決者                                                                    |
 

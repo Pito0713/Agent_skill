@@ -202,6 +202,24 @@ Frontend (Next.js) → API Layer (Next.js API Routes / FastAPI)
 
 ---
 
+### ADR-008：制度檔 harness 適配層（通用原則與 harness 語法分離）
+
+**狀態**：已接受
+**日期**：2026-07-04
+
+**背景**：一個 Antigravity（agy harness）session 依 tech-lead-mode / model-orchestration 執行委派時發現：制度檔明文的 `subagent_type: "general-purpose"` / `isolation: "worktree"` / `model: sonnet` 是 Claude Code 專屬參數，Antigravity 只認 `TypeName: "self"|"research"` / `Workspace: "branch"|"share"` 且不支援逐次指定 model——模型越忠實遵守制度檔，工具層報錯越硬。另外 Phase 0 的 shell 偵測在逐次核准 shell 的 harness 會把每個 session 開局卡在人工點擊。
+
+**決策**：不採用該 session 提議的「參數整批替換成 Antigravity 規格」——本 repo 未遷移，Claude Code 仍是主要環境，單邊替換只是反向撞牆。改為建立 harness 適配層：
+- `model-orchestration.md` §2 重寫為 Claude Code / Antigravity 雙欄適配表，附鐵律「先認環境、查表取參數、禁止照抄他 harness 參數名」；§6 註明逐次指定 model 僅 Claude Code 支援，其他環境升級 = 帶失敗軌跡提示使用者
+- `tech-lead-mode.md` Phase 2 標註範例為 Claude Code 語法、附 Antigravity 等價參數，並新增「派發後等待紀律」（事件驅動喚醒，禁止輪詢空轉）
+- `coding-workflow-core.md` Phase 0 改原生唯讀工具優先（Glob / Grep 類），shell 降為 fallback
+
+**後果**：
+- 正面：同一份制度可被多 harness 忠實執行而不撞工具層；Phase 0 在核准制 harness 不再卡人工點擊
+- 負面/注意：Antigravity 參數規格來自該 session 的實際回報，本 repo 無法在 Claude Code 環境下直接驗證，若 agy harness 改版需照 maintenance-protocol 🟢 級事實修正更新適配表；新增 harness（如 Codex）時需自行補欄
+
+---
+
 > 知道不完美但有意為之的設計，避免新人重複質疑
 
 | 限制 | 原因 | 預計改善時間 |

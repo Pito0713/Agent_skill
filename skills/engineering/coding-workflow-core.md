@@ -23,12 +23,21 @@ description: 實作任何功能的核心流程守則（常駐版）。包含四�
 | `.git/` 存在且任務涉及 commit / PR / branch | `@rules/git.md` |
 | `package.json` 含 `"react"` / `"vue"` / `"next"` | `@rules/frontend-security.md` |
 
+**偵測方式（原生工具優先，不開 shell）**：
+
+1. **先用 harness 原生唯讀工具**（免逐次核准、速度快）：
+   - 檔案存在性：用 Glob / list_dir 類工具檢查 `tsconfig.json`、`next.config.*`、`requirements.txt`、`pyproject.toml`、`*.test.*`、`jest.config.*`、`pytest.ini`
+   - 內容偵測：用 Grep / grep_search 類工具在 `package.json` 找 `"react"` / `"vue"` / `"next"`
+2. **原生工具不可用時才 fallback 到 shell**：
+
 ```bash
-# 快速偵測指令（在專案根目錄執行）
+# fallback 偵測指令（在專案根目錄執行）
 ls tsconfig.json next.config.* requirements.txt pyproject.toml 2>/dev/null
 grep -s "\"react\"\|\"vue\"\|\"next\"" package.json
 find . -maxdepth 2 -name "*.test.*" -o -name "jest.config.*" -o -name "pytest.ini" 2>/dev/null | head -3
 ```
+
+> 原因：部分 harness（如 Antigravity）對 shell 指令逐次要求使用者核准，Phase 0 用 shell 會讓每個 session 開局就卡一次人工點擊；原生唯讀工具無此問題。
 
 ---
 

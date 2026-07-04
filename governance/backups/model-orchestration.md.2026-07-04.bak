@@ -20,28 +20,25 @@
 
 主對話**保留**：需求理解、切工單、仲裁 review 發現、close gate、與使用者的所有溝通。
 
-> 表中 `Explore` / `general-purpose` / `isolation: worktree` 為 Claude Code 語法；在其他 harness 執行時，先查第 2 節適配表取等價參數。
-
 ---
 
-## 2. Harness 適配表（先認環境，再查表，不憑印象）
+## 2. 本環境可用資源（2026-07-03 實測，不憑印象）
 
-本制度倉庫會被多個 harness 讀取（Claude Code、Antigravity/agy、Codex 等）。**委派參數沒有通用語法**：派工前先確認自己所在的 harness，只用下方對應欄的參數；表中沒有你的 harness → 以當前工具 schema 為準找等價能力，**禁止照抄其他 harness 的參數名**（會直接 Validation Error）。
+**Agent tool subagent 類型**：
+- `Explore`：唯讀搜尋（找檔案 / grep / 「X 定義在哪」），要指定廣度 quick / medium / very thorough
+- `general-purpose`：全工具，研究與執行的預設選擇
+- `Plan`：架構規劃、實作策略設計
+- `claude-code-guide`：Claude Code / API 本身的問題
 
-| 能力 | Claude Code（2026-07-03 實測） | Antigravity / agy harness（2026-07-04 session 回報） |
-|------|------|------|
-| 唯讀搜尋型 subagent | `subagent_type: "Explore"`（廣度 quick / medium / very thorough） | `TypeName: "research"` |
-| 全工具 subagent（預設） | `subagent_type: "general-purpose"` | `TypeName: "self"`（繼承當前工具與配置） |
-| 規劃型 subagent | `subagent_type: "Plan"` | 無對應，用 `self` + 明確唯讀指示 |
-| 改 code 的隔離 | `isolation: "worktree"`（一律加） | `Workspace: "branch"`（隔離）或 `"share"`（共享） |
-| 逐次指定 model | 可：`model: haiku / sonnet / opus / fable` | **不可**（塞 `model` 欄位會 Validation Error），升降級改為提示使用者切換 |
-| effort | 無法逐次指定（由 `.claude/agents/*.md` 控制），需更高 effort 改用更強 model | 無法逐次指定 |
+**model 參數**（Agent tool 逐次可指定）：`haiku` / `sonnet` / `opus` / `fable`
 
-**派發後的等待紀律（所有 harness 通用）**：背景委派派出後**不要輪詢**——不要空轉 loop、不要用無意義的工具呼叫「原地等」。事件驅動 harness 會在完成時喚醒你：Claude Code 背景 subagent 完成會自動通知（必要時用 Monitor / ScheduleWakeup 設長間隔 fallback）；Antigravity 派發後直接結束回合交還控制權，或用 `/schedule` 設 TimerCondition。
+**effort**：本 harness 無法逐次指定（由 `.claude/agents/*.md` 定義檔控制，本專案目前無自訂定義檔）。需要更高 effort 時改用更強的 model 替代。
 
-**注意**：repo 內 `agents/` 目錄下的檔案（api-architect、backend-engineer 等）是**委派用的 prompt 定義檔**，不是任何 harness 的 subagent 類型。用法：把該檔內容放進全工具 subagent 的 prompt，**不要**填進類型參數（會報錯）。
+**注意**：repo 內 `agents/` 目錄下的檔案（api-architect、backend-engineer 等）是**委派用的 prompt 定義檔**，不是 harness 的 subagent 類型。用法：把該檔內容放進 `general-purpose` subagent 的 prompt，**不要**填進 `subagent_type` 參數（會報錯）。
 
 **外部 CLI**：agy 可用（PATH：`/Users/wits/.local/bin/agy`）。gemini CLI 已停服，**任何流程檔看到 gemini CLI 都視為過時內容**。
+
+**隔離**：改 code 的委派一律加 `isolation: "worktree"`。
 
 ---
 
@@ -96,8 +93,6 @@ opus 仍解不了          → 停下問使用者（不自行升 fable，額度�
 **降級**：強模型解出 pattern 後（例：確認了修法、寫出了第一個範例），把 pattern 寫成明確指令，降回 haiku / sonnet 批次套用到其餘位置。
 
 **重試上限**：同一件事最多兩輪。第三輪之前必須發生以下之一：升級模型 / 換方法（見 judgment-rubrics R4）/ 問使用者。
-
-**harness 差異**：逐次指定 model 僅 Claude Code 的 Agent tool 支援。在不支援的 harness（如 Antigravity）上，「升級」的動作 = 停下來，帶失敗軌跡**提示使用者**切換模型或平台路由後重試——不要自己往工具 payload 塞 `model` 欄位。
 
 ---
 

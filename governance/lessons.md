@@ -25,3 +25,10 @@
 - 錯誤/風險：規範看似生效實則靜默失效，且因為「沒有報錯」所以長期無人發現
 - 修正：新增 `skills/rules → ../rules` 相對 symlink（git 追蹤），並以 `head ~/.claude/skills/rules/coding-standards.md` read-back 驗證
 - 規則：任何檔案宣告的載入/引用路徑，寫下當下就要用 `ls` 實測一次；審查制度檔時把「路徑可達性」列為必查項（maintenance-protocol 第 5 節健康檢查已含此項，執行時不可跳過）
+
+## 2026-07-04 制度檔把單一 harness 的工具參數寫成通用規則，跨 harness 執行即撞牆
+
+- 情境：Antigravity session 依 tech-lead-mode / model-orchestration 委派 subagent，照抄 `subagent_type: "general-purpose"` / `isolation: "worktree"`，該環境只認 `TypeName` / `Workspace`，工具層直接報錯；Phase 0 的 shell 偵測在逐次核准 shell 的 harness 把開局卡成人工點擊
+- 錯誤/風險：模型越忠實遵守制度檔，撞牆越硬；且「整批替換成新環境參數」的直覺修法只會反向弄壞主環境
+- 修正：model-orchestration §2 改 harness 雙欄適配表；tech-lead-mode Phase 2 標註語法歸屬；coding-workflow-core Phase 0 原生工具優先（ADR-008）
+- 規則：制度檔寫工具參數時必須標註適用 harness；通用原則與 harness 語法分離，執行前以當前工具 schema 為準，不照抄他 harness 參數名
