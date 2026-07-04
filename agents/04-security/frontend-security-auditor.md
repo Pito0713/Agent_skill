@@ -70,16 +70,12 @@ grep -rn "<script src=" public/ --include="*.html"
 
 ---
 
-## 審計觸發指令
+## 委派方式
 
-```bash
-# 審查整個 src/
-find ./src -name "*.tsx" -o -name "*.ts" -o -name "*.js" | \
-  xargs cat | claude "用 frontend-security-auditor 審查"
+本檔是**委派用 prompt 定義檔**，不是 harness 的 subagent 類型（見 `governance/model-orchestration.md` 第 2 節）。
 
-# 審查 git diff（PR review）
-git diff main | claude "用 frontend-security-auditor 審查這個 diff"
-```
+使用方式：把本檔內容 + 審查目標（diff 或檔案清單）放進 `general-purpose` subagent 的 prompt，
+派工格式照 `governance/delegation-templates.md` T5（冷啟動，不附主對話的分析脈絡）。
 
 ---
 

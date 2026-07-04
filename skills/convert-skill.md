@@ -89,16 +89,18 @@ source: <原始 GitHub URL>
 mv skills/_inbox/<filename>.md skills/<category>/<new-name>.md
 ```
 
-完成後必須同步更新以下四個地方，缺一不可：
+完成後必須同步更新以下三個地方，缺一不可：
 
 ```
 [ ] skills/llms.txt              → 在對應分類區塊加入 name / path / triggers / description
-[ ] CLAUDE.md                   → 在「按需載入」表格加一行
 [ ] inject.sh INJECT_BLOCK      → 決定此 skill 是否應進客戶專案
                                    是 → 在對應分類區塊加入（預設以 # 註解）
                                    否 → 記錄原因（Agent_skill 內部使用）
 [ ] README.md 版本紀錄           → 執行 version-log skill 更新版本號
 ```
+
+> 🔴 **禁止**同步往 CLAUDE.md 加列：skill 路由的單一事實來源是 `skills/llms.txt`，
+> CLAUDE.md 只放指標（見 `governance/maintenance-protocol.md` 第 1 節）。
 
 **inject.sh 判斷標準：**
 

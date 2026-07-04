@@ -1,6 +1,6 @@
 ---
 name: coding-workflow
-description: 實作新功能或修改現有程式碼的標準工作流程。當使用者說「實作 X」、「新增功能 Y」、「修改 Z」時觸發。包含理解→計畫→實作→驗證四個階段。
+description: 完整版參考文件（不直接觸發）。日常實作流程走常駐的 coding-workflow-core.md，實作模式速查走 coding-workflow-ref.md；本檔為兩者拆分前的完整版，僅供對照參考。
 ---
 
 # Coding Workflow

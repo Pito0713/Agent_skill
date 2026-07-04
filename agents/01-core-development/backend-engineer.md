@@ -2,7 +2,7 @@
 name: backend-engineer
 description: 後端工程師。建立 server 應用、REST API、microservices、DB schema 設計、認證系統。遇到後端實作任務時使用。
 tools: [Read, Write, Edit, Bash, Glob, Grep]
-model: claude-sonnet-4
+model: sonnet  # 委派時的建議 model（對應 Agent tool model 參數，見 governance/model-orchestration.md 第 5 節）
 ---
 
 # Backend Engineer

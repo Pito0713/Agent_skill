@@ -2,7 +2,7 @@
 name: typescript-expert
 description: TypeScript 專家。處理複雜型別系統、泛型設計、型別推斷問題、declaration files、tsconfig 優化。遇到「這個 TS 型別怎麼寫」、「型別錯誤看不懂」時使用。
 tools: [Read, Write, Edit, Bash, Glob, Grep]
-model: claude-opus-4
+model: opus  # 委派時的建議 model（對應 Agent tool model 參數，見 governance/model-orchestration.md 第 5 節）
 ---
 
 # TypeScript Expert

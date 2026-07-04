@@ -26,6 +26,11 @@ path: skills/engineering/coding-workflow-ref.md
 triggers: 查實作模式、怎麼寫 API、component 怎麼做、有沒有範本
 description: 常見實作模式速查手冊（API endpoint / React 元件 / bug 修復）。
 
+name: coding-workflow
+path: skills/engineering/coding-workflow.md
+triggers: （不直接觸發，完整版參考文件）
+description: coding-workflow-core + coding-workflow-ref 拆分前的完整版，僅供對照參考。
+
 name: debug-flow
 path: skills/engineering/debug-flow.md
 triggers: bug、壞掉了、為什麼錯、不如預期、找不到原因、一直出錯、error、為什麼會這樣
@@ -35,6 +40,11 @@ name: deploy-prep
 path: skills/engineering/deploy-prep.md
 triggers: 要上線了、deploy 前、release 前、上線檢查、準備 deploy、要 release 了
 description: 上線前安全檢查協調器，涵蓋 build / 環境變數 / migration / rollback 確認。
+
+name: debug
+path: skills/engineering/debug.md
+triggers: （一般不直接觸發，由 debug-flow 協調載入）
+description: 系統性除錯工作流程：重現→收集→假設→驗證→修復。debug-flow 的 Phase 1 執行依據。
 
 ---
 
@@ -107,6 +117,11 @@ description: 根據產品類型與目標用戶推薦顏色、字型、間距視�
 
 ## Learning — 學習
 
+name: hermes-extractor
+path: skills/learning/hermes-extractor.md
+triggers: 提煉經驗、寫入知識庫、這個 bug 記下來、hermes extractor、這是一個很好的教訓
+description: Hermes 風格的自我學習與經驗提煉迴圈。自動將複雜 bug 或重構經驗提煉為通用法則，並寫入 knowledge/ 知識庫。
+
 name: concrete-example
 path: skills/learning/concrete-example.md
 triggers: 我看不懂、為什麼還是錯、這什麼意思、邏輯是什麼
@@ -163,8 +178,8 @@ description: 搜尋 knowledge/ 知識庫，找出相關規範或模式後回答�
 
 name: smart-init
 path: skills/productivity/smart-init.md
-triggers: 接手專案、了解專案、session 開始、smart init
-description: 初始化新的工作 session，掃描專案結構建立工作上下文。
+triggers: session 開始、開始新工作、幫我初始化、smart init
+description: 初始化新的工作 session，讀取專案記憶建立工作上下文（完整接手新專案請走 onboarding）。
 
 name: onboarding
 path: skills/productivity/onboarding.md
@@ -212,6 +227,9 @@ description: 將 GitHub 原始 workflow/prompt 文件轉換為本專案標準 sk
 
 常見衝突與判斷樹：
 - 「新增這個畫面的功能」→ new-feature vs ui-design-flow
+- 「接手專案 / 了解這個專案」
+    → 要完整理解 codebase（架構 / 模組 / 依賴）→ onboarding
+    → 只是開始一個新 session、恢復工作狀態 → smart-init
 - 「review 這個 component 有沒有安全問題」→ code-review vs security-review
 - 「準備 commit / commit 之前確認一下」
     → 有提版本號 / README / 變更記錄 → version-log

@@ -21,19 +21,7 @@ description: Code Review 協調器。當使用者說「幫我 code review」、�
 
 ## Phase 0：偵測專案類型
 
-```bash
-ls tsconfig.json next.config.* requirements.txt pyproject.toml 2>/dev/null
-grep -s '"react"\|"vue"\|"next"' package.json 2>/dev/null
-```
-
-| 偵測結果 | 載入規則 |
-|---------|---------|
-| `tsconfig.json` 存在 | `rules/typescript.md` |
-| `package.json` 含 react / next | `rules/react.md` 或 `rules/nextjs.md` |
-| `package.json` 含 react / vue / next | `rules/frontend-security.md` |
-| `requirements.txt` / `*.py` 存在 | `rules/python.md` |
-| 任何專案 | `rules/coding-standards.md`（常駐）|
-| 任何專案 | `rules/security.md`（常駐）|
+照 `coding-workflow-core.md` Phase 0 的偵測表執行（單一事實來源，不在本檔重複維護）。
 
 **輸出**：「偵測到：[技術堆疊]，載入對應規則」
 
@@ -120,61 +108,38 @@ grep -s '"react"\|"vue"\|"next"' package.json 2>/dev/null
 
 ---
 
-## Phase 5：Gemini 交叉驗證
+## Phase 5：交叉驗證（冷啟動）
 
-將 Phase 1–4 初步報告 + 完整程式碼一併送交 Gemini 獨立複審。
+依 `gemini-assist.md` 模式 C 執行。**鐵律：reviewer 不得看到 Phase 1–4 的初步報告**（避免錨定偏誤），只收原始碼與審查維度；agy 不可用時強制走模式 C 的 Claude Subagent Fallback，不得跳過。
 
-### Step 1：整合初步報告
+### Step 1：agy 冷啟動獨立審查
 
-將 Phase 1–4 所有發現整理成結構化文字：
-
-```
-[初步審查報告]
-邏輯問題：...
-安全問題：...
-測試缺口：...
-PR 格式：...
-```
-
-### Step 2：依審查範圍選擇送交方式
-
-**範圍為 git diff：**
 ```bash
-git diff HEAD | agy -p "
-以下是另一個 reviewer 的初步審查報告：
----
-[貼入初步報告]
----
-以上 diff 是對應的完整程式碼變更，請你：
-1. 同意 / 不同意報告中每個問題（說明原因）
-2. 補充報告遺漏的問題
+# $CLI_CMD 依 gemini-assist.md 前置確認偵測
+# Bash tool timeout: 570s（agy --print-timeout 9m + 30s 緩衝）
 
-每個項目格式：
-[同意 / 不同意 / 補充] 類別：描述 → 潛在影響
+# 範圍為 git diff
+git diff HEAD | $CLI_CMD --print-timeout 9m -p "審查這個 diff，僅回報問題，不提供修改方案。
 
-只回報問題，不提供修改方案。繁體中文。"
+審查維度：邏輯漏洞、邊界條件缺失、安全風險、測試缺口
+每個問題格式：
+[嚴重度] 位置：描述 → 潛在影響
+
+嚴重度：CRITICAL / HIGH / MEDIUM / LOW
+無問題時輸出：「未發現問題」
+繁體中文。"
+
+# 範圍為特定檔案：改用 cat [filepath] | $CLI_CMD ...（prompt 同上）
 ```
 
-**範圍為特定檔案：**
-```bash
-cat [filepath] | agy -p "
-以下是另一個 reviewer 的初步審查報告：
----
-[貼入初步報告]
----
-以上是對應的完整程式碼，請你交叉驗證並補充遺漏問題。
-格式同上。繁體中文。"
+### Step 2：Claude 比對兩份獨立發現
 
-# 多檔案
-cat src/a.ts src/b.ts | agy -p "..."
-```
+收到結果後，與 Phase 1–4 的初步報告逐條比對：
 
-### Step 3：Claude 裁決 Gemini 輸出
-
-收到 Gemini 結果後：
-- **Gemini「不同意」** → 重新評估，決定保留或移除，記錄原因
-- **Gemini「補充」** → 驗證後決定是否納入最終報告
-- **雙方一致** → 信心提升，直接納入
+- **雙方一致** → 信心提升，直接納入最終報告
+- **agy 獨有** → 讀實際程式碼逐條查證（流程照 `tech-lead-mode.md` Phase 4），CONFIRMED 才納入，REJECTED 記一句原因
+- **Claude 獨有** → 保留並在報告中標注「來源：Claude 單方發現」
+- **結論相左** → 列入最終報告的 ⚖️ 爭議項目區塊，說明最終採用誰的判斷與原因
 
 ---
 
@@ -184,19 +149,19 @@ cat src/a.ts src/b.ts | agy -p "..."
 ## Code Review 報告
 專案類型：[TypeScript / React / Python / ...]
 審查範圍：[git diff / 檔案名稱]
-交叉驗證：Claude 初審 + Gemini 複審 ✅
+交叉驗證：Claude 初審 + agy 冷啟動複審 ✅（agy 不可用時：Claude Subagent Fallback ⚠️）
 
 ### 🔴 CRITICAL
 - [位置] 問題描述 → 潛在影響
-  來源：[Claude / Gemini / 雙方確認]
+  來源：[Claude / agy / 雙方確認]
 
 ### 🟠 HIGH
 - [位置] 問題描述 → 潛在影響
-  來源：[Claude / Gemini / 雙方確認]
+  來源：[Claude / agy / 雙方確認]
 
 ### 🟡 MEDIUM
 - [位置] 問題描述 → 建議
-  來源：[Claude / Gemini / 雙方確認]
+  來源：[Claude / agy / 雙方確認]
 
 ### 🟢 LOW / 建議
 - [位置] 可選改善項目
@@ -204,8 +169,8 @@ cat src/a.ts src/b.ts | agy -p "..."
 ### ✅ 通過項目
 - 無發現問題的審查面向
 
-### ⚖️ 爭議項目（Claude 與 Gemini 意見不同）
-- [問題] Claude：[觀點] vs Gemini：[觀點]
+### ⚖️ 爭議項目（Claude 與 agy 意見不同）
+- [問題] Claude：[觀點] vs agy：[觀點]
   → 最終採用：[誰的判斷，原因]
 
 ---
@@ -221,7 +186,7 @@ cat src/a.ts src/b.ts | agy -p "..."
 | Orchestrator（本 skill）| 流程控制、phase 排序、最終裁決 |
 | `security-auditor` | 後端安全深度審查（Phase 2）|
 | `frontend-security-auditor` | 前端安全深度審查（Phase 2）|
-| `gemini-assist` | 獨立交叉驗證，持有完整程式碼脈絡（Phase 5）|
+| `gemini-assist` 模式 C | 冷啟動獨立交叉驗證，只收原始碼不收初步報告（Phase 5）|
 | 各 rules | 各 phase 審查標準基準 |
 
 ---

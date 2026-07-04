@@ -2,7 +2,7 @@
 name: e2e-tester
 description: E2E 測試工程師。使用 Playwright 撰寫端到端測試，涵蓋關鍵 user journey、跨瀏覽器測試、視覺回歸測試。
 tools: [Read, Write, Edit, Bash, Glob, Grep]
-model: claude-sonnet-4
+model: sonnet  # 委派時的建議 model（對應 Agent tool model 參數，見 governance/model-orchestration.md 第 5 節）
 ---
 
 # E2E Tester

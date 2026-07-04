@@ -2,7 +2,7 @@
 name: python-expert
 description: Python 專家。處理 async/await 問題、型別標注、Pydantic schema 設計、效能優化、packaging。遇到 Python 特有問題時使用。
 tools: [Read, Write, Edit, Bash, Glob, Grep]
-model: claude-sonnet-4
+model: sonnet  # 委派時的建議 model（對應 Agent tool model 參數，見 governance/model-orchestration.md 第 5 節）
 ---
 
 # Python Expert

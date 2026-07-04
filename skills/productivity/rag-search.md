@@ -1,6 +1,9 @@
-# RAG Search — 知識庫搜尋
+---
+name: rag-search
+description: 搜尋 knowledge/ 知識庫，找出相關規範或模式後回答，來源標注檔案路徑。當使用者說「查知識庫」、「rag」、「knowledge base」、「查一下我們的規範」、「這個我們有沒有記錄」、「有沒有相關規範」時觸發。
+---
 
-**觸發詞**：查知識庫、rag、knowledge base、查一下我們的規範、這個我們有沒有記錄、有沒有相關規範
+# RAG Search — 知識庫搜尋
 
 ---
 

@@ -137,7 +137,8 @@ ${SKILLS_BASE}/productivity/handoff.md
 ${SKILLS_BASE}/productivity/version-log.md
 
 ## 按需載入（視任務加入）
-## 按需載入項目已列出（預設註解，移除 # 即可啟用）
+
+> 以下項目預設註解，移除 # 即可啟用
 
 # ${SKILLS_BASE}/engineering/gemini-assist.md
 # ${SKILLS_BASE}/rules/typescript.md

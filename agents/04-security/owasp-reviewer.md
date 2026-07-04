@@ -2,7 +2,7 @@
 name: owasp-reviewer
 description: OWASP 整體合規評估。上線前、security sprint、或需要正式合規報告時使用。逐條掃描 OWASP Top 10 2025，輸出合規狀態表格。不做單點 PR 掃描（單點掃描用 security-auditor）。
 tools: [Read, Grep, Glob, WebSearch]
-model: claude-opus-4
+model: opus  # 委派時的建議 model（對應 Agent tool model 參數，見 governance/model-orchestration.md 第 5 節）
 ---
 
 # OWASP Reviewer

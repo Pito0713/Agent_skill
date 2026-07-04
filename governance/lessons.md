@@ -18,3 +18,10 @@
 - 錯誤/風險：漏同步其中一份後，弱模型不知道信哪份，路由開始隨機失效
 - 修正：CLAUDE.md 重寫為只放指標；路由的單一事實來源定為 llms.txt
 - 規則：同一份資訊只維護一處，其他地方放指標（maintenance-protocol 第 1 節已固化）
+
+## 2026-07-04 宣告的載入路徑從未實測，rules/ 斷鏈近一個月無人發現
+
+- 情境：setup.sh 只 symlink `skills/`，但 inject.sh 常駐注入 `@~/.claude/skills/rules/...`（rules/ 是 skills/ 的同層目錄）——下游專案的 coding-standards / security / git 三個常駐 rules 從 v1.9 起實際上從未載入成功
+- 錯誤/風險：規範看似生效實則靜默失效，且因為「沒有報錯」所以長期無人發現
+- 修正：新增 `skills/rules → ../rules` 相對 symlink（git 追蹤），並以 `head ~/.claude/skills/rules/coding-standards.md` read-back 驗證
+- 規則：任何檔案宣告的載入/引用路徑，寫下當下就要用 `ls` 實測一次；審查制度檔時把「路徑可達性」列為必查項（maintenance-protocol 第 5 節健康檢查已含此項，執行時不可跳過）

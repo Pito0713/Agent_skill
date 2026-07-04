@@ -2,7 +2,7 @@
 name: frontend-engineer
 description: 前端工程師。建立 React/Next.js UI 元件、響應式介面、無障礙設計、效能優化。遇到前端實作任務時使用。
 tools: [Read, Write, Edit, Bash, Glob, Grep]
-model: claude-sonnet-4
+model: sonnet  # 委派時的建議 model（對應 Agent tool model 參數，見 governance/model-orchestration.md 第 5 節）
 ---
 
 # Frontend Engineer

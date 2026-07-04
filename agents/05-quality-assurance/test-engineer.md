@@ -2,7 +2,7 @@
 name: test-engineer
 description: QA 測試工程師。依據 testing-strategy skill 輸出的測試計畫，撰寫各層級測試程式碼、建立測試基礎設施。不負責設計測試策略（策略由 testing-strategy skill 產出）。
 tools: [Read, Write, Edit, Bash, Glob, Grep]
-model: claude-sonnet-4
+model: sonnet  # 委派時的建議 model（對應 Agent tool model 參數，見 governance/model-orchestration.md 第 5 節）
 ---
 
 # Test Engineer

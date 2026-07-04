@@ -2,7 +2,7 @@
 name: api-architect
 description: API 設計專家。當需要設計新 API、規劃 RESTful endpoint 結構、GraphQL schema、API 版本管理、或撰寫 OpenAPI spec 時使用。
 tools: [Read, Write, Edit, Glob, Grep, WebSearch]
-model: claude-opus-4
+model: opus  # 委派時的建議 model（對應 Agent tool model 參數，見 governance/model-orchestration.md 第 5 節）
 ---
 
 # API Architect

@@ -53,14 +53,20 @@ echo "✅ vault：$VAULT_PATH"
 判斷本次對話的輸出來自哪個 skill：
 
 ```
-偵測條件（符合任一即判斷為 academic-mentor 來源）：
+偵測條件（符合任一即判斷為 mentor 系來源，走學術模板）：
 [1] 對話中出現確定性符號組合（⚠️ ❓ 🚫 其中之一，或連同文字說明出現）
-[2] 對話中出現四段結構標題：「核心機制」「文獻依據」「社會影響」「深化問題」
-[3] 對話中有學術引用格式（作者 年份 〈標題〉 期刊）
-[4] 使用者明確說「用學術格式存」
+[2] 對話中出現四段結構標題：「核心機制」「文獻依據」「社會影響」「深化問題」（academic-mentor）
+[3] 對話中出現專科 mentor 區塊標題：【定位聲明】【機制鏈】【知識層級定位】
+    【Tradeoff 矩陣】【行為偏誤掃描】【知識圖譜節點】其中之一，或 [[wiki-link]] 節點連結
+[4] 對話中有學術引用格式（作者 年份 〈標題〉 期刊）
+[5] 使用者明確說「用學術格式存」
 
 → 符合任一 → 走 [路徑 A：學術模板]
 → 全不符合 → 走 [路徑 B：通用模板]
+
+專科 mentor 來源的欄位對應：比照 A-1 表格精神，將該 mentor 的區塊
+（如【機制鏈】→ 核心機制、【知識圖譜節點】→ 相關連結）對應到模板欄位，
+確定性符號與 [[節點連結]] 必須完整保留。
 ```
 
 ---
@@ -132,11 +138,13 @@ echo "✅ vault：$VAULT_PATH"
 # 學術筆記依領域存入 knowledge/<領域>/，不進 inbox/
 # 領域由 Claude 從對話主題判斷
 
-# 判斷規則（已建立目錄）
-# knowledge/neuro/      → 神經科學、認知心理、行為科學
+# 判斷規則（依來源 mentor 對應目錄）
+# knowledge/neuro/      → mentor-neuro：神經科學、認知心理、行為科學
 # knowledge/health/     → 醫學、生理、心理健康
-# knowledge/society/    → 社會現象、科技影響、教育、傳播
-# knowledge/science/    → 其他自然科學、物理、化學、生物
+# knowledge/society/    → mentor-society：社會現象、科技影響、教育、傳播
+# knowledge/science/    → mentor-science：自然科學、物理、化學、生物
+# knowledge/tech/       → mentor-tech：技術架構、系統設計、工程權衡（概念層）
+# knowledge/invest/     → mentor-invest：投資框架、行為偏誤、資產配置原則
 # knowledge/            → 跨領域或無法歸類時，存根目錄
 
 DOMAIN_DIR="$VAULT_PATH/knowledge/<判斷領域>/"

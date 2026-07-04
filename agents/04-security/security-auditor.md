@@ -2,7 +2,7 @@
 name: security-auditor
 description: 後端快速安全掃描。PR/commit 前、或懷疑特定後端功能有漏洞時使用。覆蓋 OWASP A01/A02/A03/A05/A07，輸出問題清單。不做整體合規評估（整體合規用 owasp-reviewer）。
 tools: [Read, Grep, Glob]
-model: claude-opus-4
+model: opus  # 委派時的建議 model（對應 Agent tool model 參數，見 governance/model-orchestration.md 第 5 節）
 ---
 
 # Security Auditor

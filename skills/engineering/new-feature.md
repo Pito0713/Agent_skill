@@ -20,18 +20,7 @@ description: 新功能開發協調器。當使用者說「幫我做一個功能�
 
 ## Phase 0：偵測專案類型 + 載入對應規則
 
-```bash
-ls tsconfig.json next.config.* requirements.txt pyproject.toml 2>/dev/null
-grep -s '"react"\|"vue"\|"next"' package.json 2>/dev/null
-```
-
-| 偵測結果 | 載入規則 |
-|---------|---------|
-| `tsconfig.json` 存在 | `rules/typescript.md` |
-| `package.json` 含 react / next | `rules/react.md` 或 `rules/nextjs.md` |
-| `requirements.txt` / `*.py` 存在 | `rules/python.md` |
-| 任何專案 | `rules/coding-standards.md`（常駐）|
-| 任何專案 | `rules/security.md`（常駐）|
+照 `coding-workflow-core.md` Phase 0 的偵測表執行（單一事實來源，不在本檔重複維護）。
 
 **輸出**：「偵測到：[技術堆疊]，載入對應規則，開始規劃」
 
@@ -163,13 +152,14 @@ Python → agents/02-language-specialists/python-expert.md（Python 專案）
 [ ] 確認 commit message 符合 rules/git.md
 ```
 
-### Step 2：Gemini 交叉驗證（可選）
+### Step 2：agy 交叉驗證（可選）
 
-詢問使用者：「是否啟用 Gemini 交叉驗證？(y/n)」
+詢問使用者：「是否啟用 agy 交叉驗證？(y/n)」
 
-**y：**
+**y：**（$CLI_CMD 與安全設定依 `gemini-assist.md` 前置確認；agy 不可用時走模式 C 的 Claude Subagent Fallback）
 ```bash
-git diff HEAD | agy -p "
+# Bash tool timeout: 570s（agy --print-timeout 9m + 30s 緩衝）
+git diff HEAD | $CLI_CMD --print-timeout 9m -p "
 這是一個新功能的實作 diff，請審查：
 1. 邏輯是否正確，有無邊界條件遺漏
 2. 安全風險（注入、權限、資料洩漏）
@@ -182,7 +172,7 @@ git diff HEAD | agy -p "
 繁體中文。"
 ```
 
-收到結果後 Claude 裁決，MEDIUM 以上問題回到 Phase 4 修正。
+收到結果後 Claude 逐條查證裁決（流程照 `tech-lead-mode.md` Phase 4），CONFIRMED 且 MEDIUM 以上問題回到 Phase 4 修正。
 
 ---
 
@@ -200,7 +190,7 @@ git diff HEAD | agy -p "
 測試覆蓋：
 - [測試清單]
 
-Gemini 驗證：[通過 / 發現 N 個問題已修正]
+agy 驗證：[通過 / 發現 N 個問題已修正 / 未啟用]
 
 下一步建議：
 - [ ] deploy-prep（上線前檢查）
