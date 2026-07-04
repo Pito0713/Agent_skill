@@ -289,10 +289,15 @@ lazyengineer [lite|full|ultra|off]
 # gemini-assist / typescript / python / coding-workflow-ref /
 # learning 系（feedback-loop、concrete-example、academic-mentor、mentor-*）/
 # design 系 / obsidian-query / obsidian-save
+
+## 制度層路由（governance，用到才讀，不要 @ 常駐）
+# 委派/選 model → model-orchestration；完成判準 → judgment-rubrics；
+# 派工 prompt → delegation-templates；教訓 → lessons
 ```
 
 > 移除 `#` 即可啟用對應按需 skill。Orchestrator skills 不需要在此列出，說出觸發詞即可自動執行。
 > `rules/` 透過 `skills/rules → ../rules` 相對 symlink 對外提供（v4.6），下游 `@~/.claude/skills/rules/...` 路徑因此有效。
+> `governance/` 同樣透過 `skills/governance → ../governance` 相對 symlink 對外提供（v4.7），下游以路由指標按需讀取，不 @ 常駐載入。
 
 ---
 
@@ -337,3 +342,4 @@ lazyengineer [lite|full|ultra|off]
 | v4.4 | 2026-07-03 | 新增 tech-lead-mode 執行策略 skill：工單化（範圍/禁區/驗收條件）、executor 委派（subagent worktree / agy 臨時授權）、reviewer 發現逐條仲裁、close gate 三選一（CLOSE/REOPEN/ESCALATE）；接線至 coding-workflow-core / new-feature / debug-flow |
 | v4.5 | 2026-07-03 | 新增 governance/ 制度層（7 檔）：harness 診斷、模型調度守則、判斷力 rubrics（R1-R5）、派工模板、維護協議、lessons 日誌、給未來 session 的信；CLAUDE.md 精簡為 48 行純路由；gemini-assist 由常駐降為按需；經冷啟動 subagent 對抗審查修正 7 項 |
 | v4.6 | 2026-07-04 | 全面功能性 review：修復 rules/ 斷鏈（新增 skills/rules → ../rules symlink，下游 @~/.claude/skills/rules/... 路徑恢復有效）；code-review Phase 5 改冷啟動交叉驗證（對齊 governance 獨立性原則）；5 個 orchestrator 內嵌 agy 指令補 $CLI_CMD 偵測與 timeout；orchestrator Phase 0 偵測表去重複（指向 coding-workflow-core 單一事實來源）；convert-skill 移除 CLAUDE.md 同步項（對齊 maintenance-protocol）；obsidian-save 補專科 mentor 偵測與 tech/invest 目錄；agents frontmatter 過時模型名更新；deploy-prep Phase 6 diff 範圍改 release tag..HEAD；rag-search 補 frontmatter；llms.txt 補 debug 索引與 onboarding/smart-init 歧義樹；README/setup.sh 過時常駐清單同步 |
+| v4.7 | 2026-07-04 | governance/ 分發到下游：新增 skills/governance → ../governance 相對 symlink（比照 v4.6 rules/ 模式，零腳本改動）；inject.sh INJECT_BLOCK 加「制度層路由」段（用到才讀，不 @ 常駐）；既有下游專案重跑 inject.sh 即取得路由 |

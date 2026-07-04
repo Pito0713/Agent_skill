@@ -46,7 +46,7 @@
 
 - ~~`inject.sh` 常駐清單未同步~~（2026-07-03 已完成：gemini-assist 降按需、計數修正）
 - ~~`AGENTS.md` / `GEMINI.md` 未跟進精簡~~（2026-07-03 已完成，並修正 GEMINI.md 模式 A 與 v3.8 分工的矛盾）
-- ~~governance/ 未分發到下游~~（2026-07-04 已完成，使用者核准：`skills/governance → ../governance` symlink + inject.sh 制度層路由段，setup.sh 免改，詳見 ADR-007。既有下游專案需重跑 inject.sh 才取得路由段）
+- **governance/ 未分發到下游**：setup.sh 只 symlink `skills/`，下游專案讀不到 governance/ 路由。若要讓下游也用制度層，需改 setup.sh 加 symlink + inject.sh 加路由——屬 🟡 級，先問使用者
 - `memory/project-context.md` 的技術選型欄位仍是模板占位，等實際有選型再填
 
 ## 誠實標註

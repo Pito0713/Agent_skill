@@ -180,6 +180,28 @@ Frontend (Next.js) → API Layer (Next.js API Routes / FastAPI)
 - 正面：下游 rules 載入恢復；review 哲學（冷啟動）全 repo 一致；同步負擔再降一處
 - 負面/注意：Windows 環境 git symlink 需 `core.symlinks=true` 才有效（本專案目前僅 macOS 使用，記錄備查）；`skills/` 目錄掃描工具（如 setup.sh 的 find）預設不跟隨 symlink，rules 不會重複列出，此為預期行為
 
+---
+
+### ADR-007：governance/ 分發到下游（symlink + 路由指標，不 @ 常駐）
+
+**狀態**：已接受
+**日期**：2026-07-04
+
+**背景**：v4.5 建立的 governance/ 制度層只有本 repo 的 CLAUDE.md 路由得到，下游專案（經 inject.sh 注入者）完全讀不到，letter-to-future-sessions 列為未完成交接事項（🟡 級，需使用者同意）。使用者於 2026-07-04 指示執行分發。
+
+**決策**：比照 ADR-006 rules/ 的做法：
+- 新增 `skills/governance → ../governance` 相對 symlink（git 追蹤），下游 `~/.claude/skills/governance/...` 路徑立即可達，setup.sh / 既有 symlink 零改動
+- `inject.sh` INJECT_BLOCK 末尾加「制度層路由」段：**純文字路由指標（用到才讀），不用 `@` 常駐載入**——governance 四檔合計約 2 萬字，常駐會重演 v4.5 修掉的 901 行常駐問題
+- 路由只收下游高頻四項：model-orchestration / judgment-rubrics / delegation-templates / lessons；harness-diagnosis、maintenance-protocol 屬制度倉庫內部事務，不下放
+
+**驗證**：`~/.claude/skills/governance/judgment-rubrics.md` head 實測可讀（遵守 lessons 2026-07-04「宣告路徑必須實測」）；inject.sh 情境 1（新生成）與情境 2（區塊更新）於 scratchpad 實跑通過，更新流程無重複注入。
+
+**後果**：
+- 正面：下游 session 可查判準與派工模板；lessons.md 經 symlink 全專案共用（踩坑教訓集中一處）
+- 負面/注意：既有下游專案需重跑 `inject.sh` 才會取得路由段（symlink 部分則立即生效）；下游多 session 同時 append lessons.md 有理論上的寫入競態，現況單人使用風險低，記錄備查；governance/backups/ 亦隨 symlink 對下游可見，屬無害冗餘
+
+---
+
 > 知道不完美但有意為之的設計，避免新人重複質疑
 
 | 限制 | 原因 | 預計改善時間 |
