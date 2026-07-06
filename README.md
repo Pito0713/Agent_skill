@@ -297,7 +297,7 @@ lazyengineer [lite|full|ultra|off]
 
 > 移除 `#` 即可啟用對應按需 skill。Orchestrator skills 不需要在此列出，說出觸發詞即可自動執行。
 > `rules/` 透過 `skills/rules → ../rules` 相對 symlink 對外提供（v4.6），下游 `@~/.claude/skills/rules/...` 路徑因此有效。
-> `governance/` 同樣透過 `skills/governance → ../governance` 相對 symlink 對外提供（v4.7），下游以路由指標按需讀取，不 @ 常駐載入。
+> `governance/` 由 setup.sh 建立 `~/.claude/governance` 專屬 symlink 對外提供（v4.9），下游以路由指標按需讀取，不 @ 常駐載入；repo 內 `skills/governance → ../governance` 保留為 v4.7 舊路徑相容層，兩條路徑皆有效。
 
 ---
 
@@ -344,3 +344,4 @@ lazyengineer [lite|full|ultra|off]
 | v4.6 | 2026-07-04 | 全面功能性 review：修復 rules/ 斷鏈（新增 skills/rules → ../rules symlink，下游 @~/.claude/skills/rules/... 路徑恢復有效）；code-review Phase 5 改冷啟動交叉驗證（對齊 governance 獨立性原則）；5 個 orchestrator 內嵌 agy 指令補 $CLI_CMD 偵測與 timeout；orchestrator Phase 0 偵測表去重複（指向 coding-workflow-core 單一事實來源）；convert-skill 移除 CLAUDE.md 同步項（對齊 maintenance-protocol）；obsidian-save 補專科 mentor 偵測與 tech/invest 目錄；agents frontmatter 過時模型名更新；deploy-prep Phase 6 diff 範圍改 release tag..HEAD；rag-search 補 frontmatter；llms.txt 補 debug 索引與 onboarding/smart-init 歧義樹；README/setup.sh 過時常駐清單同步 |
 | v4.7 | 2026-07-04 | governance/ 分發到下游：新增 skills/governance → ../governance 相對 symlink（比照 v4.6 rules/ 模式，零腳本改動）；inject.sh INJECT_BLOCK 加「制度層路由」段（用到才讀，不 @ 常駐）；既有下游專案重跑 inject.sh 即取得路由 |
 | v4.8 | 2026-07-04 | harness 適配層：model-orchestration §2 改 Claude Code / Antigravity 雙欄參數適配表（subagent 類型 / 隔離 / model 逐次指定差異）+ 派發後等待紀律；tech-lead-mode Phase 2 標註語法歸屬並附 Antigravity 等價參數；coding-workflow-core Phase 0 改原生唯讀工具優先、shell 降 fallback（避免核准制 harness 開局卡點擊）；ADR-008 |
+| v4.9 | 2026-07-06 | governance 分發改一級路徑：setup.sh 直建 `~/.claude/governance` symlink、inject.sh 路由改指 `~/.claude/governance/...`（原 skills/governance 巢狀路徑保留相容）；修復 setup.sh 檢查順序缺陷（實體目錄擋路時半途退出會刪掉 skills symlink 未重建 → 檢查全部前置）；ADR-007 修訂 |

@@ -32,3 +32,10 @@
 - 錯誤/風險：模型越忠實遵守制度檔，撞牆越硬；且「整批替換成新環境參數」的直覺修法只會反向弄壞主環境
 - 修正：model-orchestration §2 改 harness 雙欄適配表；tech-lead-mode Phase 2 標註語法歸屬；coding-workflow-core Phase 0 原生工具優先（ADR-008）
 - 規則：制度檔寫工具參數時必須標註適用 harness；通用原則與 harness 語法分離，執行前以當前工具 schema 為準，不照抄他 harness 參數名
+
+## 2026-07-06 多步驟改系統狀態的腳本，中途 exit 會留下斷鏈中間態
+
+- 情境：setup.sh 順序為「刪舊 skills symlink → 檢查 governance 目標 → 建兩條新鏈」，governance 位置若被實體目錄佔住，腳本在中途 exit 1，skills 舊鏈已刪、新鏈未建，全機下游常駐 @load 靜默斷鏈
+- 錯誤/風險：與 v4.6 rules/ 斷鏈同類——無報錯的靜默失效，且觸發條件罕見，很難在事後追因
+- 修正：存在性檢查全部前置，通過後才開始 rm/ln；隔離假 HOME 實測四組情境（首跑/冪等/兩種實體目錄邊界）
+- 規則：腳本要動多個系統狀態時，先驗證所有前置條件再開始變更；每個 exit 路徑都要問「此刻系統停在什麼狀態」

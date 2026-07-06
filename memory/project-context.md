@@ -200,6 +200,8 @@ Frontend (Next.js) → API Layer (Next.js API Routes / FastAPI)
 - 正面：下游 session 可查判準與派工模板；lessons.md 經 symlink 全專案共用（踩坑教訓集中一處）
 - 負面/注意：既有下游專案需重跑 `inject.sh` 才會取得路由段（symlink 部分則立即生效）；下游多 session 同時 append lessons.md 有理論上的寫入競態，現況單人使用風險低，記錄備查；governance/backups/ 亦隨 symlink 對下游可見，屬無害冗餘
 
+**修訂（2026-07-06，v4.9）**：分發機制改為 setup.sh 直建 `~/.claude/governance` 專屬 symlink（即本 ADR 當初的落選方案「setup.sh 加第二條 symlink」），inject.sh 路由改指 `~/.claude/governance/...`。改變理由：governance 以一級路徑對外、不再借道 skills/ 巢狀路徑，語意更清楚；代價是各機器需重跑一次 setup.sh（本機已於 2026-07-06 完成並實測可達）。原 `skills/governance → ../governance` symlink 保留為 v4.7 舊路徑相容層，已注入舊路徑的下游不受影響。同批修復 setup.sh 檢查順序缺陷：實體目錄擋路時腳本半途 exit，會留下「skills 舊鏈已刪、新鏈未建」的斷鏈中間態——存在性檢查全部前置後，隔離環境四組測試（首跑/冪等/兩種實體目錄邊界）全數通過。
+
 ---
 
 ### ADR-008：制度檔 harness 適配層（通用原則與 harness 語法分離）
