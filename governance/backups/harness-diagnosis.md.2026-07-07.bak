@@ -55,38 +55,6 @@
 
 ---
 
-## 三 harness 差異診斷（2026-07-07 補充）
-
-上方三大症狀（常駐過重、長鏈失焦、自我驗證）**三家共通**。以下是各 harness 獨有的問題與修法，弱模型照做即可：
-
-### Claude Code 獨有
-
-| 問題 | 修法 |
-|------|------|
-| 多 session 並行互相覆寫（使用者常態）| 動 repo 前 `git status`，非預期變更停下來問（lessons 2026-07-03）|
-| 背景 subagent 派出後空轉輪詢，白燒 context | 派發後不輪詢，等完成通知（model-orchestration §2 等待紀律）|
-| CLAUDE.md 路由表有「長回來」的重力 | 新 skill 只進 `skills/llms.txt`，禁往路由表加列（maintenance-protocol 🔴）|
-
-### Codex 獨有
-
-| 問題 | 修法 |
-|------|------|
-| AGENTS.md 逐層合併上限 32KiB，超過**靜默截斷**（最漏 token）| 全域與專案層索引都保持薄；長內容進正本、索引放指標 |
-| 8 個平行 worker 沒有 close gate 就各自發散（最易失焦）| manager 收攏時逐 worker 對驗收條件打勾，照派工三件套（model-orchestration §3）|
-| 全域 AGENTS.md 沒接線 = 制度靜默未載入（2026-07-07 前即如此；最易出錯）| 開工自檢 `ls -l ~/.codex/AGENTS.md` 應指向 `~/Agent_skill/AGENTS.md`；自動 Memories 保持關閉 |
-
-### Antigravity / agy 獨有
-
-| 問題 | 修法 |
-|------|------|
-| 自動記憶（brain）是二進位、跨 session 不可讀，導致每輪重新探索同一 repo（最漏 token）| 開工先讀 `~/.agent-sessions/<專案>/latest.md`，收工必寫 |
-| 照抄他 harness 的委派參數名直接 Validation Error（最易出錯）| 只用 model-orchestration §2 agy 欄；該欄參數未驗證前以工具 schema 為準（lessons 2026-07-04）|
-| shell 指令逐次人工核准，把流程卡死（最易失焦）| 偵測類操作用原生唯讀工具，見 coding-workflow-core Phase 0 |
-
-另：agy 的 model picker 有社群回報「顯示的 model 與實際執行的不符」（未經本端確認）——高風險任務開場先驗證輸出品質，不盲信選單。
-
----
-
 ## 誠實標註：本診斷的極限
 
 - 以上修法補的是「執行品質」。模糊題（產品判斷、命名品味、寫作風格）拆解補不了 → 遇到時升級模型或問使用者，處理方式見 judgment-rubrics「誠實標註」節。

@@ -17,23 +17,21 @@ Claude 負責決策與整合，agy 負責資料密集工作。
 依優先順序偵測，找到第一個可用的即設為 `$CLI_CMD`：
 
 ```bash
-# 優先順序：agy（PATH） → ~/.local/bin/agy（常見安裝路徑）→ gemini（相容舊版）
+# 優先順序：agy（PATH） → ~/.local/bin/agy（常見安裝路徑）
+# 注意：gemini CLI 已於 2026-06 停服，不再作為 fallback（model-orchestration §2）
 if command -v agy &>/dev/null; then
   CLI_CMD="agy"
   echo "✅ 使用 agy (Antigravity CLI)"
 elif [ -x "$HOME/.local/bin/agy" ]; then
   CLI_CMD="$HOME/.local/bin/agy"
   echo "✅ 使用 ~/.local/bin/agy（建議加入 PATH）"
-elif command -v gemini &>/dev/null; then
-  CLI_CMD="gemini"
-  echo "⚠️  使用 gemini CLI（舊版相容，建議遷移至 agy）"
 else
   CLI_CMD=""
 fi
 ```
 
-**若 `$CLI_CMD` 為空（三者均未找到）：**
-> 詢問使用者：「找不到 agy 或 gemini CLI，是否現在安裝 Antigravity CLI？(y/n)」
+**若 `$CLI_CMD` 為空（兩者均未找到）：**
+> 詢問使用者：「找不到 agy，是否現在安裝 Antigravity CLI？(y/n)」
 > - **y**：執行以下指令：
 >   ```bash
 >   curl -fsSL https://antigravity.google/cli/install.sh | bash
@@ -313,8 +311,7 @@ Step 4：收到 subagent 輸出後，主 agent 裁決
 |------|-----|------|
 | 1 | `agy`（PATH） | Antigravity CLI，推薦版本 |
 | 2 | `~/.local/bin/agy` | agy 安裝但未加入 PATH |
-| 3 | `gemini`（PATH） | 舊版 Gemini CLI，介面相容 |
-| — | 均不可用 | 模式 A/B：提示安裝 agy；模式 C：強制改用 Claude Subagent Fallback |
+| — | 均不可用 | 模式 A/B：提示安裝 agy；模式 C：強制改用 Claude Subagent Fallback。（gemini CLI 已停服，勿再嘗試） |
 
 ## 執行限制
 

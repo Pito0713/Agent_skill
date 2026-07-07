@@ -222,6 +222,26 @@ Frontend (Next.js) → API Layer (Next.js API Routes / FastAPI)
 
 ---
 
+### ADR-009：三 harness 制度統一——單一正本 + 三薄索引 + 全域接線
+
+**日期**：2026-07-07
+
+**背景**：使用者長期以三個 harness（Claude Code / Codex / Antigravity agy）+ 弱模型日常運作。盤點發現：制度只接上了 Claude（`~/.claude/` symlink），Codex 全域 `~/.codex/AGENTS.md` 與 agy 全域 `~/.gemini/GEMINI.md` 從不存在——repo 索引檔只在人位於本 repo 時生效，其他專案的 Codex / agy 完全沒讀到制度。記憶亦分裂三處（Claude 專案記憶已過時、Codex sqlite 0 筆、agy brain 二進位）且無單一真相來源。
+
+**決策**（使用者 2026-07-07 逐項核准）：
+1. **正本選址**：沿用 `~/Agent_skill` repo 為唯一正本，不新建 `~/.agents/institution/`（該目錄實查只有 excludeTools 鎖檔，非既有正本）
+2. **全域接線**：setup.sh 增建 `~/.codex/AGENTS.md → repo/AGENTS.md`、`~/.gemini/GEMINI.md → repo/GEMINI.md` 兩條檔案 symlink；索引檔內路徑全部改為 `~/Agent_skill/...` 絕對路徑，任何專案都可達
+3. **agy 升級為完整 harness**：GEMINI.md 從「唯讀協作者」改寫為對等薄索引；移除 `~/.gemini/settings.json`、`~/.agents/settings.json` 的 excludeTools 全域唯讀鎖（備份 `*.2026-07-07.bak`）；「被委派模式」保留 A/B/C 唯讀約定
+4. **記憶收斂**（maintenance-protocol §6）：交接正本 = `~/.agent-sessions/<專案>/latest.md`、教訓正本 = lessons.md、決策正本 = 本檔 ADR；Codex Memories 保持關閉、agy brain 不作為制度記憶
+5. **索引防漂移**（maintenance-protocol §7）：四項可執行檢查（行數 ≤150 / symlink 指向 / AGENTS-GEMINI inline 段逐字 diff / 路由可達），改索引必跑
+6. model-orchestration 補 Codex 欄與三 harness 模型選擇表（型號 2026-07-07 查證：Codex 文件查證未實測、agy 本機 `agy models` 實測、Claude 官方文件）
+
+**後果**：
+- 正面：三 harness 任何專案任何 session 都讀到同一份制度；升降級與委派在三家都有具體型號可查；記憶有唯一回寫點
+- 負面/注意：Codex 欄零本機實測（首個 Codex session 需校準）；agy 解鎖後具寫檔能力（誤寫事故的根因候選）；其他機器需重跑 setup.sh，否則 Codex/agy 靜默無制度
+
+---
+
 > 知道不完美但有意為之的設計，避免新人重複質疑
 
 | 限制 | 原因 | 預計改善時間 |

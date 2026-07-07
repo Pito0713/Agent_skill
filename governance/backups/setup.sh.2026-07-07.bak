@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
-# setup.sh — 將 Agent Skill 正本接線到三個 harness
-#   Claude Code：~/.claude/skills + ~/.claude/governance（目錄 symlink）
-#   Codex      ：~/.codex/AGENTS.md → repo/AGENTS.md（全域指令檔）
-#   Antigravity：~/.gemini/GEMINI.md → repo/GEMINI.md（全域指令檔）
+# setup.sh — 將 Agent Skill 連結到本機 ~/.claude/skills/
+# 執行後，所有本機專案的 CLAUDE.md 均可 @import 這份 skill 庫
 
 set -euo pipefail
 
@@ -10,8 +8,6 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLAUDE_DIR="$HOME/.claude"
 SKILLS_LINK="$CLAUDE_DIR/skills"
 GOVERNANCE_LINK="$CLAUDE_DIR/governance"
-CODEX_LINK="$HOME/.codex/AGENTS.md"
-AGY_LINK="$HOME/.gemini/GEMINI.md"
 
 echo "🔧 Agent Skill Setup"
 echo "   Repo: $REPO_DIR"
@@ -31,14 +27,6 @@ if [[ ! -L "$SKILLS_LINK" && -d "$SKILLS_LINK" ]]; then
 fi
 if [[ ! -L "$GOVERNANCE_LINK" && -d "$GOVERNANCE_LINK" ]]; then
   echo "⚠️  $GOVERNANCE_LINK 已是一個目錄，略過（請手動處理）"
-  exit 1
-fi
-if [[ ! -L "$CODEX_LINK" && -e "$CODEX_LINK" ]]; then
-  echo "⚠️  $CODEX_LINK 已是一個實體檔案，略過（請先備份後手動移除）"
-  exit 1
-fi
-if [[ ! -L "$AGY_LINK" && -e "$AGY_LINK" ]]; then
-  echo "⚠️  $AGY_LINK 已是一個實體檔案，略過（請先備份後手動移除）"
   exit 1
 fi
 
@@ -65,16 +53,6 @@ echo "   $SKILLS_LINK → $REPO_DIR/skills"
 ln -sf "$REPO_DIR/governance" "$GOVERNANCE_LINK"
 echo "✅ Governance 已連結："
 echo "   $GOVERNANCE_LINK → $REPO_DIR/governance"
-
-# Codex / Antigravity 全域指令檔（檔案 symlink；ln -sf 可原子覆蓋舊 symlink）
-mkdir -p "$HOME/.codex" "$HOME/.gemini"
-ln -sf "$REPO_DIR/AGENTS.md" "$CODEX_LINK"
-echo "✅ Codex 全域 AGENTS.md 已連結："
-echo "   $CODEX_LINK → $REPO_DIR/AGENTS.md"
-
-ln -sf "$REPO_DIR/GEMINI.md" "$AGY_LINK"
-echo "✅ Antigravity 全域 GEMINI.md 已連結："
-echo "   $AGY_LINK → $REPO_DIR/GEMINI.md"
 echo ""
 
 # 顯示可用的 skills 清單

@@ -2,14 +2,12 @@
 
 > 五種常見任務型態的委派模板。`<>` 是填空，填完才准派工。
 > 每份模板都內建派工三件套（目標與動機 / 驗收條件 / 回報格式）——刪掉任何一段就不符合 `model-orchestration.md` 第 3 節。
-> **工具列的參數是 Claude Code 語法**；在 Codex / agy 上執行時查 `model-orchestration.md` §2 換成對應欄參數。
-> **沒有 subagent 機制（或想省主 session 額度）時**：開一個獨立低成本 session（model 照 §5 選該 harness 的機械工/工作馬），把模板整包貼入當開場 prompt——模板內容本身 harness 中立，直接可用。
 
 ---
 
 ## T1. 搜尋 / 定位（找檔案、找定義、找引用）
 
-**工具**：唯讀搜尋型 subagent。Claude Code：`subagent_type: "Explore"`（model 不必指定）；Codex：worker + prompt 內明寫「只讀不寫」；agy：research 型（參數名未驗證，以 schema 為準）
+**工具**：Agent tool，`subagent_type: "Explore"`，model 不必指定（Explore 自帶輕量配置）
 
 ```
 在這個 repo 找出：<要找什麼，例：所有呼叫 processPayment 的位置>
@@ -28,7 +26,7 @@
 
 ## T2. 實作（新功能 / 修 bug 的執行）
 
-**工具**：全工具 subagent + 隔離，model 選工作馬（§5）。Claude Code：`subagent_type: "general-purpose"` + `model: "sonnet"` + `isolation: "worktree"`；Codex：worker（雲端 sandbox 天然隔離，`gpt-5.4`）；agy：self + 隔離 workspace（未驗證）
+**工具**：Agent tool，`subagent_type: "general-purpose"`，`model: "sonnet"`，`isolation: "worktree"`
 
 ```
 ## 目標
@@ -57,7 +55,7 @@
 
 ## T3. 重構（行為不變的結構調整）
 
-**工具**：同 T2；機械性 pattern 套用可降機械工（Claude `haiku` / Codex `gpt-5.4-mini` / agy `Gemini 3.5 Flash`）
+**工具**：同 T2，`model: "sonnet"`（機械性 pattern 套用可降 `"haiku"`）
 
 ```
 ## 目標
@@ -84,7 +82,7 @@
 
 ## T4. 研究（理解 codebase / 技術方案調查）
 
-**工具**：全工具 subagent（唯讀任務），model 選工作馬、跨模組複雜推理升複雜推理級（§5 各 harness 欄）。Claude Code：`subagent_type: "general-purpose"` + `model: "sonnet"`（升 `"opus"`）
+**工具**：Agent tool，`subagent_type: "general-purpose"`，`model: "sonnet"`（跨模組複雜推理升 `"opus"`）
 
 ```
 ## 問題
@@ -107,8 +105,8 @@
 
 ## T5. 審查（對抗式 review）
 
-**首選**：與 executor **不同模型家族**的 reviewer（盲點不重疊，見 model-orchestration §8）——Claude 寫的 code 用 agy 模式 C（照 `gemini-assist.md` 指令模板）；agy / Codex 寫的可用 Claude subagent 審。
-**異質來源不可用時**：本 harness 冷啟動 subagent（Claude Code：`subagent_type: "general-purpose"` + `model: "sonnet"`），不給任何主對話的分析脈絡：
+**首選**：agy 模式 C（異質模型，照 `gemini-assist.md` 的指令模板跑）。
+**agy 不可用或需要第二個獨立意見**：Agent tool，`subagent_type: "general-purpose"`，`model: "sonnet"`，冷啟動（不給任何主對話的分析脈絡）：
 
 ```
 你是獨立 code reviewer，沒看過其他人的意見，只根據以下原始碼回報問題。

@@ -98,20 +98,13 @@ Antigravity 等價參數：`TypeName: "self"` + `Workspace: "branch"`（隔離�
 
 **派發後等待紀律**：executor 在背景執行時不要輪詢、不要用無意義工具呼叫原地等。事件驅動 harness 完成時會喚醒你（Claude Code 自動通知；Antigravity 結束回合交還控制權或用 `/schedule` 設 TimerCondition），醒來直接進 Phase 3/4。
 
-### Path B：agy 作為 executor（需臨時放寬權限，僅限明確要求異質模型執行時使用）
+### Path B：agy 作為 executor（需要異質模型執行時）
 
-`gemini-assist.md` 目前的 `~/.agents/settings.json` 明確排除 `write_file` / `edit_file` / `run_shell_command`，agy 預設**不能**當 executor。若任務需要真正異質模型執行（而非同模型 subagent），走以下確認流程：
+2026-07-07 起 agy 是完整 harness（ADR-009）：`~/.agents/settings.json` 與 `~/.gemini/settings.json` 的全域 excludeTools 已移除，agy **可直接當 executor**，不需臨時放寬流程。派工時：
 
-```
-1. 讀取目前 ~/.agents/settings.json 的 excludeTools 內容（作為還原基準）
-2. 詢問使用者：
-   「這個工單要委派 agy 直接改檔案，需暫時移除 write_file/edit_file 的排除限制，
-     僅限本次 ticket 使用，完成後立即還原，是否同意？(y/n)」
-3. y → 暫時修改 excludeTools → 執行 ticket → 執行完立刻還原成 Step 1 記錄的原始設定
-4. n → 改用 Path A
-```
-
-**鐵律**：Path B 是每次都要重新確認的臨時授權，不得改成永久設定。禁區檔案清單仍然是 belt-and-suspenders 的第二層防線（工具權限 + 檔案範圍雙重限制）。
+- prompt 用與 Path A 相同的完整 ticket（範圍 / 禁區 / 驗收條件 / 回報格式）
+- 防線在工單層：**禁區檔案清單寫死 + close gate 讀 diff 驗收**——工具權限不再是防線，工單才是
+- 例外：若發現上述 settings.json 又出現 `excludeTools`（有人鎖回去），視為使用者意圖變更 → 停下來問使用者，**不得自行解鎖**（judgment-rubrics R3「安全 vs 便利」條）
 
 ---
 

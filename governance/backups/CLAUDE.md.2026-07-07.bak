@@ -2,7 +2,6 @@
 
 > 制度倉庫：管理 AI coding agent 的 rules / skills / agents / memory。
 > 本檔只放常駐規則與路由指標。詳細內容在被指向的檔案裡，**用到才讀，讀完就動手**。
-> 三 harness 薄索引：CLAUDE.md（本檔）/ AGENTS.md（Codex）/ GEMINI.md（agy），共用本 repo 為唯一正本。
 
 ---
 
@@ -21,7 +20,7 @@
 3. **不猜意圖**：訊息命中多個 skill 觸發詞、或出現模糊詞（「優化」「完善」「讓它更好」「改進」）→ 列出選項問使用者。判斷樹在 `skills/llms.txt` 末段「歧義處理提示」。
 4. **卡住就停**：同一件事重試兩輪仍失敗 → 停下，帶完整失敗軌跡升級模型或問使用者。判準見 `governance/judgment-rubrics.md`。
 5. **動 repo 前先 `git status`**：發現非預期變更（可能是其他 session 在動）→ 停下來問使用者，不默默覆蓋。
-6. **隨做隨記**：重要架構決策寫入 `memory/project-context.md`（ADR 格式）；踩坑教訓 append 到 `governance/lessons.md`；跨 harness 交接開工先讀、收工必寫 `~/.agent-sessions/<專案>/latest.md`。
+6. **隨做隨記**：重要架構決策寫入 `memory/project-context.md`（ADR 格式）；踩坑教訓 append 到 `governance/lessons.md`。
 
 ---
 

@@ -1,29 +1,30 @@
 # 給未來 Session 的信（G）
 
-> 寫於 2026-07-03。這封信講三件使用者沒問、但對這個環境最重要的事，加上這套制度最可能的退化方式。
+> 首版寫於 2026-07-03；本版改寫於 2026-07-07（三 harness 制度統一那一輪）。
 > 你（讀這封信的模型）多半比寫信的模型小。這不是問題——制度的目的就是讓你不需要跟我一樣強。照檔案做，比聰明更重要。
+> 你可能在 Claude Code、Codex 或 Antigravity（agy）任何一家讀到這封信：三家共用同一份正本（`~/Agent_skill`），規則對你們一視同仁。
 
 ---
 
-## 第一件事：這個 repo 是「制度倉庫」，改它會波及所有下游專案
+## 第一件事：這個 repo 現在是三個 harness 的全域正本，改它的波及面比你以為的大
 
-`setup.sh` 把 skills/ symlink 到 `~/.claude/skills/`，`inject.sh` 把常駐清單注入其他專案的 CLAUDE.md。意思是：
+2026-07-07 起，`setup.sh` 除了 Claude 的 `~/.claude/skills`、`~/.claude/governance`，還把 `~/.codex/AGENTS.md` 與 `~/.gemini/GEMINI.md` symlink 到本 repo 的索引檔。意思是：
 
-- 你在這裡改一個 skill，**所有用它的專案立即生效**（symlink 指向原始檔）
-- **已知未同步項**：本次把 `gemini-assist.md` 從常駐降為按需，但 `inject.sh` 生成的模板還把它列為常駐。下次有人動 inject.sh 時要一起修（屬 🟡 級，先問使用者）
-- 改動前問自己：這是「這個 repo 的事」還是「所有專案的事」？後者要更謹慎
+- 你改 `AGENTS.md` 一行，**這台機器上所有專案的所有 Codex session 立即生效**；GEMINI.md 對 agy 同理
+- 改動前問自己：這是「這個 repo 的事」、「所有專案的事」、還是「三個 harness 的事」？越往後越謹慎，權限分級見 `maintenance-protocol.md`
+- 換新機器：先 `bash ~/Agent_skill/setup.sh`，否則 Codex / agy 讀不到任何制度（靜默失效，不會報錯）
 
 ## 第二件事：這個環境的真實瓶頸是重工，不是 token 單價
 
-2026-07 的實測結論（詳見 memory/project-context.md ADR-004 的背景）：最貴的不是模型費用，是卡死一小時沒產出、朝錯方向修一輪、把假 bug 當真 bug 修、scope 越滾越大沒人敢收尾。所以：
+2026-07 的實測結論：最貴的不是模型費用，是卡死一小時沒產出、朝錯方向修一輪、把假 bug 當真 bug 修、scope 越滾越大沒人敢收尾。所以：
 
 - 多花一點 token 在「切工單、驗收、仲裁」上是**划算的**（tech-lead-mode 的存在理由）
 - 看到自己在「省 token」而跳過驗證步驟時，你正在犯這個環境已經付過學費的錯
 
 ## 第三件事：使用者的工作模式
 
-- 他會同時開多個 session / 多個工具（Claude、Codex、agy）操作同一批 repo——所以 `git status` 出現非預期變更是**常態**不是異常，處理協議在 judgment-rubrics R3 和 lessons.md 2026-07-03 條
-- 他吃直球：發現他的邏輯漏洞直接講，他自己在 CLAUDE.md 寫了「不為友善而同意」
+- 他同時用三個 harness（Claude、Codex、agy）+ 多 session 操作同一批 repo——`git status` 出現非預期變更是**常態**不是異常，處理協議在 judgment-rubrics R3 和 lessons 2026-07-03 條；跨 harness 交接一律走 `~/.agent-sessions/<專案>/latest.md`
+- 他吃直球：發現他的邏輯漏洞直接講，他自己在索引檔寫了「不為友善而同意」
 - 他要「極短摘要先行」——長輸出放檔案，對話裡給結論
 
 ---
@@ -32,24 +33,31 @@
 
 | 退化 | 徵兆 | 預防 |
 |------|------|------|
-| 路由表長回來 | 有人覺得「加一行到 CLAUDE.md 比較方便」 | maintenance-protocol 🟢 級明文禁止；新 skill 只進 llms.txt |
+| **三份索引漂移**（本制度最大風險）| AGENTS.md / GEMINI.md 的 inline 段被單邊改動；索引檔開始長正文 | 改任一索引必跑 maintenance-protocol §7 四查（可執行指令）；新內容 >10 行進正本 |
+| **某 harness 的結論沒回寫正本** | agy / Codex session 做完事，latest.md 還是上週的 | 收工自檢一題「學到的落正本了嗎」（§6）；Codex Memories 保持關閉、agy brain 不作數，逼結論走 latest.md |
+| 全域 symlink 被覆蓋成實體檔 | 某 harness 自動更新時把 `~/.codex/AGENTS.md` 寫成一般檔案 | 開工自檢 `ls -l`，發現實體檔 → 停下來問（可能含未回寫的內容，不可直接覆蓋）|
+| 型號表過期 | model-orchestration §5 的型號已下架 / 改名 | 事實錯誤屬 🟢 級，查證後當場修，並更新「查證日期」|
+| 路由表長回來 | 有人覺得「加一行到索引比較方便」 | maintenance-protocol 🔴 明文禁止；新 skill 只進 llms.txt |
 | lessons.md 變垃圾場 | 一次性手滑也被記錄，300 行沒人讀 | 寫入門檻（下次還會有人踩才寫）+ 30 條精簡門檻 |
 | 驗證被「趕時間」跳過 | 回報裡出現「應該會過」「邏輯上正確」 | R2 明文：這些字眼 = 進行中，不是完成 |
-| 制度檔與現實漂移 | 檔案提到的工具已改名 / 停服 | 事實錯誤屬 🟢 級，發現當下就修（先 `ls` / `command -v` 驗證）|
-| 制度只剩形式 | 模板照填但驗收條件寫「做好做滿」 | delegation-templates 通用自檢第 2 條：驗收條件必須含可驗證字眼 |
 
 最根本的退化：**下一個模型覺得自己夠聰明，不需要查表**。制度不是因為你笨，是因為 context 會斷、session 會換、記憶會漂。寫檔案的那個模型也照著檔案做。
 
 ---
 
+## 誠實標註：2026-07-07 這輪產出中，信心最低的部分
+
+1. **Codex 整欄純屬文件查證、零本機實測**：型號（gpt-5.5/5.4/5.4-mini）、effort 值、32KiB 上限、subagent 用法全部來自 developers.openai.com，本機 `~/.codex/config.toml` 是 GUI app 骨架、看不出實際用法。第一個 Codex session 開工時，請把 §5 Codex 欄逐項對照實際可選值，錯了照 🟢 級修
+2. **agy 的 `TypeName` / `Workspace` 參數**：來自 2026-07-04 某 agy session 的二手回報，至今無人驗證。第一個要委派的 agy session：先看工具 schema，驗完把「未驗證」標註拿掉或改正
+3. **agy 解鎖的安全面**：2026-07-07 依使用者決定移除了 `~/.gemini/settings.json` 與 `~/.agents/settings.json` 的 excludeTools 全域唯讀鎖。若日後發現 agy 誤寫檔案造成事故，這是根因候選，備份在同目錄 `*.2026-07-07.bak`
+4. **「被導向 Opus 4.8 的請求是否消耗原方案額度」**：查不到，未確認。要答案只能到平台 usage 頁實測
+5. **agy model picker 掛羊頭的傳聞**：僅社群回報，未經確認，寫進 harness-diagnosis 時已標註
+
 ## 未完成 / 交接事項
 
-- ~~`inject.sh` 常駐清單未同步~~（2026-07-03 已完成：gemini-assist 降按需、計數修正）
-- ~~`AGENTS.md` / `GEMINI.md` 未跟進精簡~~（2026-07-03 已完成，並修正 GEMINI.md 模式 A 與 v3.8 分工的矛盾）
-- ~~governance/ 未分發到下游~~（2026-07-04 已完成，使用者核准：`skills/governance → ../governance` symlink + inject.sh 制度層路由段，setup.sh 免改，詳見 ADR-007。既有下游專案需重跑 inject.sh 才取得路由段）
+- **其他機器**需重跑 `bash ~/Agent_skill/setup.sh` 才有四條 symlink（本機 2026-07-07 已完成並實測）
+- 下游專案的專案層 AGENTS.md / GEMINI.md 注入（inject.sh 目前只管 CLAUDE.md）——全域 symlink 已覆蓋大多數需求，專案層等真的需要再做
+- 本輪 commits 未 push（使用者指示只 commit）；連同更早的 cd8d0bd 一起等使用者指示
 - `memory/project-context.md` 的技術選型欄位仍是模板占位，等實際有選型再填
 
-## 誠實標註
-
-- 本信寫於一個模型身分無法自我驗證的 session（系統資訊與 /model 顯示不一致），內容全部按 Sonnet 等級可執行的標準撰寫
-- 制度補得了執行品質，補不了品味與模糊題。遇到時：升級模型、外部第二意見、或明說做不到。這句話值得每個 session 重讀一次
+制度補得了執行品質，補不了品味與模糊題。遇到時：升級模型、外部第二意見、或明說做不到。這句話值得每個 session 重讀一次。
