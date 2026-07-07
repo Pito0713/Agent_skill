@@ -46,3 +46,10 @@
 - 錯誤/風險：與 v4.6 rules/ 斷鏈同族的靜默失效，但範圍大一級：不是一條路徑斷，是整個 harness 沒接上；且寫檔的人永遠不會發現（檔案在 repo 裡好好的）
 - 修正：setup.sh 增建兩條全域檔案 symlink；索引檔路徑改絕對路徑；maintenance-protocol §7 把「全域接線健在」列入必查
 - 規則：制度檔宣稱服務某個 harness 時，必須實際驗證**那個 harness 的載入點**讀得到它（`ls -l` 它真正讀的路徑），不能只驗證檔案存在於 repo
+
+## 2026-07-07 下游公開 repo 長出制度副本與個人絕對路徑
+
+- 情境：AG_knowledge（公開 repo）被 7/2–7/3 的 session 塞入 `.agents/rules/` 七檔制度改名副本、CLAUDE.md 加了 `file:///Users/...` 路由表、`.agents/skills/` 36 個指向本機路徑的 symlink 被 git 追蹤——根因是當時 agy 沒有全域載入點，session 只好「就地複製制度」
+- 錯誤/風險：副本內容凍在 7/3 必然漂移（索引漂移的真實案例）；公開 commit 會洩漏使用者名，絕對路徑對其他協作者全部斷鏈
+- 修正：副本先比對回寫再刪、CLAUDE.md 重跑 inject 回 `~` 路徑標準形、skills symlink 移出追蹤 + gitignore；inject.sh 新增 `audit_personal_paths`（注入完成後掃 `file:///` 與 `/Users/` 並警告）+ 修 `.git/hooks/` 目錄不存在時 cp 失敗的 bug
+- 規則：下游專案 **committed 的檔案禁止 `/Users/<name>` 與 `file:///` 絕對路徑**，制度/skill 引用一律 `~` 形式；發現制度副本 → 回寫獨有內容後刪除，改走全域索引路由正本

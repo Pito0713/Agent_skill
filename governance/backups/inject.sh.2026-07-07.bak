@@ -23,22 +23,6 @@ CYAN='\033[0;36m'
 NC='\033[0m'
 
 # ─────────────────────────────────────────
-# audit_personal_paths：注入完成後檢查 CLAUDE.md 是否含個人絕對路徑
-# 公開 repo 會洩漏使用者名、且路徑對其他協作者全部斷鏈——制度/skill 引用一律 ~ 形式
-# （防的是其他 session 手動塞入的內容；INJECT_BLOCK 本身只用 @~/.claude/...）
-# ─────────────────────────────────────────
-audit_personal_paths() {
-  local hits
-  hits=$(grep -nE 'file:///|/Users/[A-Za-z0-9._-]+' "$CLAUDE_MD" 2>/dev/null || true)
-  if [[ -n "$hits" ]]; then
-    echo ""
-    echo -e "${YELLOW}⚠️  CLAUDE.md 含個人絕對路徑（若為公開 repo：洩漏使用者名 + 對他人斷鏈）：${NC}"
-    echo "$hits" | head -10
-    echo "   → 請改為 ~ 開頭路徑（@~/.claude/...）或手動移除該段"
-  fi
-}
-
-# ─────────────────────────────────────────
 # install_hook：安裝 post-commit hook
 # ─────────────────────────────────────────
 install_hook() {
@@ -61,7 +45,6 @@ install_hook() {
     [[ ! "$hook_confirm" =~ ^[Yy]$ ]] && echo "略過 hook 安裝。" && return
   fi
 
-  mkdir -p "$(dirname "$HOOK_DEST")"   # 部分 repo 沒有 .git/hooks/ 目錄，cp 會直接失敗
   cp "$HOOK_SRC" "$HOOK_DEST"
   chmod +x "$HOOK_DEST"
   echo -e "${GREEN}✅ 已安裝 post-commit hook${NC}"
@@ -223,7 +206,6 @@ EOF
   echo -e "${CYAN}📌 常駐載入已設定（6 個 skills）${NC}"
   echo "   按需載入項目已列出（預設註解，移除 # 即可啟用）"
   install_hook
-  audit_personal_paths
   exit 0
 fi
 
@@ -325,7 +307,6 @@ PYEOF
   echo ""
   echo -e "${CYAN}📌 常駐載入已更新（6 個 skills）${NC}"
   install_hook
-  audit_personal_paths
   exit 0
 fi
 
@@ -367,4 +348,3 @@ echo ""
 echo -e "${CYAN}📌 常駐載入已設定（6 個 skills）${NC}"
 echo "   按需載入項目已列出（預設註解，移除 # 即可啟用）"
 install_hook
-audit_personal_paths
