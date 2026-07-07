@@ -58,7 +58,7 @@
 
 ## 4. 精簡門檻
 
-`lessons.md` 超過 **30 條或 300 行** 時：
+**觸發時機**：每次 append lessons.md 時順手 `wc -l`（不靠主動巡檢）。超過 **30 條或 300 行** 時：
 
 1. 提議把重複主題歸納進 `judgment-rubrics.md` 對應的 rubric（或新增 rubric）
 2. **先問使用者**，同意後才把已歸納的條目從 lessons.md 移除（歸納後的規則要註明來源日期）
@@ -93,13 +93,19 @@
 
 **回寫紀律**：任何 harness 的 session 結束前自檢一題——「這輪學到的東西落在正本了嗎？」同一結論只寫一處正本，其他地方放指標。
 
+**交接檔的具體規約**（弱模型照做）：
+- `<專案>` = 專案根目錄的資料夾名（`basename` 該路徑，例：`/Users/wits/Agent_skill` → `Agent_skill`）；目錄不存在先 `mkdir -p ~/.agent-sessions/<專案>`
+- **無鎖併發**：同一專案避免同時開兩個「會寫交接」的 session。寫入前先重讀 latest.md——若「最後更新」比你開工時間晚，代表有別的 session 動過 → 把對方內容**合併進來再寫**，禁止整檔覆蓋
+
 ---
 
 ## 7. 索引防漂移檢查（每次修改三份索引檔之一時必跑，全部可執行）
 
 ```bash
-# 1. 行數上限：三份索引各 ≤150 行（超過 = 有人往索引塞正文）
+# 1. 大小上限：三份索引各 ≤150 行（超過 = 有人往索引塞正文）；
+#    且各 ≤16KB（Codex 全域+專案層合併上限 32KiB 的安全邊際，超過會被靜默截斷）
 wc -l ~/Agent_skill/CLAUDE.md ~/Agent_skill/AGENTS.md ~/Agent_skill/GEMINI.md
+wc -c ~/Agent_skill/AGENTS.md
 
 # 2. 全域接線健在：兩條檔案 symlink 都指向 ~/Agent_skill/
 ls -l ~/.codex/AGENTS.md ~/.gemini/GEMINI.md
@@ -117,3 +123,5 @@ grep -oE '~/Agent_skill/[a-zA-Z0-9/_.-]+\.(md|txt)' ~/Agent_skill/AGENTS.md ~/Ag
 ```
 
 判定：**索引檔的新內容超過 10 行 → 內容進 governance/ 或 rules/ 正本，索引只加一行指標**。檢查不過 → 事實錯誤 🟢 自修，結構問題 🟡 先問。
+
+**已知極限**：AGENTS/GEMINI 的 inline 段是 rules/ 正本的**人工摘要**（該兩家無 `@file` 語法，接受的取捨）——上述檢查只保證兩份索引互不漂移，**不保證與 rules/ 正本同步**。改 `rules/coding-standards.md` 或 `rules/security.md` 時，順手檢查兩份索引的 inline 段要不要跟改。

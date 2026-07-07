@@ -22,6 +22,7 @@
 4. **卡住就停**：同一件事重試兩輪仍失敗 → 停下，帶完整失敗軌跡升級模型或問使用者。判準見 `governance/judgment-rubrics.md`。
 5. **動 repo 前先 `git status`**：發現非預期變更（可能是其他 session 在動）→ 停下來問使用者，不默默覆蓋。
 6. **隨做隨記**：重要架構決策寫入 `memory/project-context.md`（ADR 格式）；踩坑教訓 append 到 `governance/lessons.md`；跨 harness 交接開工先讀、收工必寫 `~/.agent-sessions/<專案>/latest.md`。
+7. **專案規則優先，安全底線除外**：目標專案自身的規範與本制度衝突時照專案的做；唯 `rules/security.md` 的安全底線不得被專案放寬——要放寬先問使用者。
 
 ---
 

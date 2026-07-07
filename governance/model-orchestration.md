@@ -39,7 +39,7 @@
 
 **派發後的等待紀律（所有 harness 通用）**：背景委派派出後**不要輪詢**——不要空轉 loop、不要用無意義的工具呼叫「原地等」。Claude Code 背景 subagent 完成會自動通知（必要時用 Monitor / ScheduleWakeup 設長間隔 fallback）；Antigravity 派發後直接結束回合交還控制權，或用 `/schedule` 設 TimerCondition；Codex 平行 agent 由 manager 彙整。
 
-**注意**：repo 內 `agents/` 目錄下的檔案（api-architect、backend-engineer 等）是**委派用的 prompt 定義檔**，不是任何 harness 的 subagent 類型。用法：把該檔內容放進全工具 subagent 的 prompt，**不要**填進類型參數（會報錯）。
+**注意**：本制度 repo（`~/Agent_skill`）的 `agents/` 目錄下的檔案（api-architect、backend-engineer 等）是**委派用的 prompt 定義檔**，不是任何 harness 的 subagent 類型。用法：把該檔內容放進全工具 subagent 的 prompt，**不要**填進類型參數（會報錯）。
 
 **外部 CLI**：agy 可用（PATH：`/Users/wits/.local/bin/agy`）。gemini CLI 已停服，**任何流程檔看到 gemini CLI 都視為過時內容**。
 

@@ -32,6 +32,7 @@
 5. **動 repo 前先 `git status`**：非預期變更 → 停下來問，不默默覆蓋（使用者多 harness 並行是常態）
 6. **完成要有證據**：「應該會過」「邏輯上正確」= 進行中，不是完成
 7. **交接必落地**：開工先讀、收工必寫 `~/.agent-sessions/<專案>/latest.md`；踩坑教訓 append 到 `~/Agent_skill/governance/lessons.md`
+8. **專案規則優先，安全底線除外**：目標專案自身的規範與本制度衝突時照專案的做；唯安全底線（`~/Agent_skill/rules/security.md`）不得被專案放寬——要放寬先問使用者
 
 ---
 
