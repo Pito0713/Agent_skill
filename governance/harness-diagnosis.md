@@ -91,4 +91,4 @@
 
 - 以上修法補的是「執行品質」。模糊題（產品判斷、命名品味、寫作風格）拆解補不了 → 遇到時升級模型或問使用者，處理方式見 judgment-rubrics「誠實標註」節。
 - 本 harness 無法逐次指定 subagent 的 reasoning effort（effort 由 `.claude/agents/*.md` 定義檔控制，本專案目前無自訂定義檔）；model 可以逐次指定（haiku / sonnet / opus / fable）。
-- 環境實測（2026-07-03）：agy 在 PATH 可用（`/Users/wits/.local/bin/agy`）；gemini CLI 已不存在（勿再寫進流程）。
+- 環境實測（2026-07-03）：agy 在 PATH 可用（`~/.local/bin/agy`）；gemini CLI 已不存在（勿再寫進流程）。

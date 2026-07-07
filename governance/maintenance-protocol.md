@@ -94,7 +94,7 @@
 **回寫紀律**：任何 harness 的 session 結束前自檢一題——「這輪學到的東西落在正本了嗎？」同一結論只寫一處正本，其他地方放指標。
 
 **交接檔的具體規約**（弱模型照做）：
-- `<專案>` = 專案根目錄的資料夾名（`basename` 該路徑，例：`/Users/wits/Agent_skill` → `Agent_skill`）；目錄不存在先 `mkdir -p ~/.agent-sessions/<專案>`
+- `<專案>` = 專案根目錄的資料夾名（`basename` 該路徑，例：`~/Agent_skill` → `Agent_skill`）；目錄不存在先 `mkdir -p ~/.agent-sessions/<專案>`
 - **無鎖併發**：同一專案避免同時開兩個「會寫交接」的 session。寫入前先重讀 latest.md——若「最後更新」比你開工時間晚，代表有別的 session 動過 → 把對方內容**合併進來再寫**，禁止整檔覆蓋
 
 ---

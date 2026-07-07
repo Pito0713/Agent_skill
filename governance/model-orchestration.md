@@ -41,7 +41,7 @@
 
 **注意**：本制度 repo（`~/Agent_skill`）的 `agents/` 目錄下的檔案（api-architect、backend-engineer 等）是**委派用的 prompt 定義檔**，不是任何 harness 的 subagent 類型。用法：把該檔內容放進全工具 subagent 的 prompt，**不要**填進類型參數（會報錯）。
 
-**外部 CLI**：agy 可用（PATH：`/Users/wits/.local/bin/agy`）。gemini CLI 已停服，**任何流程檔看到 gemini CLI 都視為過時內容**。
+**外部 CLI**：agy 可用（PATH：`~/.local/bin/agy`）。gemini CLI 已停服，**任何流程檔看到 gemini CLI 都視為過時內容**。
 
 ---
 
