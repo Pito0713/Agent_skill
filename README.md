@@ -1,9 +1,18 @@
 # AI Agent Skill Project
 
-Claude Code 的完整 agent skill 骨架，包含 rules、skills、subagents、memory。
+**三個 AI coding harness 的共用制度正本**（v5.0 起）：Claude Code / Codex / Antigravity（agy）各持一份薄索引，經 symlink 指向本 repo——任何規則只有一個 source of truth。
 
-用於收集、整理、管理 AI coding agent 的行為規範與工作流程 skill。
+包含 rules、skills、agents、governance 制度層、memory。
 支援 Orchestrator 模式：單一入口協調多個 skills / agents，完成完整開發流程。
+
+```
+                    ~/Agent_skill（唯一正本）
+                   /          |            \
+      CLAUDE.md(+global)   AGENTS.md      GEMINI.md
+            ↓                 ↓               ↓
+   ~/.claude/CLAUDE.md  ~/.codex/AGENTS.md  ~/.gemini/GEMINI.md
+      （Claude Code）      （Codex）        （Antigravity）
+```
 
 ---
 
@@ -11,9 +20,12 @@ Claude Code 的完整 agent skill 骨架，包含 rules、skills、subagents、m
 
 ```
 .
-├── CLAUDE.md                          # 頂層入口（Claude Code 自動讀取）
-├── setup.sh                           # 一鍵連結 skills 到 ~/.claude/skills/
-├── inject.sh                          # 在目標專案注入常駐 skill 設定
+├── CLAUDE.md                          # Claude Code 索引（本 repo 內自動讀取）
+├── CLAUDE.global.md                   # Claude Code 全域極薄指標（symlink 到 ~/.claude/CLAUDE.md）
+├── AGENTS.md                          # Codex 索引（symlink 到 ~/.codex/AGENTS.md，全域生效）
+├── GEMINI.md                          # Antigravity/agy 索引（symlink 到 ~/.gemini/GEMINI.md，全域生效）
+├── setup.sh                           # 一鍵建五條 symlink，把正本接線到三個 harness
+├── inject.sh                          # 在目標專案注入常駐 skill 設定（Claude 專案層）
 ├── .claudeignore                      # Claude 工具掃描排除清單
 │
 ├── governance/                        # 制度層（v4.5）：調度守則、判斷 rubrics、派工模板、維護協議
@@ -105,7 +117,15 @@ cd Agent_skill
 bash setup.sh
 ```
 
-Setup 會將 `skills/` 連結到 `~/.claude/skills/`，讓本機所有專案都能引用。
+Setup 會建立**五條 symlink**，把正本接線到三個 harness（每台機器都要跑一次，否則該機的 Codex / agy 讀不到制度且不會報錯）：
+
+| Symlink | 供誰讀 |
+|---------|--------|
+| `~/.claude/skills → repo/skills` | Claude Code（skill 庫）|
+| `~/.claude/governance → repo/governance` | Claude Code（制度層）|
+| `~/.claude/CLAUDE.md → repo/CLAUDE.global.md` | Claude Code 全域（未 inject 的專案也有極薄路由）|
+| `~/.codex/AGENTS.md → repo/AGENTS.md` | Codex 全域 |
+| `~/.gemini/GEMINI.md → repo/GEMINI.md` | Antigravity（agy）全域 |
 
 ---
 
@@ -345,3 +365,6 @@ lazyengineer [lite|full|ultra|off]
 | v4.7 | 2026-07-04 | governance/ 分發到下游：新增 skills/governance → ../governance 相對 symlink（比照 v4.6 rules/ 模式，零腳本改動）；inject.sh INJECT_BLOCK 加「制度層路由」段（用到才讀，不 @ 常駐）；既有下游專案重跑 inject.sh 即取得路由 |
 | v4.8 | 2026-07-04 | harness 適配層：model-orchestration §2 改 Claude Code / Antigravity 雙欄參數適配表（subagent 類型 / 隔離 / model 逐次指定差異）+ 派發後等待紀律；tech-lead-mode Phase 2 標註語法歸屬並附 Antigravity 等價參數；coding-workflow-core Phase 0 改原生唯讀工具優先、shell 降 fallback（避免核准制 harness 開局卡點擊）；ADR-008 |
 | v4.9 | 2026-07-06 | governance 分發改一級路徑：setup.sh 直建 `~/.claude/governance` symlink、inject.sh 路由改指 `~/.claude/governance/...`（原 skills/governance 巢狀路徑保留相容）；修復 setup.sh 檢查順序缺陷（實體目錄擋路時半途退出會刪掉 skills symlink 未重建 → 檢查全部前置）；ADR-007 修訂 |
+| v5.0 | 2026-07-07 | 三 harness 制度統一（ADR-009）：setup.sh 增建 `~/.codex/AGENTS.md`、`~/.gemini/GEMINI.md` 全域 symlink；AGENTS.md / GEMINI.md 改寫為薄索引（絕對路徑 + harness 專屬區塊）；agy 升級完整 harness（excludeTools 解鎖）；model-orchestration 補 Codex 欄 + 三 harness 型號表 + 跨 harness 分工；maintenance-protocol §6 記憶回寫正本表（交接正本 = ~/.agent-sessions/）+ §7 索引防漂移四查；harness-diagnosis 三家差異診斷 |
+| v5.0.1 | 2026-07-07 | agy 對抗審查修正（8 條發現：6 修 / 1 駁回 / 1 已知取捨）：三索引鐵律加「專案規則優先、安全底線不得放寬」；交接檔 `<專案>` 定義與無鎖併發合併規約；§7 補 16KB 大小檢查；lessons 精簡觸發時機 |
+| v5.0.2 | 2026-07-07 | Claude 全域載入點補齊：新增 CLAUDE.global.md（18 行極薄指標，不常駐載入），setup.sh 第五條 symlink `~/.claude/CLAUDE.md`——三家全域覆蓋對稱 |

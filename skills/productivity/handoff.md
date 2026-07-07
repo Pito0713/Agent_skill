@@ -7,6 +7,8 @@ description: 將當前對話壓縮成交接文件，供下一個 session 或 age
 
 產生一份讓任何人（或新 session）能在 5 分鐘內接手的交接文件。
 
+> **跨 harness 適用**（v5.0）：本 skill 在 Claude Code / Codex / agy 都照同一流程執行。最終寫入的 `~/.agent-sessions/<專案>/latest.md` 是**三 harness 共用的交接正本**（maintenance-protocol §6）——不管你在哪個 harness，收工必寫、開工必讀的都是同一份檔案。
+
 ---
 
 ## 輸出格式
@@ -120,9 +122,10 @@ description: 將當前對話壓縮成交接文件，供下一個 session 或 age
 
 交接文件確認後，執行以下步驟將本次 session 狀態寫入 `~/.agent-sessions/<project>/latest.md`：
 
-1. 取得專案名稱：`basename $PWD`
+1. 取得專案名稱：`basename $PWD`（= 專案根目錄的資料夾名）
 2. 確認目錄存在：`mkdir -p ~/.agent-sessions/<project>`
-3. 依以下格式寫入（觸發來源標記為 `handoff`）：
+3. **無鎖併發防護（寫入前必做）**：重讀現有 latest.md——若「最後更新」時間比你這輪 session 開工時間**晚**，代表有別的 session / harness 動過 → 把對方的內容**合併進你的版本再寫**，禁止整檔覆蓋（maintenance-protocol §6）
+4. 依以下格式寫入（觸發來源標記為 `handoff`）：
 
 ```markdown
 # <project-name>
@@ -154,4 +157,14 @@ description: 將當前對話壓縮成交接文件，供下一個 session 或 age
 - <決策及原因>
 ```
 
-4. 完成後輸出確認：「✅ 已更新 ~/.agent-sessions/<project>/latest.md」
+5. 完成後輸出確認：「✅ 已更新 ~/.agent-sessions/<project>/latest.md」
+
+---
+
+## Phase 收尾：回寫紀律自檢（maintenance-protocol §6）
+
+寫完 latest.md 後，收工前自檢一題——「**這輪學到的東西落在正本了嗎？**」：
+
+- 踩坑教訓（下次還會有人踩的）→ append 到 `~/Agent_skill/governance/lessons.md`（格式見 maintenance-protocol §3）
+- 重要架構決策 → 追加 ADR 到專案的 `memory/project-context.md`
+- 各 harness 自帶的自動記憶（Codex Memories、agy brain）**不算落地**——沒寫進上面的檔案就等於丟失
