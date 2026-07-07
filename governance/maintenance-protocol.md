@@ -104,11 +104,11 @@
 ```bash
 # 1. 大小上限：三份索引各 ≤150 行（超過 = 有人往索引塞正文）；
 #    且各 ≤16KB（Codex 全域+專案層合併上限 32KiB 的安全邊際，超過會被靜默截斷）
-wc -l ~/Agent_skill/CLAUDE.md ~/Agent_skill/AGENTS.md ~/Agent_skill/GEMINI.md
+wc -l ~/Agent_skill/CLAUDE.md ~/Agent_skill/CLAUDE.global.md ~/Agent_skill/AGENTS.md ~/Agent_skill/GEMINI.md
 wc -c ~/Agent_skill/AGENTS.md
 
-# 2. 全域接線健在：兩條檔案 symlink 都指向 ~/Agent_skill/
-ls -l ~/.codex/AGENTS.md ~/.gemini/GEMINI.md
+# 2. 全域接線健在：三條檔案 symlink 都指向 ~/Agent_skill/
+ls -l ~/.claude/CLAUDE.md ~/.codex/AGENTS.md ~/.gemini/GEMINI.md
 
 # 3. inline 段未漂移：AGENTS.md 與 GEMINI.md 的四個共用段設計為逐字相同，
 #    逐段 diff——任何 diff 輸出或 ⚠️ 行 = 漂移，無輸出 = 通過

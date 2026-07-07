@@ -12,6 +12,7 @@ SKILLS_LINK="$CLAUDE_DIR/skills"
 GOVERNANCE_LINK="$CLAUDE_DIR/governance"
 CODEX_LINK="$HOME/.codex/AGENTS.md"
 AGY_LINK="$HOME/.gemini/GEMINI.md"
+CLAUDE_GLOBAL_LINK="$CLAUDE_DIR/CLAUDE.md"
 
 echo "🔧 Agent Skill Setup"
 echo "   Repo: $REPO_DIR"
@@ -39,6 +40,10 @@ if [[ ! -L "$CODEX_LINK" && -e "$CODEX_LINK" ]]; then
 fi
 if [[ ! -L "$AGY_LINK" && -e "$AGY_LINK" ]]; then
   echo "⚠️  $AGY_LINK 已是一個實體檔案，略過（請先備份後手動移除）"
+  exit 1
+fi
+if [[ ! -L "$CLAUDE_GLOBAL_LINK" && -e "$CLAUDE_GLOBAL_LINK" ]]; then
+  echo "⚠️  $CLAUDE_GLOBAL_LINK 已是一個實體檔案，略過（請先備份後手動移除）"
   exit 1
 fi
 
@@ -75,6 +80,10 @@ echo "   $CODEX_LINK → $REPO_DIR/AGENTS.md"
 ln -sf "$REPO_DIR/GEMINI.md" "$AGY_LINK"
 echo "✅ Antigravity 全域 GEMINI.md 已連結："
 echo "   $AGY_LINK → $REPO_DIR/GEMINI.md"
+
+ln -sf "$REPO_DIR/CLAUDE.global.md" "$CLAUDE_GLOBAL_LINK"
+echo "✅ Claude 全域 CLAUDE.md 已連結："
+echo "   $CLAUDE_GLOBAL_LINK → $REPO_DIR/CLAUDE.global.md"
 echo ""
 
 # 顯示可用的 skills 清單
