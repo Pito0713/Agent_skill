@@ -69,62 +69,6 @@ install_hook() {
 }
 
 # ─────────────────────────────────────────
-# install_stop_hook：在專案 .claude/settings.json 掛 Claude Code Stop hook（收工守門）
-# 設計：governance/enforcement-layers.md §4。settings.json 只放「指向正本」的指令，
-# 不複製腳本到下游——避免下游副本漂移（lessons 2026-07-07 教訓）。
-# 只動 hooks.Stop；PreToolUse 層由使用者既有全域 hook 承擔，一律不碰。
-# ─────────────────────────────────────────
-install_stop_hook() {
-  local hook_script="$HOME/Agent_skill/hooks/stop-handoff-check.sh"
-  local settings="$PROJECT_DIR/.claude/settings.json"
-
-  if [[ ! -f "$hook_script" ]]; then
-    echo "⚠️  找不到 $hook_script，略過 Stop hook 安裝"
-    return
-  fi
-
-  if [[ -f "$settings" ]] && grep -q "stop-handoff-check.sh" "$settings"; then
-    echo "✅ Stop hook 已存在（$settings），略過"
-    return
-  fi
-
-  if ! command -v python3 >/dev/null 2>&1; then
-    echo "⚠️  缺 python3 無法安全合併 settings.json，略過 Stop hook 安裝"
-    return
-  fi
-
-  echo ""
-  read -r -p "是否掛載收工守門 Stop hook（交接檔未寫會擋一次收工）？(y/N) " stop_confirm
-  [[ ! "$stop_confirm" =~ ^[Yy]$ ]] && echo "略過 Stop hook 安裝。" && return
-
-  mkdir -p "$PROJECT_DIR/.claude"
-  SETTINGS_PATH="$settings" python3 - <<'PYEOF'
-import json, os, sys
-
-path = os.environ["SETTINGS_PATH"]
-entry = {"hooks": [{"type": "command",
-                    "command": "$HOME/Agent_skill/hooks/stop-handoff-check.sh"}]}
-try:
-    with open(path) as f:
-        data = json.load(f)
-except FileNotFoundError:
-    data = {}
-except json.JSONDecodeError:
-    print(f"⚠️  {path} 不是合法 JSON，不動它——請手動處理", file=sys.stderr)
-    sys.exit(1)
-
-data.setdefault("hooks", {}).setdefault("Stop", []).append(entry)
-with open(path, "w") as f:
-    json.dump(data, f, ensure_ascii=False, indent=2)
-    f.write("\n")
-PYEOF
-  if [[ $? -eq 0 ]]; then
-    echo -e "${GREEN}✅ 已掛載 Stop hook（指向正本，不複製腳本）${NC}"
-    echo "   路徑：$settings"
-  fi
-}
-
-# ─────────────────────────────────────────
 # prompt_productivity：偵測並詢問跨專案工作流 skills
 # 輸出：設定全域變數 PRODUCTIVITY_ADDITION（空字串 or 要補入的區塊）
 # 用法：prompt_productivity [existing_claude_md_path]
@@ -279,7 +223,6 @@ EOF
   echo -e "${CYAN}📌 常駐載入已設定（6 個 skills）${NC}"
   echo "   按需載入項目已列出（預設註解，移除 # 即可啟用）"
   install_hook
-  install_stop_hook
   audit_personal_paths
   exit 0
 fi
@@ -382,7 +325,6 @@ PYEOF
   echo ""
   echo -e "${CYAN}📌 常駐載入已更新（6 個 skills）${NC}"
   install_hook
-  install_stop_hook
   audit_personal_paths
   exit 0
 fi
@@ -425,5 +367,4 @@ echo ""
 echo -e "${CYAN}📌 常駐載入已設定（6 個 skills）${NC}"
 echo "   按需載入項目已列出（預設註解，移除 # 即可啟用）"
 install_hook
-install_stop_hook
 audit_personal_paths

@@ -1,0 +1,81 @@
+# 執行力分層設計（Enforcement Layers）
+
+> **狀態：設計稿（2026-07-10），未實作**。實作前需使用者審過本文件並核准第 4 節清單。
+> 動機：現行防呆全靠文字制度，仰賴模型自主遵守——模型發散或遺忘時規則就失效。本文件規劃把高風險規則**下沉**到確定性腳本（hooks）與乾淨 context 守門員（cop agents）。
+
+---
+
+## 1. 三層執行力模型
+
+與 `skills/unknown-matrix-navigation/SKILL.md` §3 的去相關階梯同構——層級越高，與主模型推理的相關性越低，越不會被主模型的盲點帶著走：
+
+| 層 | 機制 | 強制力來源 | 生效範圍 | 對 AI 判讀的作用 |
+|----|------|-----------|---------|----------------|
+| L1 | 文字制度（rules/ + governance/ + 索引檔） | 模型自主遵守 | **三 harness 全部** | 建立判讀框架；會隨 context 稀釋而失效 |
+| L2 | Hooks（PreToolUse / PostToolUse / Stop） | harness 程式碼層，模型無法繞過 | 僅 Claude Code | 見第 2 節兩型 |
+| L3 | Cop agents（乾淨 context 守門員） | hook 強制喚醒 + 獨立 context | 僅 Claude Code（Codex/agy 用派工模板模擬） | 去除推理相關性：主模型說服自己的那套推理，cop 沒看過 |
+
+**鐵則：L2/L3 是 L1 的加固層，不是取代層。** Hooks 只在 Claude Code 生效——Codex 與 agy 不吃 `.claude/settings.json`，文字正本是跨 harness 的唯一底線。**禁止因為某規則已有 hook 就從 rules/ 或索引刪掉該規則**（否則另外兩個 harness 立即裸奔）。
+
+---
+
+## 2. Hook 的兩型（對判讀的作用相反）
+
+| 型 | 行為 | 對判讀的作用 | 例 |
+|----|------|-------------|-----|
+| **攔截型**（guard） | 不合規直接 block 該次 tool call | **不擴充判讀，補償判讀失敗**。價值在零智能：確定性腳本不共享模型盲點 | 攔 force-push、secret 樣式、界外 rm -rf |
+| **注入型**（inject） | 在決策點自動執行並把疆域事實灌回 context | **真正擴充判讀**。規則從「模型要記得」變成「疆域自己出現在決策點」——反射，不是自律 | git mutation 前自動跑 `git status` 並注入輸出（鐵律 5 的反射化） |
+
+「強制喚醒 cop」是第三種組合技：**強制力只能來自 hook，不能來自 agent 定義檔**。agent 寫得再鐵面，主模型不叫它就沒用。正確接法：Stop / PostToolUse hook 偵測條件 → 擋下並回饋指令 → 主模型被迫喚醒 cop。hook 出強制力，agent 出判讀力。
+
+---
+
+## 3. 分工判準：哪條規則落到哪層
+
+依序問三題：
+
+1. **機械可判定且低誤報嗎？**（regex / 檔案存在性 / 指令樣式）→ 是：下沉到 **L2 攔截型**
+2. **是「決策點缺事實」而非「行為違規」嗎？** → 是：**L2 注入型**（餵事實，不攔截）
+3. **需要語意判斷嗎？**（「吞錯誤」「交接檔內容夠不夠」「這算不算 scope creep」）→ 是：**L3 cop agent**。禁止硬寫成 regex hook——誤報摩擦會讓使用者關掉整個 hook 層
+
+任何情況下該規則的文字版**保留在 L1 正本**（跨 harness 需要）。
+
+---
+
+## 4. 第一批實作清單（待核准，未動工）
+
+| # | 產物 | 型 | 內容 | 誤報風險 |
+|---|------|-----|------|---------|
+| 1 | `hooks/pre-tool-use.sh` | L2 攔截 | 攔 `git push --force`（不含 `--force-with-lease`）、`rm -rf` 於 scratchpad/repo 外、Write/Edit 內容含 secret 樣式（`sk-`、`AKIA`、private key header） | 低；secret regex 需白名單 `.env.example` 與文件範例 |
+| 2 | 同檔內注入段 | L2 注入 | 偵測 `git commit/push/merge/rebase` → 先跑 `git status --short` 注入 context | 極低（唯讀） |
+| 3 | `hooks/stop-handoff-check.sh` | L2 注入 | Stop hook：本 session 有 repo 寫入但 `~/.agent-sessions/<專案>/latest.md` 未更新 → 擋一次並提示喚醒 handoff-verifier | 中；需「僅擋一次」防死循環 |
+| 4 | `agents/06-governance/handoff-verifier.md` | L3 | 乾淨 context 查核 latest.md：格式合規（maintenance-protocol §6）、與 `git log` 事實對帳、下一步可執行性。**回傳必附證據**（引用行號與 git hash），防主模型抄結論 | — |
+| 5 | 接線 | — | 專案 `.claude/settings.json` 掛 hooks；`inject.sh` 增選項將 hooks 複製到下游專案（沿用 post-commit hook 的既有安裝模式） | 下游副本會漂移——沿用 2026-07-07 lessons 的路徑審計教訓 |
+
+**明確不做**（本批）：空 catch block regex 攔截（語意規則，交給 code-review / cop）、governance-auditor agent（等 handoff-verifier 跑順再擴）、Codex/agy 側的等效機制（先驗證 Claude Code 層值不值得）。
+
+---
+
+## 5. 失敗模式與防線
+
+- **過度攔截自毀**：誤報多 → 摩擦 → 使用者關掉 hook → 比純文字更糟。防線：第一批只收「高風險 + 低誤報」；每個攔截都要能用環境變數一鍵旁路（`AGENT_SKILL_HOOK_BYPASS=1`），旁路事件寫 log 供事後審
+- **hook 與正本漂移**：改了 rules/ 沒改 hook（或反之）。防線：hook 腳本頭部註明對應正本條文；維護協議健康檢查（§5）加一項「hooks 對應條文仍存在」
+- **cop 形式化**：主模型引用 cop 結論但 cop 沒真的查。防線：cop 產出必附可驗證證據（行號、hash、指令輸出），無證據的核可視為未核可
+- **Stop hook 死循環**：擋收工 → 模型重試 → 再擋。防線：以 marker 檔保證每 session 只擋一次
+
+---
+
+## 6. 驗收標準（實作後觀察一週）
+
+- 攔截型：誤報 ≤ 1 次／週，否則收窄規則或降級為注入型
+- 注入型 git status：鐵律 5 違規（未看狀態就 commit）歸零
+- Stop hook：交接檔漏寫率下降（基線：2026-07-07 曾發現 latest.md 落後 repo 3 commits）
+- cop：至少抓到一次主模型自驗漏掉的問題，否則檢討 prompt
+
+---
+
+## 相關文件
+
+- 去相關階梯原理：`skills/unknown-matrix-navigation/SKILL.md` §3
+- 委派與模型選擇：`governance/model-orchestration.md`
+- 下游注入模式與路徑教訓：`inject.sh`、`governance/lessons.md`（2026-07-07 兩條）

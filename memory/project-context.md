@@ -240,6 +240,21 @@ Frontend (Next.js) → API Layer (Next.js API Routes / FastAPI)
 - 正面：三 harness 任何專案任何 session 都讀到同一份制度；升降級與委派在三家都有具體型號可查；記憶有唯一回寫點
 - 負面/注意：Codex 欄零本機實測（首個 Codex session 需校準）；agy 解鎖後具寫檔能力（誤寫事故的根因候選）；其他機器需重跑 setup.sh，否則 Codex/agy 靜默無制度
 
+### ADR-010：執行力分層——Stop hook 收工守門 + handoff-verifier cop
+
+**日期**：2026-07-10
+
+**背景**：文字制度仰賴模型自主遵守，模型發散即失效（實例：2026-07-07 發現 latest.md 落後 repo 3 commits，鐵律 1 被靜默跳過）。設計分析見 `governance/enforcement-layers.md`（三層執行力模型，與 unknown-matrix skill §3 去相關階梯同構）。
+
+**決策**（使用者 2026-07-10 核准，明確要求不建 PreToolUse 腳本——`~/.claude/settings.json` 已有全域 cost-aware-approval hook 承擔該層）：
+1. `hooks/stop-handoff-check.sh`：Stop hook 偵測「本 session 寫過 repo 但 latest.md 未更新」→ 擋一次收工。fail-open（hook 內部錯誤一律放行）；`stop_hook_active` 防死循環；`AGENT_SKILL_HOOK_BYPASS=1` 旁路（留檔 `~/.agent-sessions/hook.log`）
+2. `agents/06-governance/handoff-verifier.md`：乾淨 context 查核員，三查（格式合規 / git 事實對帳 / 下一步可執行性），回傳必附證據，無證據核可視為未核可
+3. 接線：本 repo `.claude/settings.json` 掛 Stop hook；inject.sh 增 `install_stop_hook()` 供下游掛載——**settings.json 指向正本腳本、不複製**（偏離設計稿原文「複製到下游」，理由：杜絕下游副本漂移，即 2026-07-07 lessons 教訓）
+
+**後果**：
+- 正面：鐵律 1 從自律變反射；查核與主對話推理去相關。實測 10 案例通過（block/放行×4/旁路/合併/冪等/拒裝/壞 JSON 拒改）
+- 負面/注意：僅 Claude Code 生效（Codex/agy 仍靠文字制度）；transcript 掃描是字串比對啟發式，harness transcript 格式變動可能靜默失效（fail-open 設計下失效 = 不擋，退回純文字制度）；驗收與觀察期見 enforcement-layers.md §6
+
 ---
 
 > 知道不完美但有意為之的設計，避免新人重複質疑

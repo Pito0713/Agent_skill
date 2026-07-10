@@ -60,3 +60,10 @@
 - 錯誤/風險：洩漏使用者名（已成事實，修 live 檔是止血非抹除）；更實際的傷害是**跨機器不可攜**——其他機器照抄這條 PATH 會直接錯
 - 修正：live 三處改 `~` 形式（`~/.local/bin/agy`、`~/Agent_skill`）；backups/ 不動（備份的意義是忠實快照，且歷史已公開）；未來下游由 inject.sh 的 `audit_personal_paths` 把關
 - 規則：制度檔寫路徑**一律 `~` 形式，連「舉例」也不用真實使用者名**（用 `~` 或 `<name>` 占位）；寫下環境實測記錄前先問「這行被別台機器 / 公開讀者看到還成立嗎」
+
+## 2026-07-10 設計新 hook 前未盤點既有 harness 設施
+
+- 情境：enforcement-layers 設計稿第一批含新建 PreToolUse 攔截腳本；使用者指出 `~/.claude/settings.json` 已掛全域 PreToolUse hook（cost-aware-approval），再建即疊床架屋
+- 錯誤/風險：同一 hook 事件掛兩支腳本，行為疊加難追蹤；同類攔截規則散在兩處必然漂移
+- 修正：移除 PreToolUse 項（設計改為「攔截規則日後擴充進既有 hook」）；enforcement-layers.md §2 加「既有設施盤點」註記
+- 規則：新增執行層設施（hook / agent / 自動化）前，先實查 harness 既有設定（`~/.claude/settings.json`、專案 `.claude/`）——同一事件層只允許一個歸屬，擴充優先於新建
