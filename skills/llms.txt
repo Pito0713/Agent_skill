@@ -46,6 +46,11 @@ path: skills/engineering/debug.md
 triggers: （一般不直接觸發，由 debug-flow 協調載入）
 description: 系統性除錯工作流程：重現→收集→假設→驗證→修復。debug-flow 的 Phase 1 執行依據。
 
+name: unknown-matrix-navigation
+path: skills/unknown-matrix-navigation/SKILL.md
+triggers: 盲點掃描、blindspot、我不熟這個模組、不知道從哪下手、需求很模糊但不知道怎麼問、給我幾個極端的設計方向、考考我這次改動、對抗自審
+description: 未知矩陣判斷程序：先判斷「未知的答案在誰手上」（疆域自查／使用者腦中用訪談或極端原型抽取／誰都沒有用盲點掃描浮現），執行中地圖與疆域矛盾時重新分類；AI 產出前做對抗自審（自問自答→疆域仲裁→異質對抗三級去相關）；大改動後產報告+測驗保持人類在迴圈中。掛在 coding-workflow-core Phase 1/3 之上。
+
 ---
 
 ## Quality & Security — 品質與安全
