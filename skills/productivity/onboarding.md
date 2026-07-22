@@ -1,8 +1,18 @@
 ---
 name: onboarding
-description: 接手新專案協調器。當使用者說「幫我了解這個專案」、「我剛加入這個 repo」、
-  「幫我看一下這個 codebase」、「這個專案是做什麼的」、「接手專案」時觸發。
-  快速掌握專案架構、技術堆疊、關鍵模組，輸出可供後續 session 使用的專案摘要。
+description: |
+  新專案接手協調器，系統性建立對一個 codebase 的理解：
+  1. 確認接手情境（角色 / 現有文件 / 最需要先了解的部分）
+  2. Phase 0 觸發 smart-init 讀取既有記憶，掃描專案基本資訊與規模
+  3. Phase 1 架構掃描（大型專案可委派 agy），Phase 2 自動偵測技術堆疊
+  4. Phase 3 深度閱讀關鍵模組，Phase 4 整理資訊架構，Phase 5 觸發 handoff 輸出專案摘要文件
+
+  觸發場景：剛加入一個新專案或第一次接觸某個 repo，需要系統性掌握架構、技術堆疊與核心模組，而非只是恢復上次的工作狀態（那是 smart-init 的範疇）。
+  示例觸發：「我剛加入這個專案，幫我了解一下」「幫我看一下這個 codebase 是怎麼運作的」「接手這個專案，先幫我搞懂架構」
+metadata:
+  trigger: 剛加入新專案需系統性了解架構與技術堆疊時觸發
+  version: "1.0"
+  last_updated: "2026-07-04"
 ---
 
 # Onboarding — Orchestrator
@@ -42,7 +52,7 @@ wc -l $(find . -name "*.ts" -o -name "*.py" -o -name "*.go" 2>/dev/null) | tail 
 若專案規模大，詢問：
 > 「是否啟用 agy 掃描整個 codebase？(y/n)」
 
-**y：**（$CLI_CMD 依 `gemini-assist.md` 前置確認偵測）
+**y：**（$CLI_CMD 依 `agy-assist.md` 前置確認偵測）
 ```bash
 # Bash tool timeout: 570s（agy --print-timeout 9m + 30s 緩衝，模式 B）
 find ./src -name "*.ts" -o -name "*.py" -o -name "*.go" | \
@@ -154,7 +164,7 @@ grep -s '"react"\|"vue"\|"next"\|"express"\|"fastapi"' package.json 2>/dev/null
 |------|------|
 | Orchestrator（本 skill）| 全流程控制、摘要整合 |
 | `smart-init` | Phase 0 讀取既有記憶與工作狀態 |
-| `gemini-assist` 模式 B | Phase 1 大型 codebase 掃描 |
+| `agy-assist` 模式 B | Phase 1 大型 codebase 掃描 |
 | `coding-workflow-core` Phase 0 | Phase 2 技術堆疊自動偵測 |
 | `information-architecture` | Phase 4 功能地圖與路由整理 |
 | `handoff` | Phase 5 輸出結構化摘要文件 |

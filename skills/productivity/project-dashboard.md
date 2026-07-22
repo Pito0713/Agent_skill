@@ -1,6 +1,17 @@
 ---
 name: project-dashboard
-description: 讀取 ~/.agent-sessions/ 下所有專案的 latest.md，輸出跨專案進度總覽表。當使用者說「project dashboard」、「看一下所有專案」、「跨專案狀態」、「專案總覽」時觸發。
+description: |
+  讀取 ~/.agent-sessions/ 下所有專案的 latest.md，輸出跨專案進度總覽表：
+  1. 掃描所有專案的 latest.md 檔案
+  2. 提取每個專案的狀態、最後更新時間、觸發來源、當前焦點與是否有 blocker
+  3. 彙整成單一總覽表格，對 🔴 狀態或有 blocker 的專案額外展開完整內容
+
+  觸發場景：同時手上有多個專案在跑，想快速掌握每個專案目前的進度與是否卡住，不用逐一切換專案查看。
+  示例觸發：「幫我看一下所有專案目前的狀態」「project dashboard」「這幾個專案現在進度到哪了，給我一個總覽」
+metadata:
+  trigger: 需要跨專案進度總覽時觸發
+  version: "1.0"
+  last_updated: "2026-06-25"
 ---
 
 # Project Dashboard

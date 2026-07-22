@@ -67,3 +67,10 @@
 - 錯誤/風險：同一 hook 事件掛兩支腳本，行為疊加難追蹤；同類攔截規則散在兩處必然漂移
 - 修正：移除 PreToolUse 項（設計改為「攔截規則日後擴充進既有 hook」）；enforcement-layers.md §2 加「既有設施盤點」註記
 - 規則：新增執行層設施（hook / agent / 自動化）前，先實查 harness 既有設定（`~/.claude/settings.json`、專案 `.claude/`）——同一事件層只允許一個歸屬，擴充優先於新建
+
+## 2026-07-22 skill 改名只改了 name 欄，檔名與 30 處引用全留舊名
+
+- 情境：`gemini-assist.md` 的底層工具早已從 gemini CLI 換成 agy，某次把 frontmatter `name` 改成 `agy-assist` 就收手，但檔名、`llms.txt` path、inject.sh、CLAUDE.md 路由、10 個 skill 的委派表共約 30 處仍是 gemini-assist——放了數週沒人發現，直到這次批量升 frontmatter 才撞出 name 與檔名不一致
+- 錯誤/風險：不完整改名 = 懸空引用未爆彈（llms.txt path 指向的檔名與 name 不一致，靠檔名對應 name 的流程會斷）；且改名時若無腦全域 sed，會連 README 版本表 / memory ADR / handoff 這些**歷史紀錄**一起竄改，違反「不改史」
+- 修正：先 `grep -rn` 全 repo 盤點所有引用，切成「活引用（路由指標 / 委派表 / skill 名標籤 → 改）」與「dated 歷史敘述（README changelog / memory ADR / handoff / 診斷快照 → 保留）」兩類分別處理；改完跑 §7 索引防漂移四查確認路由 resolve
+- 規則：改 skill / 工具名是**原子操作**——`name` 欄、檔名、`llms.txt`(name+path)、所有活引用必須同一次全改；動手前先 `grep -rn` 全 repo 盤點，並區分活引用（改）vs 歷史紀錄（不改史，保留）

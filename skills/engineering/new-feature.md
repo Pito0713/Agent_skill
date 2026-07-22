@@ -1,8 +1,17 @@
 ---
 name: new-feature
-description: 新功能開發協調器。當使用者說「幫我做一個功能」、「新增 feature」、
-  「實作 X」、「我要做 Y」、「建立 Z 功能」時觸發。
-  自動偵測專案類型，協調 API 設計 → 實作 → 測試 → 文件 → 版本記錄的完整流程。
+description: |
+  新功能開發協調器，自動偵測專案類型，協調完整開發流程：
+  1. 釐清需求 → 偵測技術堆疊 → API 設計（有後端時）
+  2. 委派實作（依範圍分派 backend / frontend / 語言專項 agent）
+  3. 測試策略 → 文件更新 → 版本記錄 → agy 交叉驗證
+
+  觸發場景：要開發全新功能、新增 API endpoint 或 UI 元件，且需要從需求確認到版本記錄的完整流程協調。
+  示例觸發：「幫我做一個使用者通知功能」「新增一個匯出 CSV 的 feature」「我要做一個購物車結帳流程」
+metadata:
+  trigger: 開發全新功能 / 新增 API 或 UI 功能時觸發
+  version: "1.0"
+  last_updated: "2026-07-04"
 ---
 
 # New Feature — Orchestrator
@@ -156,7 +165,7 @@ Python → agents/02-language-specialists/python-expert.md（Python 專案）
 
 詢問使用者：「是否啟用 agy 交叉驗證？(y/n)」
 
-**y：**（$CLI_CMD 與安全設定依 `gemini-assist.md` 前置確認；agy 不可用時走模式 C 的 Claude Subagent Fallback）
+**y：**（$CLI_CMD 與安全設定依 `agy-assist.md` 前置確認；agy 不可用時走模式 C 的 Claude Subagent Fallback）
 ```bash
 # Bash tool timeout: 570s（agy --print-timeout 9m + 30s 緩衝）
 git diff HEAD | $CLI_CMD --print-timeout 9m -p "
@@ -211,7 +220,7 @@ agy 驗證：[通過 / 發現 N 個問題已修正 / 未啟用]
 | `testing-strategy` + `test-engineer` + `e2e-tester` | Phase 5 測試 |
 | `documentation` | Phase 6 文件 |
 | `version-log` | Phase 7 版本記錄 |
-| `gemini-assist` | Phase 7 交叉驗證 |
+| `agy-assist` | Phase 7 交叉驗證 |
 
 ---
 

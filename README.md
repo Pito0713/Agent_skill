@@ -56,7 +56,7 @@
 │   │   ├── tech-lead-mode.md          # Orchestrator 執行策略切換（工單化 + executor 委派 + close gate，按需）
 │   │   ├── coding-workflow-ref.md     # 實作模式速查（按需）
 │   │   ├── coding-workflow.md         # 完整版（參考用）
-│   │   ├── gemini-assist.md           # AI 分工協作 — Antigravity CLI（常駐實驗）
+│   │   ├── agy-assist.md              # AI 分工協作 — Antigravity CLI（常駐實驗）
 │   │   ├── code-review.md             # ★ Code Review 協調器（Orchestrator）
 │   │   ├── new-feature.md             # ★ 新功能開發協調器（Orchestrator）
 │   │   ├── debug-flow.md              # ★ 除錯流程協調器（Orchestrator）
@@ -148,7 +148,7 @@ bash ~/Agent_skill/inject.sh
 
 注入後的 CLAUDE.md 會包含：
 - **常駐載入**（6 項，自動生效）：`coding-standards`、`security`、`git`、`coding-workflow-core`、`handoff`、`version-log`
-- **按需載入**：其餘 skills 以註解列出，移除 `#` 即可啟用（含 `gemini-assist`，v4.5 起降為按需）
+- **按需載入**：其餘 skills 以註解列出，移除 `#` 即可啟用（含 `agy-assist`，v4.5 起降為按需）
 
 ---
 
@@ -279,7 +279,7 @@ lazyengineer [lite|full|ultra|off]
 | 常駐 | `rules/coding-standards.md` | 語言無關，每次都適用 |
 | 常駐 | `rules/security.md` | 安全規範，不可省略 |
 | 常駐 | `skills/engineering/coding-workflow-core.md` | Phase 0-4 實作守則（含自動偵測）|
-| 按需（v4.5 起）| `skills/engineering/gemini-assist.md` | 搜尋 / 掃大檔 / 交叉驗證時載入（原常駐，降級原因見 governance/harness-diagnosis.md）|
+| 按需（v4.5 起）| `skills/engineering/agy-assist.md` | 搜尋 / 掃大檔 / 交叉驗證時載入（原常駐，降級原因見 governance/harness-diagnosis.md）|
 | 自動偵測 | `rules/typescript.md` | tsconfig.json 存在時 |
 | 自動偵測 | `rules/react.md` / `nextjs.md` | package.json 含 react / next 時 |
 | 自動偵測 | `rules/python.md` | requirements.txt / pyproject.toml 存在時 |
@@ -306,7 +306,7 @@ lazyengineer [lite|full|ultra|off]
 @~/.claude/skills/productivity/{handoff,version-log}.md
 
 ## 按需載入（視任務加入，預設 # 註解）
-# gemini-assist / typescript / python / coding-workflow-ref /
+# agy-assist / typescript / python / coding-workflow-ref /
 # learning 系（feedback-loop、concrete-example、academic-mentor、mentor-*）/
 # design 系 / obsidian-query / obsidian-save
 

@@ -1,6 +1,17 @@
 ---
 name: version-log
-description: 每次 commit 前記錄版本號與變更摘要到 README.md 的版本紀錄表。當使用者說「更新版本」、「記錄版本」、「version log」、「準備 commit」時觸發。
+description: |
+  每次 commit 前，將此次變更以版本號形式記錄到 README.md 的版本紀錄表：
+  1. 確認 README.md 是否已有版本紀錄表（無則略過並告知使用者）
+  2. 讀取當前版本號，依變更類型判斷 major / minor bump
+  3. 產生新版本條目寫入 README.md 並 git add，同步寫入 ~/.agent-sessions/<專案>/latest.md 快照
+
+  觸發場景：準備要 commit，需要先把這次的變更以版本號摘要記錄下來，供後續回溯版本歷史。
+  示例觸發：「準備 commit 了，幫我記一下版本」「這次改動幫我更新版本號」「version log」
+metadata:
+  trigger: commit 前需記錄版本號與變更摘要時觸發
+  version: "1.0"
+  last_updated: "2026-06-25"
 ---
 
 # Version Log

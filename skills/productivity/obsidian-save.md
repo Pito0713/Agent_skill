@@ -1,6 +1,18 @@
 ---
 name: obsidian-save
-description: 將本次對話的重點整理後存入 Obsidian vault。當使用者說「記起來」、「存到 Obsidian」、「幫我記錄」、「結束」時觸發。自動偵測來源 skill，切換對應模板。
+description: |
+  將本次對話中有價值的知識整理成結構化筆記存入 Obsidian vault：
+  1. 讀取 .env 取得 VAULT_PATH（缺少則引導使用者建立）
+  2. 自動偵測輸出來源（academic-mentor / 專科 mentor 系 → 學術模板；一般對話 → 通用模板）
+  3. 依模板萃取欄位、判斷分類目錄（knowledge/<領域>/ 或 inbox/）並寫入檔案
+  4. 也支援「整理 inbox」：列出待分類筆記，建議分類後由使用者確認搬移
+
+  觸發場景：對話中出現值得長期保存的知識、解法或決策，想存進個人知識庫；或想把 inbox 暫存筆記重新分類。
+  示例觸發：「這段幫我記起來，存到 Obsidian」「今天學到的東西幫我記錄一下」「幫我整理一下 inbox，分類一下」
+metadata:
+  trigger: 對話出現值得存檔的知識或使用者要求記錄時觸發
+  version: "1.0"
+  last_updated: "2026-07-04"
 ---
 
 # Obsidian Save（寫入知識）

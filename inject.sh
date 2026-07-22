@@ -213,7 +213,7 @@ ${SKILLS_BASE}/productivity/version-log.md
 
 > 以下項目預設註解，移除 # 即可啟用
 
-# ${SKILLS_BASE}/engineering/gemini-assist.md
+# ${SKILLS_BASE}/engineering/agy-assist.md
 # ${SKILLS_BASE}/rules/typescript.md
 # ${SKILLS_BASE}/rules/python.md
 # ${SKILLS_BASE}/engineering/coding-workflow-ref.md

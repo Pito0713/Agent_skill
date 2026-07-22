@@ -1,6 +1,17 @@
 ---
 name: agy-assist
-description: 將資料密集型任務委派給 Antigravity CLI（agy）執行，節省 Claude token 並提供交叉驗證。當使用者說「幫我搜尋」、「這個檔案太大」、「掃一下整個專案」、「給我第二個意見」、「交叉驗證」時觸發。
+description: |
+  將資料密集型任務委派給 Antigravity CLI（agy）執行，節省 Claude token 並提供交叉驗證：
+  1. 模式 A：網路搜尋（agy 取原始資料，Claude 翻譯整合）
+  2. 模式 B：大檔案 / repo 掃描（用 agy 大上下文視窗提取架構重點）
+  3. 模式 C：對抗式審查（agy 或 Claude Subagent Fallback 提供獨立第二意見）
+
+  觸發場景：任務需要網路搜尋最新資訊、檔案或 repo 過大不想耗費 Claude token 直接讀、或需要獨立於主 agent 分析之外的第二意見／交叉驗證。
+  示例觸發：「幫我搜尋一下這個套件最新版本的 breaking changes」「這個 repo 太大了，先掃一下核心架構」「這段邏輯我寫完了，給我第二個意見」
+metadata:
+  trigger: 網路搜尋 / 大檔案掃描 / 對抗式審查交叉驗證時觸發
+  version: "1.0"
+  last_updated: "2026-07-07"
 ---
 
 # AGY Assist（AI 分工協作）

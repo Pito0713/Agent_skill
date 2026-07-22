@@ -257,6 +257,27 @@ Frontend (Next.js) → API Layer (Next.js API Routes / FastAPI)
 
 ---
 
+### ADR-011：skill frontmatter 標準化——結構化 description + 示例觸發 + 版本戳
+
+**日期**：2026-07-22
+
+**背景**：借鏡外部 repo `liusai0820/Stock-Analysis-Skill` 的文件工程。其 frontmatter 把「具體使用者話術例句」寫進 description、並帶 skill 級版本戳——正好對準本 repo 兩個痛點：鐵律 3「不猜意圖」需要例句才好消歧，而近期 lessons 全在講漂移、缺可稽核的陳舊信號。刻意不採其執行期做法（往 /tmp 寫腳本 + 即時 `pip install`、零測試——按本 repo security/coding 標準是反例）。
+
+**決策**（使用者核准，先單檔試點 unknown-matrix 再全面推廣）：所有 skill frontmatter 統一格式——
+1. `description` 用 `|` 多行：能力簡述 +「觸發場景：」+「示例觸發：」（≥3 個逐字使用者話術例句）
+2. `metadata` 區塊：`trigger`（一行簡短情境）、`version`、`last_updated`
+3. `last_updated` 一律填**該檔實質最後變更日**（本批用 git 最後 commit 日為誠實基準，非套用當天）；日後只有動到 skill 實質內容才 bump
+4. **不加** `allowed-tools`（Claude Code 中它是功能性限制欄，會綁死疊加型判斷 skill 的可用工具）
+
+**執行**：37 檔一次到位（36 檔派 5 個 sonnet subagent 平行改 + 1 檔範本手做）；Claude 主對話做終審（python 驗證：正文與 HEAD 逐字比對 / name 未改 / 日期正確 / YAML 合法 / 無 allowed-tools / llms.txt 未動）。同批修掉 `gemini-assist` → `agy-assist` 不完整改名（見 lessons 2026-07-22）。
+
+**後果**：
+- 正面：模糊指令（「優化一下」「重構讓它更好」）更穩定命中對應 skill；`grep last_updated` 可盤陳舊 skill
+- 負面/注意：SKILL.md 的 description 與 `llms.txt` 的 description 是兩份人工摘要，本就不逐字同步（maintenance-protocol §7 已知極限），新增 skill 時兩處都要照此標準寫
+- `convert-skill.md` 產出模板已同步更新為新標準（Step 3 frontmatter + Step 4 checklist + 轉換範例，含 metadata 區塊、示例觸發、不加 allowed-tools）——日後新 skill 自動符合本標準
+
+---
+
 > 知道不完美但有意為之的設計，避免新人重複質疑
 
 | 限制 | 原因 | 預計改善時間 |

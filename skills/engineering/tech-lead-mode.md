@@ -1,11 +1,18 @@
 ---
 name: tech-lead-mode
-description:
-  Tech Lead 執行模式。Orchestrator 不直接寫 code，改為切工單、定驗收、委派 executor、
-  仲裁 reviewer 發現、跑 close gate。當使用者說「tech lead 模式」、「照工單跑」、
-  「這個任務容易 scope creep」、「orchestrator 模式」、或任務符合下方啟用條件時觸發。
-  這是掛在既有 Orchestrator（new-feature / debug-flow / coding-workflow-core）之上的執行策略切換，
-  不是新的任務類型入口。
+description: |
+  Tech Lead 執行模式，Orchestrator 不直接寫 code，改為切工單、委派 executor、仲裁 reviewer 發現、跑 close gate：
+  1. 切工單（範圍/禁區/驗收條件明確寫死）
+  2. 委派 executor（subagent 或 agy）依工單執行
+  3. Reviewer 審查 → Orchestrator 逐條仲裁 → Close Gate 三選一（CLOSE/REOPEN/ESCALATE）
+
+  這是掛在既有 Orchestrator（new-feature / debug-flow / coding-workflow-core）之上的執行策略切換，不是新的任務類型入口。
+  觸發場景：任務預估影響超過 3 個檔案、之前已經卡過關、容易 scope creep，或使用者明確要求工單化管理。
+  示例觸發：「這個改動照 tech lead 模式跑」「這個任務容易 scope creep，切工單處理」「用 orchestrator 模式，委派 executor 去做」
+metadata:
+  trigger: 任務易卡關 / scope creep / 需工單化管理時觸發
+  version: "1.0"
+  last_updated: "2026-07-07"
 ---
 
 # Tech Lead Mode
@@ -44,7 +51,7 @@ description:
 | ----------------------------------------- | ------------------------------------------------------------------------------------------------ | -------------------------------- |
 | **Orchestrator**（Claude 本身）           | 切工單、定驗收條件、委派 executor、仲裁 reviewer 發現、跑 close gate、決定 close/reopen/escalate | 親自大量寫 code                  |
 | **Executor**（見下方委派協定）            | 依工單執行、回報 plan + diff + 測試結果 + 剩餘風險                                               | 決定任務算不算完成、決定驗收標準 |
-| **Reviewer**（`gemini-assist.md` Mode C） | 挑毛病、報風險、報 edge case                                                                     | 決定要不要修、直接改 code        |
+| **Reviewer**（`agy-assist.md` Mode C） | 挑毛病、報風險、報 edge case                                                                     | 決定要不要修、直接改 code        |
 | **人類**（使用者）                        | 產品行為判斷、風險是否可接受、最終驗收                                                           | 盯每一行 diff                    |
 
 ---
@@ -112,7 +119,7 @@ Antigravity 等價參數：`TypeName: "self"` + `Workspace: "branch"`（隔離�
 
 高風險 ticket（金流、正式環境、既有 gate）預設啟用；一般 ticket 詢問使用者是否啟用。
 
-沿用 `gemini-assist.md` Mode C：
+沿用 `agy-assist.md` Mode C：
 
 ```
 git diff HEAD | agy --print-timeout 9m -p "審查這個 diff，僅回報問題，不提供修改方案。
@@ -127,7 +134,7 @@ git diff HEAD | agy --print-timeout 9m -p "審查這個 diff，僅回報問題�
 繁體中文。"
 ```
 
-agy 不可用時走 `gemini-assist.md` 的 Claude Subagent Fallback（冷啟動審查，不可省略）。
+agy 不可用時走 `agy-assist.md` 的 Claude Subagent Fallback（冷啟動審查，不可省略）。
 
 **鐵律：Reviewer 的發現不能直接被信任，也不能被直接忽略。** 進 Phase 4 逐條查證。
 
@@ -231,7 +238,7 @@ coding-workflow-core.md  Phase 2（計畫）完成後 → 同上邏輯
 | ------------ | -------------------------------------------------------------------------------------------- |
 | Orchestrator | Claude 本身，本 skill 全流程控制                                                             |
 | Executor     | harness subagent + 隔離工作區（預設，參數查 model-orchestration §2 適配表）或 agy CLI（需臨時授權，見 Phase 2 Path B） |
-| Reviewer     | `gemini-assist.md` Mode C（agy 或 Claude Subagent Fallback）                                 |
+| Reviewer     | `agy-assist.md` Mode C（agy 或 Claude Subagent Fallback）                                 |
 | 人類終審     | ESCALATE 結果的唯一裁決者                                                                    |
 
 ---

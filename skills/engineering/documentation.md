@@ -1,6 +1,18 @@
 ---
 name: documentation
-description: 撰寫技術文件。當使用者說「幫我寫文件」、「更新 README」、「寫 API docs」、「建立 runbook」時觸發。
+description: |
+  撰寫技術文件，涵蓋四種文件類型與對應模板：
+  1. README.md（快速開始、目錄結構、環境變數、部署）
+  2. API 文件（OpenAPI / JSDoc 格式，含 request/response 範例）
+  3. Runbook（症狀 → 嚴重程度 → 處理步驟 → 升級條件）
+  4. Architecture Decision Record（背景 → 選項比較 → 決策 → 後果）
+
+  觸發場景：使用者需要撰寫或更新任一類型的技術文件，且希望文件同時交代 what、why、how。
+  示例觸發：「幫我寫這個專案的 README」「幫我建立一份 API docs」「這個服務出問題常見，幫我寫個 runbook」
+metadata:
+  trigger: 撰寫 README / API docs / runbook / ADR 時觸發
+  version: "1.0"
+  last_updated: "2026-06-08"
 ---
 
 # Documentation Skill

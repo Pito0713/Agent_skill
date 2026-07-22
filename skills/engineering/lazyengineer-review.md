@@ -1,8 +1,17 @@
 ---
 name: lazyengineer-review
-description: Over-Engineering 偵測審查。當使用者說「掃一下有沒有過度設計」、「這段可以更簡單嗎」、
-  「有什麼可以刪的」、「lazyengineer review」、「找多餘的程式碼」時觸發。
-  補充一般 code-review，專門找「可以刪什麼」，不審查 correctness 或安全問題。
+description: |
+  Over-Engineering 偵測審查，補充一般 code-review，專門找「可以刪什麼」：
+  1. 用五種 tag（delete / stdlib / native / yagni / shrink）標記過度設計
+  2. 只審查可刪減項目，不審查 correctness 或安全問題（那是 code-review 的工作）
+  3. 輸出 net: -N lines 的可消除清單
+
+  觸發場景：懷疑程式碼有過度設計、想找可以刪除或簡化的部分，或搭配 code-review 一起跑。
+  示例觸發：「掃一下這段有沒有過度設計」「這段程式碼有什麼可以刪的」「lazyengineer review 一下這個 PR」
+metadata:
+  trigger: 懷疑過度設計 / 找可刪程式碼時觸發
+  version: "1.0"
+  last_updated: "2026-06-17"
 ---
 
 # Lazy Engineer Review — Over-Engineering 偵測

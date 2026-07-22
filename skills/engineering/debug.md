@@ -1,6 +1,19 @@
 ---
 name: debug
-description: 系統性除錯工作流程。當使用者遇到錯誤、bug、非預期行為，或說「這個壞掉了」、「為什麼會這樣」時觸發。
+description: |
+  系統性除錯工作流程，不猜測、要測量，依序縮小範圍：
+  1. Step 1 重現：確認最小重現條件與環境
+  2. Step 2 收集資訊：錯誤訊息、stack trace、近期變更
+  3. Step 3 形成假設（最多 3 個，按可能性排序）
+  4. Step 4 系統性驗證：git bisect、加 log、隔離測試
+  5. Step 5 修復與驗證：修根因、加回歸測試、移除 debug log
+
+  觸發場景：一般由 debug-flow 協調載入作為 Phase 1 執行依據，也可在使用者直接描述錯誤症狀時單獨參考。
+  示例觸發：「這個功能一直報錯，我想系統性抓一下」「這段邏輯結果不對，但沒有 error message」「幫我用二分法找出是哪個 commit 弄壞的」
+metadata:
+  trigger: debug-flow Phase 1 依據；或直接描述錯誤症狀時參考
+  version: "1.0"
+  last_updated: "2026-06-08"
 ---
 
 # Debug Workflow

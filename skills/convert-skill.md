@@ -1,6 +1,19 @@
 ---
 name: convert-skill
-description: 將 GitHub 上收集的原始 workflow/prompt 文件轉換為本專案標準 skill 格式。當有新的原始文件放入 skills/_inbox/ 時執行。
+description: |
+  將 GitHub 上收集的原始 workflow/prompt 文件轉換為本專案標準 skill 格式：
+  1. 讀取 skills/_inbox/ 中的原始文件，識別類型與核心用途
+  2. 決定分類（engineering / marketing / productivity）與命名
+  3. 轉換為標準 frontmatter + 內容格式
+  4. 品質確認（frontmatter 完整、觸發關鍵字、步驟清單）
+  5. 歸檔並同步更新 skills/llms.txt、inject.sh、README.md 版本紀錄
+
+  觸發場景：內部維護動作——有新的原始 workflow/prompt 文件放入 skills/_inbox/，需要轉換為本專案標準 skill 格式時。
+  示例觸發：「把剛丟進 _inbox 的這份 prompt 轉成 skill」「新增這個 GitHub skill 進來」「幫我把這份收集到的 workflow 轉成標準格式」
+metadata:
+  trigger: skills/_inbox/ 有新原始文件待轉換為標準 skill 格式時觸發
+  version: "1.0"
+  last_updated: "2026-07-04"
 ---
 
 # Convert Skill（原始文件 → 標準格式）
@@ -42,8 +55,16 @@ description: 將 GitHub 上收集的原始 workflow/prompt 文件轉換為本專
 ```markdown
 ---
 name: <kebab-case 名稱>
-description: <觸發條件描述>。當使用者說「...」、「...」時觸發。
-source: <原始 GitHub URL>
+description: |
+  <能力簡述，若有明確步驟可用 1. 2. 3. 編號列出>
+
+  觸發場景：<什麼情況下該喚起這個 skill>
+  示例觸發：「<逐字使用者話術1>」「<話術2>」「<話術3>」
+metadata:
+  trigger: <一行簡短情境描述，勿整串複製 llms.txt 觸發詞>
+  version: "1.0"
+  last_updated: "<YYYY-MM-DD，新建填轉換當日>"
+  source: <原始 GitHub URL，如有>
 ---
 
 # <標題>
@@ -72,8 +93,9 @@ source: <原始 GitHub URL>
 ## Step 4：品質確認
 
 ```
-[ ] frontmatter 完整（name、description、source）
-[ ] description 包含觸發關鍵字（讓 Claude 知道何時啟動）
+[ ] frontmatter 完整（name、多行 description、metadata: trigger/version/last_updated）
+[ ] description 含「觸發場景」+「示例觸發」（≥3 個逐字使用者話術例句，讓 Claude 知道何時啟動）
+[ ] 不加 allowed-tools（Claude Code 中為功能性限制欄，會綁死疊加型判斷 skill）
 [ ] 步驟清單明確可執行（不模糊）
 [ ] 有輸出格式說明
 [ ] 無原始文件中的冗餘說明或廣告文字
@@ -125,8 +147,16 @@ Output a list of issues with severity.
 ```markdown
 ---
 name: review-code
-description: 審查程式碼品質與安全性。當使用者說「幫我 review」、「檢查這段程式碼」、「code review」時觸發。
-source: https://github.com/example/repo
+description: |
+  審查程式碼品質與安全性，依序檢查安全性 / 效能 / 可讀性三面向並輸出分級問題清單。
+
+  觸發場景：使用者要求審查一段程式碼的品質或安全性。
+  示例觸發：「幫我 review 這段」「檢查這段程式碼有沒有問題」「code review 一下」
+metadata:
+  trigger: 程式碼品質 / 安全性審查時觸發
+  version: "1.0"
+  last_updated: "2026-07-22"
+  source: https://github.com/example/repo
 ---
 
 # Code Review

@@ -1,8 +1,22 @@
 ---
 name: code-review
-description: Code Review 協調器。當使用者說「幫我 code review」、「審查這段 code」、
-  「PR review」、「有沒有問題」、「幫我看一下」、「merge 前檢查」時觸發。
-  自動偵測專案類型，依序執行各審查階段，輸出統一報告。
+description: |
+  Code Review 協調器，自動偵測專案類型，依序執行各審查階段並輸出統一報告：
+  1. 確認審查範圍（git diff / 特定檔案 / 貼上片段）
+  2. Phase 0 偵測專案類型
+  3. Phase 1 邏輯與可讀性審查
+  4. Phase 1.5 Over-Engineering 掃描（可選）
+  5. Phase 2 安全審查（CRITICAL 問題設 gate）
+  6. Phase 3 測試覆蓋審查
+  7. Phase 4 Git / PR 格式審查
+  8. Phase 5 agy 冷啟動交叉驗證，輸出統一報告
+
+  觸發場景：使用者要求審查程式碼品質、PR 合併前確認、或懷疑程式碼有問題但不確定哪裡。
+  示例觸發：「幫我 code review 一下這個 PR」「這段 code 有沒有問題」「merge 前幫我看一下」
+metadata:
+  trigger: PR review / 程式碼品質審查 / merge 前確認
+  version: "1.0"
+  last_updated: "2026-07-04"
 ---
 
 # Code Review — Orchestrator
@@ -110,12 +124,12 @@ description: Code Review 協調器。當使用者說「幫我 code review」、�
 
 ## Phase 5：交叉驗證（冷啟動）
 
-依 `gemini-assist.md` 模式 C 執行。**鐵律：reviewer 不得看到 Phase 1–4 的初步報告**（避免錨定偏誤），只收原始碼與審查維度；agy 不可用時強制走模式 C 的 Claude Subagent Fallback，不得跳過。
+依 `agy-assist.md` 模式 C 執行。**鐵律：reviewer 不得看到 Phase 1–4 的初步報告**（避免錨定偏誤），只收原始碼與審查維度；agy 不可用時強制走模式 C 的 Claude Subagent Fallback，不得跳過。
 
 ### Step 1：agy 冷啟動獨立審查
 
 ```bash
-# $CLI_CMD 依 gemini-assist.md 前置確認偵測
+# $CLI_CMD 依 agy-assist.md 前置確認偵測
 # Bash tool timeout: 570s（agy --print-timeout 9m + 30s 緩衝）
 
 # 範圍為 git diff
@@ -186,7 +200,7 @@ git diff HEAD | $CLI_CMD --print-timeout 9m -p "審查這個 diff，僅回報問
 | Orchestrator（本 skill）| 流程控制、phase 排序、最終裁決 |
 | `security-auditor` | 後端安全深度審查（Phase 2）|
 | `frontend-security-auditor` | 前端安全深度審查（Phase 2）|
-| `gemini-assist` 模式 C | 冷啟動獨立交叉驗證，只收原始碼不收初步報告（Phase 5）|
+| `agy-assist` 模式 C | 冷啟動獨立交叉驗證，只收原始碼不收初步報告（Phase 5）|
 | 各 rules | 各 phase 審查標準基準 |
 
 ---

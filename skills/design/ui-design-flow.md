@@ -1,8 +1,20 @@
 ---
 name: ui-design-flow
-description: UI 設計規劃協調器。當使用者說「幫我規劃這個頁面」、「設計這個功能的 UI」、
-  「這個畫面要怎麼做」、「幫我想 UI 架構」、「設計頁面流程」時觸發。
-  從資訊架構 → 版面骨架 → 視覺風格 → 實作交接，完整走完設計流程。
+description: |
+  UI 設計規劃協調器，從資訊架構 → 版面骨架 → 視覺風格 → 實作交接，完整走完設計流程：
+  1. 釐清設計範圍（頁面類型、目標使用者、現有規範、最終產出）
+  2. Phase 1 資訊架構（委派 information-architecture）
+  3. Phase 2 版面骨架（委派 wireframing）
+  4. Phase 3 視覺風格（委派 ui-visual-design）
+  5. Phase 4 實作交接（委派 frontend-engineer / api-architect）
+  6. Phase 5 agy 設計驗證（可選）
+
+  觸發場景：需要完整規劃一個頁面或功能的 UI，從架構到實作交接一次走完。
+  示例觸發：「幫我規劃這個頁面」「設計這個功能的 UI」「這個畫面要怎麼做」「幫我想一下這個新功能的 UI 架構」
+metadata:
+  trigger: 規劃頁面 / 功能 UI，需完整走完 IA→wireframe→視覺→實作交接流程時觸發
+  version: "1.0"
+  last_updated: "2026-07-04"
 ---
 
 # UI Design Flow — Orchestrator
@@ -110,7 +122,7 @@ description: UI 設計規劃協調器。當使用者說「幫我規劃這個頁�
 
 詢問使用者：「是否啟用 agy 驗證設計合理性？(y/n)」
 
-**y：**（$CLI_CMD 依 `gemini-assist.md` 前置確認；agy 不可用時走模式 C 的 Claude Subagent Fallback）
+**y：**（$CLI_CMD 依 `agy-assist.md` 前置確認；agy 不可用時走模式 C 的 Claude Subagent Fallback）
 ```bash
 # Bash tool timeout: 570s（agy --print-timeout 9m + 30s 緩衝，模式 C）
 $CLI_CMD --print-timeout 9m -p "
@@ -167,4 +179,4 @@ agy 驗證：[通過 / 發現 N 個 UX 問題已調整 / 未啟用]
 | `ui-visual-design` | Phase 3 視覺規格 |
 | `frontend-engineer` | Phase 4 實作交接 |
 | `api-architect` | Phase 4 API 設計（若需要）|
-| `gemini-assist` 模式 C | Phase 5 UX 合理性驗證 |
+| `agy-assist` 模式 C | Phase 5 UX 合理性驗證 |

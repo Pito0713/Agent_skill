@@ -1,6 +1,17 @@
 ---
 name: smart-init
-description: 初始化新的工作 session。當使用者說「開始新工作」、「幫我初始化」、「session 開始」、「smart init」時觸發。
+description: |
+  初始化新的工作 session，快速建立 context 避免重複說明背景：
+  1. 讀取 memory/project-context.md 確認目前專案目標
+  2. 向使用者確認這次 session 的主要目標、時間限制、是否延續上次工作
+  3. 依任務類型自動點名需載入的 rules，輸出 session 摘要後直接開始工作
+
+  觸發場景：開始一個新的工作 session，只是要快速恢復上次的工作狀態並確認這次目標，不需要像 onboarding 那樣重新理解整個 codebase 架構。
+  示例觸發：「開始新工作，先幫我 init 一下」「session 開始，我們接著昨天的做」「smart init」
+metadata:
+  trigger: session 開始需快速建立工作 context 時觸發
+  version: "1.0"
+  last_updated: "2026-06-09"
 ---
 
 # Smart Init

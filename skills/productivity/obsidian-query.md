@@ -1,6 +1,17 @@
 ---
 name: obsidian-query
-description: 從 Obsidian vault 搜尋相關歷史筆記並納入回答。當使用者說「查我的筆記」、「Obsidian 有沒有記錄」、「之前有記過嗎」、「搜 Obsidian」時觸發。
+description: |
+  從 Obsidian vault 搜尋與當前問題相關的歷史筆記並納入回答：
+  1. 讀取 .env 取得 VAULT_PATH（缺少則引導使用者建立）
+  2. 從問題萃取 2–4 個關鍵字，grep 搜尋 vault 並取前 5 筆最相關命中
+  3. 依來源（一般筆記 / academic-mentor 學術筆記）用對應格式整理輸出，並標注來源檔案路徑
+
+  觸發場景：想確認某個主題之前是否已在 Obsidian 記錄過，或要把歷史筆記納入這次回答的背景知識。
+  示例觸發：「查我的筆記，之前有記過 Docker 環境變數怎麼設嗎」「Obsidian 有沒有關於多巴胺的記錄」「這個之前有記過嗎，幫我搜一下 Obsidian」
+metadata:
+  trigger: 需要搜尋 Obsidian vault 歷史筆記納入回答時觸發
+  version: "1.0"
+  last_updated: "2026-06-30"
 ---
 
 # Obsidian Query（讀取歷史知識）

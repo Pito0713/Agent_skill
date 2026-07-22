@@ -1,6 +1,18 @@
 ---
 name: handoff
-description: 將當前對話壓縮成交接文件，供下一個 session 或 agent 接手。當使用者說「交接」、「handoff」、「總結一下」、「下次繼續」時觸發。
+description: |
+  將當前對話壓縮成一份讓任何人（或新 session）能在 5 分鐘內接手的交接文件：
+  1. 掃描對話歷史，補充 memory/project-context.md 背景，套入標準交接文件模板
+  2. 確認後存檔到 memory/handoff-<YYYYMMDD>.md
+  3. 寫入跨專案進度快照到 ~/.agent-sessions/<專案>/latest.md（三 harness 共用交接正本）
+  4. 收工前自檢：踩坑教訓與架構決策是否已落地到 lessons.md / project-context.md
+
+  觸發場景：一段工作要結束、要交給下一個 session 或另一個 harness 接手、想把目前進度存下來以防中斷。
+  示例觸發：「幫我交接一下」「總結一下目前進度，我明天繼續」「這個 session 先做到這，寫個 handoff」
+metadata:
+  trigger: 對話結束需交接給下一個 session / harness 時觸發
+  version: "1.0"
+  last_updated: "2026-07-07"
 ---
 
 # Handoff Skill

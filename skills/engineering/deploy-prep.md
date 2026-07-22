@@ -1,8 +1,20 @@
 ---
 name: deploy-prep
-description: 上線前檢查協調器。當使用者說「要上線了」、「準備 deploy」、
-  「release 前」、「幫我做上線檢查」、「production 前確認」時觸發。
-  執行完整的安全、測試、效能、設定檢查，確保上線品質。
+description: |
+  上線前檢查協調器，執行完整的安全、測試、效能、設定檢查以確保上線品質：
+  1. 確認上線範圍、目標環境、是否有 DB migration / breaking change
+  2. Phase 0 偵測專案類型與必要上線條件
+  3. Phase 1 Code Review、Phase 2 安全合規審查（CRITICAL 問題設 gate）
+  4. Phase 3 測試驗證（含 migration 正向/回滾確認）
+  5. Phase 4 設定與環境確認、Phase 5 Git / Release 確認
+  6. Phase 6 agy 最終交叉驗證，輸出上線前確認清單
+
+  觸發場景：使用者準備將變更推上 staging 或 production，需要系統性上線前確認。
+  示例觸發：「這個功能要上線了，幫我做上線前檢查」「準備 deploy 到 production」「release 前確認一下有沒有遺漏」
+metadata:
+  trigger: 上線 / deploy / release 前系統性檢查
+  version: "1.0"
+  last_updated: "2026-07-04"
 ---
 
 # Deploy Prep — Orchestrator
@@ -143,7 +155,7 @@ git status            # 確認無未提交的變更
 
 詢問使用者：「是否啟用 agy 最終交叉驗證？(y/n)」
 
-**y：**（$CLI_CMD 依 `gemini-assist.md` 前置確認；agy 不可用時走模式 C 的 Claude Subagent Fallback）
+**y：**（$CLI_CMD 依 `agy-assist.md` 前置確認；agy 不可用時走模式 C 的 Claude Subagent Fallback）
 ```bash
 # 審查範圍：上次 release 到現在的全部變更，不是只有最後一個 commit
 # 無 tag 時改用使用者指定的範圍（例：main..release-branch）
@@ -209,4 +221,4 @@ agy 驗證：[通過 / 發現 N 個風險，已處理 N 個 / 未啟用]
 | `owasp-reviewer` | Phase 2 合規報告（重大版本）|
 | `e2e-tester` | Phase 3 關鍵 journey 驗證 |
 | `version-log` | Phase 5 版本記錄 |
-| `gemini-assist` 模式 C | Phase 6 上線風險交叉驗證 |
+| `agy-assist` 模式 C | Phase 6 上線風險交叉驗證 |

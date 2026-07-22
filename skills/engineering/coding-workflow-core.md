@@ -1,6 +1,19 @@
 ---
 name: coding-workflow-core
-description: 實作任何功能的核心流程守則（常駐版）。包含四個強制階段與 commit 前 checklist。
+description: |
+  實作任何功能的核心強制流程（常駐版），涵蓋四個階段與 commit 前 checklist：
+  1. Phase 0：自動偵測技術堆疊（TypeScript / React / Next.js / Python / testing / git）
+  2. Phase 1：理解需求與現有架構
+  3. Phase 2：列出計畫與風險，等待確認
+  4. Phase 3：實作（含錯誤處理與基本測試）
+  5. Phase 4：驗證（測試、手動流程、edge case、diff review）
+
+  觸發場景：每次 session 涉及任何程式碼實作時自動生效，不需使用者額外觸發。
+  示例觸發：「幫我加一個使用者登入功能」「實作這支 API endpoint」「幫我把這個表單元件寫好」
+metadata:
+  trigger: 每次 session 涉及程式碼實作時自動生效（常駐）
+  version: "1.0"
+  last_updated: "2026-07-04"
 ---
 
 # Coding Workflow — Core

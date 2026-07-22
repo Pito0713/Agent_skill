@@ -1,6 +1,17 @@
 ---
 name: testing-strategy
-description: 為功能或專案設計測試策略。當使用者說「這個要怎麼測」、「test plan」、「幫我規劃測試」時觸發。只輸出測試計畫文件，不寫測試程式碼（程式碼實作交由 test-engineer agent）。
+description: |
+  為功能或專案設計測試策略，只輸出測試計畫文件，不寫任何測試程式碼：
+  1. 分析被測目標（unit / integration / component / e2e 分類）
+  2. 依金字塔原則決定測試分佈與覆蓋率預估
+  3. 輸出結構化測試計畫，交由 test-engineer agent 實作
+
+  觸發場景：需要規劃測試涵蓋範圍、想知道某功能該怎麼測，或要產出 test plan 文件（不需要立即寫測試程式碼）。
+  示例觸發：「這個功能要怎麼測」「幫我規劃一下這支 API 的 test plan」「幫我設計購物車結帳流程的測試策略」
+metadata:
+  trigger: 需要規劃測試策略 / test plan 時觸發
+  version: "1.0"
+  last_updated: "2026-06-20"
 ---
 
 # Testing Strategy
