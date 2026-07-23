@@ -6,13 +6,20 @@
 支援 Orchestrator 模式：單一入口協調多個 skills / agents，完成完整開發流程。
 
 ```
-                    ~/Agent_skill（唯一正本）
-                   /          |            \
-      CLAUDE.md(+global)   AGENTS.md      GEMINI.md
-            ↓                 ↓               ↓
-   ~/.claude/CLAUDE.md  ~/.codex/AGENTS.md  ~/.gemini/GEMINI.md
-      （Claude Code）      （Codex）        （Antigravity）
+                         ~/Agent_skill（唯一正本）
+        rules/  skills/<category>/<name>/SKILL.md  governance/  agents/
+                                  │
+                  ┌───────────────┼───────────────┐
+             setup-claude     setup-codex     setup-agy      ← bin/ 各 harness adapter
+                  │               │               │            共用 lib-skill-farm.sh
+   ~/.claude/CLAUDE.md   ~/.codex/AGENTS.md   ~/.gemini/GEMINI.md   ← 全域薄索引
+   ~/.claude/skills/*    ~/.codex/skills/*                          ← 單層 skill link farm
+      （Claude Code）        （Codex）         （Antigravity）
 ```
+
+`setup.sh` / `inject.sh` 是總入口，實作在 `bin/{setup,inject}-<harness>.sh`，
+共用核心 `bin/lib-skill-farm.sh`。兩者皆為**兩階段全有全無**：先跑完所有 harness 的
+preflight，全數通過才進 install，任一失敗即零寫入中止（ADR-013）。
 
 ---
 
@@ -157,6 +164,64 @@ package 化之後全部失效，且 Claude Code 對不存在的 `@` 路徑靜默
 
 ---
 
+### 2b. 既有專案遷移（v5.1 之前注入過的專案）
+
+skill package 化之後，link farm 是**扁平**的（沒有 `engineering/` 這層），舊的
+`@~/.claude/skills/<category>/<name>.md` 全部失效。**Claude Code 對不存在的 `@` 路徑
+靜默略過**——不修就是無聲失去常駐規範，不會有任何錯誤訊息。
+
+`rules/*.md` 與 `governance/*.md` 不受影響（`setup-claude.sh` 掛回 farm entry 後自動復活），
+需要改寫的是其餘 category 的引用，含**被 `#` 註解掉的按需載入項**（隨時可能被啟用）。
+
+**先確認這個專案需不需要遷移：**
+
+```bash
+grep -nE '@~/\.claude/skills/(engineering|productivity|learning|design|investing)/' <專案路徑>/CLAUDE.md
+```
+
+有輸出就需要遷移。完整三步（照順序）：
+
+```bash
+P=~/your-project
+
+# 1. 改寫路徑：先看 dry-run，確認 diff 後才 --apply
+bash ~/Agent_skill/bin/migrate-downstream-paths.sh $P
+bash ~/Agent_skill/bin/migrate-downstream-paths.sh $P --apply
+
+# 2. 擋掉 adapter symlink 進 git（已有規則的可跳過）
+grep -q '.claude/skills' $P/.gitignore 2>/dev/null || printf '\n.claude/skills/\n.codex/skills/\n' >> $P/.gitignore
+
+# 3. 注入新的 managed block 與 adapter
+cd $P && bash ~/Agent_skill/inject.sh
+```
+
+> ⚠️ 三步都要跑。只跑步驟 3 的話 managed block 會就位，但舊路徑仍然全斷——
+> `inject.sh` 只維護 marker 內的區塊，marker 外的既有內容一律原樣保留。
+
+**驗證**（每一行都該是 `OK`，含註解掉的按需項）：
+
+```bash
+cd $P
+while read -r l; do p="${l#*@\~/.claude/skills/}"; test -e ~/.claude/skills/$p && echo "OK   $l" || echo "斷鏈 $l"; done < <(grep -E '^#? ?@~/\.claude/skills/' CLAUDE.md)
+git status --short   # 不該出現 .claude/skills/... 一大串
+```
+
+確認無誤後刪掉備份：`rm $P/CLAUDE.md.pre-migrate.bak`
+
+遷移後 `coding-standards` / `security` 會各出現兩次（managed block 一次、舊常駐區塊
+一次）。重複 `@` 只是多載入一次，無害；想乾淨可以把舊區塊那兩行刪掉，讓安全底線
+只由 managed block 負責。
+
+**回退單一專案**：
+
+```bash
+cd $P
+mv CLAUDE.md.pre-migrate.bak CLAUDE.md   # 已刪備份則用 git checkout CLAUDE.md
+rm -rf .claude/skills .codex/skills       # 只是 symlink farm，不影響實體檔案
+```
+
+---
+
 ### 3. 更新 Skills
 
 ```bash
@@ -279,12 +344,20 @@ lazyengineer [lite|full|ultra|off]
 
 ## 常駐 vs 按需 vs 自動偵測
 
+> **v5.2 起下游只剩兩條常駐**：`inject.sh` 的 managed block 只寫入
+> `rules/coding-standards.md` 與 `rules/security.md`（安全底線不靠模型自覺），
+> 其餘一律改走 native skill discovery——說出觸發詞即可，不需要在 CLAUDE.md 列出。
+> 本 repo 自身的 `CLAUDE.md` 另外常駐 `coding-workflow-core`，那是制度倉庫的特例。
+>
+> Codex 沒有 `@` 語法且 AGENTS.md 有 32KiB 上限，只能寫成「開工必讀」的文字要求，
+> **強制力弱於 Claude**；agy 同理。此不對等為已知取捨，見 ADR-013 與 `governance/TODO.md`。
+
 | 類型 | 內容 | 說明 |
 |------|------|------|
 | 常駐 | `rules/coding-standards.md` | 語言無關，每次都適用 |
 | 常駐 | `rules/security.md` | 安全規範，不可省略 |
-| 常駐 | `skills/engineering/coding-workflow-core/SKILL.md` | Phase 0-4 實作守則（含自動偵測）|
-| 按需（v4.5 起）| `skills/engineering/agy-assist/SKILL.md` | 搜尋 / 掃大檔 / 交叉驗證時載入（原常駐，降級原因見 governance/harness-diagnosis.md）|
+| discovery | `skills/engineering/coding-workflow-core/SKILL.md` | Phase 0-4 實作守則（含自動偵測）；本 repo 內為常駐 |
+| discovery | `skills/engineering/agy-assist/SKILL.md` | 搜尋 / 掃大檔 / 交叉驗證時載入（v4.5 起由常駐降級，原因見 governance/harness-diagnosis.md）|
 | 自動偵測 | `rules/typescript.md` | tsconfig.json 存在時 |
 | 自動偵測 | `rules/react.md` / `nextjs.md` | package.json 含 react / next 時 |
 | 自動偵測 | `rules/python.md` | requirements.txt / pyproject.toml 存在時 |
@@ -374,4 +447,5 @@ lazyengineer [lite|full|ultra|off]
 | v5.0.1 | 2026-07-07 | agy 對抗審查修正（8 條發現：6 修 / 1 駁回 / 1 已知取捨）：三索引鐵律加「專案規則優先、安全底線不得放寬」；交接檔 `<專案>` 定義與無鎖併發合併規約；§7 補 16KB 大小檢查；lessons 精簡觸發時機 |
 | v5.0.2 | 2026-07-07 | Claude 全域載入點補齊：新增 CLAUDE.global.md（18 行極薄指標，不常駐載入），setup.sh 第五條 symlink `~/.claude/CLAUDE.md`——三家全域覆蓋對稱 |
 | v5.1 | 2026-07-23 | skill package 化（ADR-012）：38 個 skill 統一 `category/name/SKILL.md`；新增 `skills/index.json` machine coverage 正本與 `bin/validate-skill-index.py`；Claude/Codex 改單層 link farm native discovery |
+| v5.2.1 | 2026-07-23 | 遷移腳本改通用 regex（原逐條列舉只覆蓋 5/21 條，漏掉 14 條註解按需項與舊名 `gemini-assist`）+ 改寫後存在性驗證；README 補「2b. 既有專案遷移」完整操作指令與架構圖 |
 | v5.2 | 2026-07-23 | 接線腳本按 harness 拆分（ADR-013）：`bin/lib-skill-farm.sh` 共用核心 + `bin/{setup,inject}-<harness>.sh` 薄 adapter，`setup.sh`/`inject.sh` 降為總入口並改**兩階段全有全無**（先全 preflight 再全 install）；修復三缺陷——① `rules`/`governance` 掛回 Claude farm，舊 `@` 常駐路徑不再靜默斷鏈 ② 半接線中間態改零寫入中止 ③ 孤兒 entry 自動清除且 validator 會 FAIL；新增 `bin/migrate-downstream-paths.sh` 遷移舊下游專案；inject 恢復兩條安全底線常駐 |
