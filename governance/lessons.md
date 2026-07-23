@@ -74,3 +74,17 @@
 - 錯誤/風險：不完整改名 = 懸空引用未爆彈（llms.txt path 指向的檔名與 name 不一致，靠檔名對應 name 的流程會斷）；且改名時若無腦全域 sed，會連 README 版本表 / memory ADR / handoff 這些**歷史紀錄**一起竄改，違反「不改史」
 - 修正：先 `grep -rn` 全 repo 盤點所有引用，切成「活引用（路由指標 / 委派表 / skill 名標籤 → 改）」與「dated 歷史敘述（README changelog / memory ADR / handoff / 診斷快照 → 保留）」兩類分別處理；改完跑 §7 索引防漂移四查確認路由 resolve
 - 規則：改 skill / 工具名是**原子操作**——`name` 欄、檔名、`llms.txt`(name+path)、所有活引用必須同一次全改；動手前先 `grep -rn` 全 repo 盤點，並區分活引用（改）vs 歷史紀錄（不改史，保留）
+
+## 2026-07-22 全綠測試與 code review 都漏掉「這個函式沒人呼叫」
+
+- 情境：tabetemiru（Swift app）修完 11 個 code review bugs、28 個單元測試全綠、冒煙啟動不 crash，使用者一開 app 卻發現首頁顯示「今日任務完成」——真因是 `SeedDataLoader.loadIfNeeded` 全專案沒有任何呼叫端，題庫從未寫進 store，所有查詢回傳 0
+- 錯誤/風險：驗證方式與缺陷類型不匹配——單元測試都自建 fixture（不走真實初始化路徑）、code review 逐檔看實作（不追呼叫圖）、冒煙測試只看有沒有 crash（空資料不會 crash）。三種驗證同時盲，功能完全不可用卻一路綠燈
+- 修正：補上呼叫端；驗證改為真實啟動後直接查資料層（`sqlite3 <store> "SELECT COUNT(*)..."`），確認初始化真的產生了資料
+- 規則：宣告「修好了」之前，至少一項驗證必須走**真實初始化路徑並檢查副作用是否真的發生**（資料寫進去了嗎、檔案產生了嗎），不能全部依賴自建 fixture 的測試；新增或修改 service 時順手 `grep -rn "<funcName>"` 確認它有呼叫端
+
+## 2026-07-23 同一條「rules 斷鏈」在三個月內踩第二次
+
+- 情境：v4.6 曾修過一次 rules 斷鏈（新增 `skills/rules → ../rules` symlink，讓下游 `@~/.claude/skills/rules/...` 有效）。ADR-012 把 `~/.claude/skills` 從「整目錄 symlink」改成「per-skill link farm」後，那條相容 symlink 不再出現在 farm 下，同一批路徑再次全部失效——而且 Claude Code 對不存在的 `@` 路徑**靜默略過**，7 個下游專案會安靜失去全部常駐規範，沒有任何錯誤訊號
+- 錯誤/風險：驗證只覆蓋「新架構自己的 38 個 package」，沒有一項檢查「舊架構承諾過的路徑是否仍然有效」。相容層（compatibility shim）是最容易在重構中被無聲刪掉的東西，因為它不屬於新設計的任何一部分，測試矩陣裡也沒有它的位置
+- 修正：`setup-claude.sh` 把 `rules`、`governance` 掛回 farm；分類層路徑（`engineering/x.md`）因 link farm 是扁平的救不回，另寫 `bin/migrate-downstream-paths.sh` 改寫下游
+- 規則：改動「對外承諾過的路徑」的產生方式時（symlink 佈局、目錄結構、URL routing），驗證清單必須包含**舊路徑仍可 resolve**，而不只是新路徑正確；靜默失敗的介面（`@` 引用、動態 import、環境變數）要特別列一條，因為它不會自己報錯

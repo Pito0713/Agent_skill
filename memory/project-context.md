@@ -10,7 +10,7 @@
 - 快照路徑：`~/.agent-sessions/<project>/latest.md`
 - 完整寫入觸發：`handoff` skill、`version-log` skill（commit）
 - 輕量寫入觸發：git post-commit hook（metadata only，無 Claude）
-- 聚合 skill：`skills/productivity/project-dashboard.md`
+- 聚合 skill：`skills/productivity/project-dashboard/SKILL.md`
 - hook 安裝方式：`inject.sh` 執行時自動安裝至 `.git/hooks/post-commit`
 
 ---
@@ -19,7 +19,7 @@
 
 - 採用 Grep-based 檢索，不引入外部 vector DB
 - 知識庫路徑：`knowledge/`，分三類：engineering / security / workflow
-- 搜尋 skill：`skills/productivity/rag-search.md`
+- 搜尋 skill：`skills/productivity/rag-search/SKILL.md`
 - 決策原因：符合現有 Bash + Markdown 架構，零依賴，可立即使用
 
 ### TODO：評估升級至 Embedding + Vector DB
@@ -326,3 +326,56 @@ Frontend (Next.js) → API Layer (Next.js API Routes / FastAPI)
 | 版本 | 日期 | 變更摘要 |
 |------|------|----------|
 | v0.1 | （日期） | 初始建立 |
+
+---
+
+## ADR-012：跨 harness 共用 SKILL.md package 與 machine index（2026-07-23）
+
+**決策**：所有 indexed skill 統一為 `category/name/SKILL.md`；`skills/index.json`
+是 machine-readable coverage 正本，`skills/llms.txt` 保留自然語言觸發說明並由
+validator 檢查 coverage。因 Claude/Codex native discovery 都要求 root 下一層直接
+出現 `<name>/SKILL.md`，`setup.sh` 與 `inject.sh` 在各自 skills root 建立單層
+per-skill symlink link farm，target 仍是分類正本，不複製內容。
+
+**原因**：舊式散落 `.md` 可供 Claude 文字引用，但 Codex native discovery 只能
+發現既有的兩個 package，造成同一制度在不同 harness 的 coverage 不一致。
+
+**安全邊界**：寫入前完整 preflight 所有 indexed names；同名實體 entry 或異源
+symlink 視為衝突並在零寫入狀態停止，非同名 `.system`／第三方 entries 保留。入口
+只替換自身 managed block 並保留使用者內容。`.codex/hooks.json` 暫不分發；
+`~/.agents/skills` 是 legacy 且不在本次管理範圍。
+
+**後果**：Claude/Codex 都可 native discover 全部 indexed packages；舊路徑屬 breaking
+change，活引用已同步，歷史 ADR/changelog 保留原文。
+
+---
+
+## ADR-013：接線腳本按 harness 拆分（2026-07-23）
+
+**決策**：`setup.sh` / `inject.sh` 降為總入口，實作拆成 `bin/lib-skill-farm.sh`
+（共用核心，唯一正本）＋ `bin/{setup,inject}-<harness>.sh`（薄 adapter）。
+harness 腳本內禁止出現 `ln -sfn` 等接線動作——出現即代表核心被複製了第二份。
+總入口採**兩階段全有全無**：先跑完所有 harness 的 preflight，全數通過才進 install。
+
+**原因**：三個 harness 的需求本就不對稱（Claude 需要 `rules`/`governance` 掛進
+farm 才能讓 `@` 常駐 resolve、Codex 需保留 `.system` 且未來可能遷往官方
+`~/.agents/skills`、agy 只吃一條 GEMINI.md），硬塞進同一個函式導致每次單一
+harness 的變動都要動共用檔案。實務上也造成兩個 session 平行作業時撞車
+（2026-07-23 已發生一次）。
+
+**安全邊界**：preflight 只做檢查與 `mkdir -p` 父目錄（冪等無破壞性），install 才
+建 symlink；孤兒清理只刪「readlink 指向本 repo `skills/` 但不在 index」的 entry，
+第三方 entry、Codex `.system`、以及指向 `repo/rules`、`repo/governance` 的 extra
+entry 因前綴不符而豁免。
+
+**已知取捨（不對等的常駐強制力）**：Claude 的 managed block 用 `@` 常駐載入
+`rules/coding-standards.md` 與 `rules/security.md`，是機制保證；Codex 沒有 `@`
+語法且 AGENTS.md 有 32KiB 上限，只能寫成「開工必讀」的文字要求，agy 同理。
+安全底線在 Claude 是強制、在 Codex/agy 是紀律。要讓 Codex 也成為硬保證需走 hook
+或內嵌精簡規範，屬未來議題。
+
+**後果**：單一 harness 的變更（如 Codex 遷往官方 discovery root）只需改一個檔案；
+半接線中間態由架構消除；`~/.claude/skills/{rules,governance}` 兩條 entry 讓
+v4.6/v4.7 建立的舊 `@` 路徑重新生效。舊下游專案的
+`@~/.claude/skills/<category>/<name>.md` 仍需 `bin/migrate-downstream-paths.sh`
+一次性改寫（link farm 是扁平的，symlink 救不回分類層路徑）。

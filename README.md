@@ -24,8 +24,18 @@
 ├── CLAUDE.global.md                   # Claude Code 全域極薄指標（symlink 到 ~/.claude/CLAUDE.md）
 ├── AGENTS.md                          # Codex 索引（symlink 到 ~/.codex/AGENTS.md，全域生效）
 ├── GEMINI.md                          # Antigravity/agy 索引（symlink 到 ~/.gemini/GEMINI.md，全域生效）
-├── setup.sh                           # 一鍵建五條 symlink，把正本接線到三個 harness
-├── inject.sh                          # 在目標專案注入常駐 skill 設定（Claude 專案層）
+├── setup.sh                           # 全域接線總入口（串接 bin/setup-<harness>.sh）
+├── inject.sh                          # 下游注入總入口（串接 bin/inject-<harness>.sh）
+│
+├── bin/                               # 接線實作（ADR-013：一份共用核心 + 各 harness 薄 adapter）
+│   ├── lib-skill-farm.sh              # 共用核心：讀 index / preflight / 建 farm / 清孤兒
+│   ├── setup-claude.sh                # Claude 全域：skill farm + rules/governance entry + CLAUDE.md
+│   ├── setup-codex.sh                 # Codex 全域：skill farm + AGENTS.md
+│   ├── setup-agy.sh                   # agy 全域：GEMINI.md
+│   ├── inject-claude.sh               # 下游 .claude/skills + CLAUDE.md managed block（含 @ 常駐）
+│   ├── inject-codex.sh                # 下游 .codex/skills + AGENTS.md managed block
+│   ├── validate-skill-index.py        # index / llms.txt / package / adapter 四方一致性
+│   └── migrate-downstream-paths.sh    # 舊下游 @ 路徑一次性遷移（預設 dry-run）
 ├── .claudeignore                      # Claude 工具掃描排除清單
 │
 ├── governance/                        # 制度層（v4.5）：調度守則、判斷 rubrics、派工模板、維護協議
@@ -49,38 +59,15 @@
 │   └── git.md                         # Git workflow / commit 規範（自動偵測）
 │
 ├── skills/                            # 工作流程 skills
-│   ├── convert-skill.md               # GitHub → 標準格式轉換 SOP
+│   ├── index.json                     # Machine-readable coverage 正本
+│   ├── llms.txt                       # 自然語言 triggers / description
+│   ├── convert-skill/SKILL.md         # GitHub → 標準格式轉換 SOP
 │   ├── _inbox/                        # 待處理的原始收集素材
-│   ├── engineering/
-│   │   ├── coding-workflow-core.md    # 核心流程守則（常駐，Phase 0-4）
-│   │   ├── tech-lead-mode.md          # Orchestrator 執行策略切換（工單化 + executor 委派 + close gate，按需）
-│   │   ├── coding-workflow-ref.md     # 實作模式速查（按需）
-│   │   ├── coding-workflow.md         # 完整版（參考用）
-│   │   ├── agy-assist.md              # AI 分工協作 — Antigravity CLI（常駐實驗）
-│   │   ├── code-review.md             # ★ Code Review 協調器（Orchestrator）
-│   │   ├── new-feature.md             # ★ 新功能開發協調器（Orchestrator）
-│   │   ├── debug-flow.md              # ★ 除錯流程協調器（Orchestrator）
-│   │   ├── deploy-prep.md             # ★ 上線前檢查協調器（Orchestrator）
-│   │   ├── security-review.md         # ★ 安全審查協調器（Orchestrator）
-│   │   ├── lazyengineer.md            # Lazy Senior Dev 模式（決策梯 + token 節省）
-│   │   ├── lazyengineer-review.md     # Over-Engineering 偵測（可刪清單）
-│   │   ├── debug.md                   # 系統性除錯流程（被 debug-flow 協調）
-│   │   ├── testing-strategy.md        # 測試策略規劃，只輸出計畫（被 Orchestrator 協調）
-│   │   └── documentation.md           # 文件撰寫模板（被 Orchestrator 協調）
-│   ├── marketing/                     # 行銷相關 skills（待填充）
-│   ├── design/                        # UI/UX 設計規劃 skills
-│   │   ├── ui-design-flow.md          # ★ UI 設計規劃協調器（Orchestrator）
-│   │   ├── wireframing.md             # 頁面版面結構規劃（被 Orchestrator 協調）
-│   │   ├── ui-visual-design.md        # 視覺風格選定與規格輸出（被 Orchestrator 協調）
-│   │   └── information-architecture.md # 導航層級與 API 路由規劃（被 Orchestrator 協調）
-│   ├── productivity/
-│   │   ├── onboarding.md              # ★ 接手新專案協調器（Orchestrator）
-│   │   ├── handoff.md                 # 交接文件生成
-│   │   ├── smart-init.md              # Session 初始化
-│   │   └── version-log.md             # 版本紀錄更新
-│   └── learning/                      # 學習 / 練習導向 skills（按需）
-│       ├── feedback-loop.md           # 刻意練習立即回饋循環
-│       └── concrete-example.md        # 具體情境舉例（A/B 方案）
+│   ├── engineering/<name>/SKILL.md    # 工程與品質 workflow packages
+│   ├── design/<name>/SKILL.md         # UI/UX 規劃 packages
+│   ├── productivity/<name>/SKILL.md   # 交接與知識工作 packages
+│   ├── learning/<name>/SKILL.md       # 學習與 mentor packages
+│   └── investing/<name>/SKILL.md      # 投資分析 packages
 │
 ├── agents/                            # 專責 subagents（被 Orchestrator 協調）
 │   ├── 01-core-development/
@@ -117,19 +104,29 @@ cd Agent_skill
 bash setup.sh
 ```
 
-Setup 會建立**五條 symlink**，把正本接線到三個 harness（每台機器都要跑一次，否則該機的 Codex / agy 讀不到制度且不會報錯）：
+`setup.sh` 是總入口，依序呼叫 `bin/setup-{claude,codex,agy}.sh`。**兩階段全有全無**：
+先跑完三個 harness 的 preflight，全數通過才進 install；任一 preflight 失敗就零寫入中止，
+不會留下「Claude 接好了、agy 沒接」的半接線狀態。可用
+`AGENT_SKILL_HOME=/tmp/test-home bash setup.sh` 做隔離 dry-run，也可單獨執行某個 harness
+（`bash bin/setup-codex.sh`）。
 
-| Symlink | 供誰讀 |
-|---------|--------|
-| `~/.claude/skills → repo/skills` | Claude Code（skill 庫）|
-| `~/.claude/governance → repo/governance` | Claude Code（制度層）|
-| `~/.claude/CLAUDE.md → repo/CLAUDE.global.md` | Claude Code 全域（未 inject 的專案也有極薄路由）|
-| `~/.codex/AGENTS.md → repo/AGENTS.md` | Codex 全域 |
-| `~/.gemini/GEMINI.md → repo/GEMINI.md` | Antigravity（agy）全域 |
+| Symlink | 供誰讀 | 由誰建 |
+|---------|--------|--------|
+| `~/.claude/skills/<name> → repo/skills/<category>/<name>` | Claude Code 單層 native discovery | `setup-claude.sh` |
+| `~/.claude/skills/rules → repo/rules` | Claude `@~/.claude/skills/rules/*.md` 常駐路徑 | `setup-claude.sh` |
+| `~/.claude/skills/governance → repo/governance` | Claude 舊路徑相容 | `setup-claude.sh` |
+| `~/.claude/governance → repo/governance` | Claude Code（制度層）| `setup-claude.sh` |
+| `~/.claude/CLAUDE.md → repo/CLAUDE.global.md` | Claude Code 全域（未 inject 的專案也有極薄路由）| `setup-claude.sh` |
+| `~/.codex/skills/<name> → repo/skills/<category>/<name>` | Codex 單層 native discovery；保留 `.system` 與第三方 entries | `setup-codex.sh` |
+| `~/.codex/AGENTS.md → repo/AGENTS.md` | Codex 全域 | `setup-codex.sh` |
+| `~/.gemini/GEMINI.md → repo/GEMINI.md` | Antigravity（agy）全域 | `setup-agy.sh` |
+
+> `rules` / `governance` 兩條**只掛在 Claude**：`@` 常駐語法只認 `~/.claude/skills/` 前綴，
+> Codex / agy 走絕對路徑讀正本，不需要。這是拆分後 harness 差異各自收斂的實例。
 
 ---
 
-### 2. 在目標專案注入 CLAUDE.md
+### 2. 在目標專案注入 Claude / Codex adapters
 
 進入你要開發的專案目錄，執行 inject.sh：
 
@@ -138,17 +135,25 @@ cd ~/my-project
 bash ~/Agent_skill/inject.sh
 ```
 
-**inject.sh 的行為：**
+`inject.sh` 同樣是總入口，兩階段呼叫 `bin/inject-{claude,codex}.sh`（agy 無下游 adapter，
+只吃全域 GEMINI.md）。會在 `.claude/skills` 與 `.codex/skills` 建立單層 per-skill link farm，
+並在 `CLAUDE.md`、`AGENTS.md` 最上方維護帶 marker 的薄區塊。既有內容保留；
+若任一同名 entry 已被其他內容占用，腳本會在寫入前停止；非同名第三方內容保留。
 
-| 情境 | 行為 |
-|------|------|
-| 專案沒有 CLAUDE.md | 自動生成含常駐 skill 的模板 |
-| 專案已有 CLAUDE.md，未注入過 | 顯示預覽，詢問確認後注入到最上方 |
-| 已注入過舊版 | 顯示現有 vs 新版對比，詢問確認後精確替換區塊 |
+**常駐載入**：Claude 的 managed block 含兩行 `@` 常駐（`rules/coding-standards.md`、
+`rules/security.md`），安全底線不靠模型自覺。Codex 沒有 `@` 語法且 AGENTS.md 有 32KiB 上限，
+只能寫成「開工必讀」的文字要求——**兩者強制力不對等**，已知取捨見 ADR-013。
 
-注入後的 CLAUDE.md 會包含：
-- **常駐載入**（6 項，自動生效）：`coding-standards`、`security`、`git`、`coding-workflow-core`、`handoff`、`version-log`
-- **按需載入**：其餘 skills 以註解列出，移除 `#` 即可啟用（含 `agy-assist`，v4.5 起降為按需）
+**舊專案遷移**：v5.x 之前注入的專案，其 `@~/.claude/skills/<category>/<name>.md` 路徑在
+package 化之後全部失效，且 Claude Code 對不存在的 `@` 路徑靜默略過。用
+`bash bin/migrate-downstream-paths.sh <專案路徑>`（預設 dry-run，加 `--apply` 寫入）改寫。
+
+所有 indexed skill 都採 `category/name/SKILL.md` package。`skills/index.json`
+是 machine-readable coverage 正本；`skills/llms.txt` 保留自然語言觸發說明，
+`bin/validate-skill-index.py` 負責防止兩者 coverage 漂移。
+
+`.codex/hooks.json` 不分發到下游：目前 hook 契約未穩定，避免覆蓋專案設定。
+`~/.agents/skills` 視為 legacy discovery root，本流程不讀寫或刪除。
 
 ---
 
@@ -188,7 +193,7 @@ agy
 
 ### 5. 新增 GitHub Skill（可選）
 
-參考 `sources/registry.md` 登記來源，再依照 `skills/convert-skill.md` 流程轉換格式。
+參考 `sources/registry.md` 登記來源，再依照 `skills/convert-skill/SKILL.md` 流程轉換格式。
 
 ---
 
@@ -278,46 +283,46 @@ lazyengineer [lite|full|ultra|off]
 |------|------|------|
 | 常駐 | `rules/coding-standards.md` | 語言無關，每次都適用 |
 | 常駐 | `rules/security.md` | 安全規範，不可省略 |
-| 常駐 | `skills/engineering/coding-workflow-core.md` | Phase 0-4 實作守則（含自動偵測）|
-| 按需（v4.5 起）| `skills/engineering/agy-assist.md` | 搜尋 / 掃大檔 / 交叉驗證時載入（原常駐，降級原因見 governance/harness-diagnosis.md）|
+| 常駐 | `skills/engineering/coding-workflow-core/SKILL.md` | Phase 0-4 實作守則（含自動偵測）|
+| 按需（v4.5 起）| `skills/engineering/agy-assist/SKILL.md` | 搜尋 / 掃大檔 / 交叉驗證時載入（原常駐，降級原因見 governance/harness-diagnosis.md）|
 | 自動偵測 | `rules/typescript.md` | tsconfig.json 存在時 |
 | 自動偵測 | `rules/react.md` / `nextjs.md` | package.json 含 react / next 時 |
 | 自動偵測 | `rules/python.md` | requirements.txt / pyproject.toml 存在時 |
 | 自動偵測 | `rules/testing.md` | *.test.* / jest.config.* / pytest.ini 存在時 |
 | 自動偵測 | `rules/git.md` | 任務涉及 commit / PR / branch 時 |
 | 自動偵測 | `rules/frontend-security.md` | package.json 含 react / vue / next 時 |
-| 按需 | `skills/engineering/coding-workflow-ref.md` | 查實作模式時 |
-| 按需 | `skills/engineering/tech-lead-mode.md` | 卡關 / 跨檔案 / 高風險任務容易 scope creep 時（工單化 + executor 委派 + close gate）|
-| 按需 | `skills/engineering/lazyengineer.md` | 精簡程式碼 / 反 over-engineering 時（實測 -65–90% output tokens）|
-| 按需 | `skills/engineering/lazyengineer-review.md` | 掃描過度設計 / 找可刪的程式碼時 |
-| 按需 | `skills/learning/feedback-loop.md` | 刻意練習 / 改進特定能力時 |
-| 按需 | `skills/learning/concrete-example.md` | 邏輯看不懂 / 反覆出錯時 |
+| 按需 | `skills/engineering/coding-workflow-ref/SKILL.md` | 查實作模式時 |
+| 按需 | `skills/engineering/tech-lead-mode/SKILL.md` | 卡關 / 跨檔案 / 高風險任務容易 scope creep 時（工單化 + executor 委派 + close gate）|
+| 按需 | `skills/engineering/lazyengineer/SKILL.md` | 精簡程式碼 / 反 over-engineering 時（實測 -65–90% output tokens）|
+| 按需 | `skills/engineering/lazyengineer-review/SKILL.md` | 掃描過度設計 / 找可刪的程式碼時 |
+| 按需 | `skills/learning/feedback-loop/SKILL.md` | 刻意練習 / 改進特定能力時 |
+| 按需 | `skills/learning/concrete-example/SKILL.md` | 邏輯看不懂 / 反覆出錯時 |
 
 ---
 
 ## 注入後的 CLAUDE.md 規格
 
-注入區塊的**單一事實來源是 `inject.sh` 的 `INJECT_BLOCK`**，本節不重複維護完整清單（避免漂移）。結構摘要：
+注入區塊的**單一事實來源是 `bin/inject-claude.sh` 的 `MANAGED_BLOCK`**（Codex 側在
+`bin/inject-codex.sh`），本節不重複維護完整清單（避免漂移）。結構摘要：
 
 ```markdown
-## 常駐載入（Agent Skill）
-@~/.claude/skills/rules/{coding-standards,security,git}.md
-@~/.claude/skills/engineering/coding-workflow-core.md
-@~/.claude/skills/productivity/{handoff,version-log}.md
+<!-- agent-skill:begin -->
+## Agent Skill adapter（claude）
 
-## 按需載入（視任務加入，預設 # 註解）
-# agy-assist / typescript / python / coding-workflow-ref /
-# learning 系（feedback-loop、concrete-example、academic-mentor、mentor-*）/
-# design 系 / obsidian-query / obsidian-save
+@~/.claude/skills/rules/coding-standards.md
+@~/.claude/skills/rules/security.md
 
-## 制度層路由（governance，用到才讀，不要 @ 常駐）
-# 委派/選 model → model-orchestration；完成判準 → judgment-rubrics；
-# 派工 prompt → delegation-templates；教訓 → lessons
+其餘 skill 優先使用 native discovery；未命中時讀 index.json 再載入 SKILL.md。
+<!-- agent-skill:end -->
+
+（marker 之後為專案原有內容，注入時原樣保留）
 ```
 
-> 移除 `#` 即可啟用對應按需 skill。Orchestrator skills 不需要在此列出，說出觸發詞即可自動執行。
-> `rules/` 透過 `skills/rules → ../rules` 相對 symlink 對外提供（v4.6），下游 `@~/.claude/skills/rules/...` 路徑因此有效。
-> `governance/` 由 setup.sh 建立 `~/.claude/governance` 專屬 symlink 對外提供（v4.9），下游以路由指標按需讀取，不 @ 常駐載入；repo 內 `skills/governance → ../governance` 保留為 v4.7 舊路徑相容層，兩條路徑皆有效。
+> 只有安全底線兩條走 `@` 常駐，其餘一律 native discovery——說出觸發詞即可，不需要在此列出。
+> 重跑 inject 只會替換 marker 內的區塊，marker 外的內容不動。
+> `rules/` 與 `governance/` 由 `setup-claude.sh` 掛進 link farm（`~/.claude/skills/rules`、
+> `~/.claude/skills/governance`），下游 `@~/.claude/skills/rules/...` 路徑因此有效；
+> `~/.claude/governance` 一級 symlink（v4.9）保留，兩條路徑皆可用。
 
 ---
 
@@ -368,3 +373,5 @@ lazyengineer [lite|full|ultra|off]
 | v5.0 | 2026-07-07 | 三 harness 制度統一（ADR-009）：setup.sh 增建 `~/.codex/AGENTS.md`、`~/.gemini/GEMINI.md` 全域 symlink；AGENTS.md / GEMINI.md 改寫為薄索引（絕對路徑 + harness 專屬區塊）；agy 升級完整 harness（excludeTools 解鎖）；model-orchestration 補 Codex 欄 + 三 harness 型號表 + 跨 harness 分工；maintenance-protocol §6 記憶回寫正本表（交接正本 = ~/.agent-sessions/）+ §7 索引防漂移四查；harness-diagnosis 三家差異診斷 |
 | v5.0.1 | 2026-07-07 | agy 對抗審查修正（8 條發現：6 修 / 1 駁回 / 1 已知取捨）：三索引鐵律加「專案規則優先、安全底線不得放寬」；交接檔 `<專案>` 定義與無鎖併發合併規約；§7 補 16KB 大小檢查；lessons 精簡觸發時機 |
 | v5.0.2 | 2026-07-07 | Claude 全域載入點補齊：新增 CLAUDE.global.md（18 行極薄指標，不常駐載入），setup.sh 第五條 symlink `~/.claude/CLAUDE.md`——三家全域覆蓋對稱 |
+| v5.1 | 2026-07-23 | skill package 化（ADR-012）：38 個 skill 統一 `category/name/SKILL.md`；新增 `skills/index.json` machine coverage 正本與 `bin/validate-skill-index.py`；Claude/Codex 改單層 link farm native discovery |
+| v5.2 | 2026-07-23 | 接線腳本按 harness 拆分（ADR-013）：`bin/lib-skill-farm.sh` 共用核心 + `bin/{setup,inject}-<harness>.sh` 薄 adapter，`setup.sh`/`inject.sh` 降為總入口並改**兩階段全有全無**（先全 preflight 再全 install）；修復三缺陷——① `rules`/`governance` 掛回 Claude farm，舊 `@` 常駐路徑不再靜默斷鏈 ② 半接線中間態改零寫入中止 ③ 孤兒 entry 自動清除且 validator 會 FAIL；新增 `bin/migrate-downstream-paths.sh` 遷移舊下游專案；inject 恢復兩條安全底線常駐 |

@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+# inject.sh — 為下游專案建立單層 Claude/Codex adapters 與薄入口。
+
+set -euo pipefail
+
+REPOSITORY_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="${AGENT_SKILL_PROJECT_DIR:-$(pwd)}"
+BEGIN_MARKER="<!-- agent-skill:begin -->"
+END_MARKER="<!-- agent-skill:end -->"
+CLAUDE_ADAPTER="$PROJECT_DIR/.claude/skills"
+CODEX_ADAPTER="$PROJECT_DIR/.codex/skills"
+SKILL_NAMES=()
+SKILL_TARGETS=()
+
+while IFS=$'\t' read -r skill_name skill_path; do
+  SKILL_NAMES+=("$skill_name")
+  SKILL_TARGETS+=("$REPOSITORY_DIR/$skill_path")
+done < <(python3 - "$REPOSITORY_DIR/skills/index.json" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as index_file:
+    for skill in json.load(index_file)["skills"]:
+        print(f"{skill['name']}\t{skill['path'].removesuffix('/SKILL.md')}")
+PY
+)
+
+preflight_adapter() {
+  local adapter_root="$1"
+  local index
+  if [[ -L "$adapter_root" || ( -e "$adapter_root" && ! -d "$adapter_root" ) ]]; then
+    echo "⚠️  $adapter_root 必須是實體目錄；未進行任何注入。" >&2
+    return 1
+  fi
+  for ((index=0; index<${#SKILL_NAMES[@]}; index++)); do
+    local entry="$adapter_root/${SKILL_NAMES[$index]}"
+    local expected="${SKILL_TARGETS[$index]}"
+    if [[ -e "$entry" || -L "$entry" ]]; then
+      if [[ ! -L "$entry" || "$(readlink "$entry")" != "$expected" ]]; then
+        echo "⚠️  skill entry 衝突：${entry}；未進行任何注入。" >&2
+        return 1
+      fi
+    fi
+  done
+}
+
+preflight_markers() {
+  local target_file="$1"
+  local begin_count=0
+  local end_count=0
+  if [[ -f "$target_file" ]]; then
+    begin_count="$(grep -cF "$BEGIN_MARKER" "$target_file" || true)"
+    end_count="$(grep -cF "$END_MARKER" "$target_file" || true)"
+  fi
+  if [[ "$begin_count" -ne "$end_count" || "$begin_count" -gt 1 ]]; then
+    echo "⚠️  $target_file 的 Agent Skill markers 不完整；未進行任何注入。" >&2
+    return 1
+  fi
+}
+
+install_adapter() {
+  local adapter_root="$1"
+  local index
+  mkdir -p "$adapter_root"
+  for ((index=0; index<${#SKILL_NAMES[@]}; index++)); do
+    ln -sfn "${SKILL_TARGETS[$index]}" "$adapter_root/${SKILL_NAMES[$index]}"
+  done
+}
+
+write_managed_block() {
+  local target_file="$1"
+  local harness_name="$2"
+  local retained_content
+  retained_content="$(mktemp)"
+  if [[ -f "$target_file" ]]; then
+    awk -v begin="$BEGIN_MARKER" -v end="$END_MARKER" '
+      $0 == begin { skipping=1; next }
+      $0 == end { skipping=0; after=1; next }
+      skipping { next }
+      after && !seen && $0 == "" { next }
+      { seen=1; print }
+    ' "$target_file" > "$retained_content"
+  fi
+  {
+    printf '%s\n' "$BEGIN_MARKER"
+    printf '## Agent Skill adapter（%s）\n\n' "$harness_name"
+    printf '優先使用 native discovery；未命中時讀取 `skills/index.json`，再完整載入對應 `SKILL.md`。\n'
+    printf '%s\n' "$END_MARKER"
+    if [[ -s "$retained_content" ]]; then
+      printf '\n'
+      cat "$retained_content"
+    fi
+  } > "$target_file"
+  rm "$retained_content"
+}
+
+python3 "$REPOSITORY_DIR/bin/validate-skill-index.py" --repo "$REPOSITORY_DIR"
+preflight_adapter "$CLAUDE_ADAPTER"
+preflight_adapter "$CODEX_ADAPTER"
+preflight_markers "$PROJECT_DIR/CLAUDE.md"
+preflight_markers "$PROJECT_DIR/AGENTS.md"
+
+install_adapter "$CLAUDE_ADAPTER"
+install_adapter "$CODEX_ADAPTER"
+write_managed_block "$PROJECT_DIR/CLAUDE.md" "claude"
+write_managed_block "$PROJECT_DIR/AGENTS.md" "codex"
+
+python3 "$REPOSITORY_DIR/bin/validate-skill-index.py" \
+  --repo "$REPOSITORY_DIR" \
+  --claude-adapter "$CLAUDE_ADAPTER" \
+  --codex-adapter "$CODEX_ADAPTER"
+echo "✅ 已注入 Claude/Codex 單層 adapters；既有內容與第三方 entries 保留。"
+echo "ℹ️  .codex/hooks.json 不分發；~/.agents/skills 為 legacy 且不在本次管理範圍。"
