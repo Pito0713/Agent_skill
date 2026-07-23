@@ -59,7 +59,7 @@ metadata:
 > - 使用者未提到「精簡」、「過度設計」、「可以刪什麼」
 > - 審查範圍為 hotfix / 微小變更（< 20 行）
 
-若使用者有提到「lazyengineer」或「太複雜了」，觸發 `skills/engineering/lazyengineer-review.md`：
+若使用者有提到「lazyengineer」或「太複雜了」，觸發 `skills/engineering/lazyengineer-review/SKILL.md`：
 
 ```
 [ ] 掃描五種 over-engineering 類型（delete / stdlib / native / yagni / shrink）

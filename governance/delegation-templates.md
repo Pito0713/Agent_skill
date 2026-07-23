@@ -22,7 +22,7 @@
 - 不要貼大段程式碼，不要建議修改方式
 ```
 
-**網路搜尋**改用 agy 模式 A（`skills/engineering/agy-assist.md`），不用 subagent。
+**網路搜尋**改用 agy 模式 A（`skills/engineering/agy-assist/SKILL.md`），不用 subagent。
 
 ---
 

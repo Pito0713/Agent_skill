@@ -23,7 +23,8 @@
    - skill 路由 → 只維護 `skills/llms.txt`
    - rules 自動偵測 → 只維護 `coding-workflow-core.md` Phase 0
    - CLAUDE.md 永遠只放指標，不放內容
-4. 同步負擔歸零規則：新增 skill 只改 llms.txt，禁止往 CLAUDE.md 加列（見 maintenance-protocol）。
+4. 同步負擔固定規則：新增 skill 更新 `skills/index.json` 與 `skills/llms.txt`，
+   跑 validator；禁止往 harness 入口檔加列（見 maintenance-protocol）。
 
 ---
 
@@ -37,7 +38,7 @@
 **修法**
 1. 錨點外置：每個 Phase 的輸出第一行必須複述原始目標（一句話），不靠模型記憶。
 2. 讀檔上限：連續讀超過 5 個檔案還沒輸出計畫 → 強制停下，先輸出目前理解 + 計畫草稿。
-3. 符合「>3 檔案 / 曾卡關 / 高風險 / 易 scope creep」任一 → 走 `skills/engineering/tech-lead-mode.md`：done definition 寫在工單裡，close gate 讀 diff 不讀報告。
+3. 符合「>3 檔案 / 曾卡關 / 高風險 / 易 scope creep」任一 → 走 `skills/engineering/tech-lead-mode/SKILL.md`：done definition 寫在工單裡，close gate 讀 diff 不讀報告。
 4. 委派一律帶「派工三件套」（目標與動機 / 驗收條件 / 回報格式），見 `governance/model-orchestration.md` 第 3 節。
 
 ---

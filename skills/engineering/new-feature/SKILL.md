@@ -96,7 +96,7 @@ Python → agents/02-language-specialists/python-expert.md（Python 專案）
 
 **Phase 3.5：Tech Lead Mode 判斷（可選）**
 
-若符合 `skills/engineering/tech-lead-mode.md` 啟用條件（預估 >3 檔案 / 曾卡關 / 高風險 / 易 scope creep），詢問使用者是否切換為 tech-lead-mode 執行 Phase 4（工單化 + 委派 executor + close gate），取代直接實作。不符合條件則略過，直接進入 Phase 4。
+若符合 `skills/engineering/tech-lead-mode/SKILL.md` 啟用條件（預估 >3 檔案 / 曾卡關 / 高風險 / 易 scope creep），詢問使用者是否切換為 tech-lead-mode 執行 Phase 4（工單化 + 委派 executor + close gate），取代直接實作。不符合條件則略過，直接進入 Phase 4。
 
 ---
 
@@ -121,7 +121,7 @@ Python → agents/02-language-specialists/python-expert.md（Python 專案）
 > - 使用者明確說「hotfix，緊急，後補測試」
 > - 本次變更行數 < 15 行且為純設定調整（非邏輯修改）
 
-委派 `skills/engineering/testing-strategy.md` 設計測試策略，
+委派 `skills/engineering/testing-strategy/SKILL.md` 設計測試策略，
 再依規模委派 `agents/05-quality-assurance/test-engineer.md` 執行：
 
 ```
@@ -141,7 +141,7 @@ Python → agents/02-language-specialists/python-expert.md（Python 專案）
 > - 使用者明確說「不需要文件更新」
 > - 本次變更行數 < 15 行
 
-委派 `skills/engineering/documentation.md`：
+委派 `skills/engineering/documentation/SKILL.md`：
 
 ```
 [ ] 更新 API 文件（若有新 endpoint）
@@ -155,7 +155,7 @@ Python → agents/02-language-specialists/python-expert.md（Python 專案）
 
 ### Step 1：版本記錄
 
-觸發 `skills/productivity/version-log.md`：
+觸發 `skills/productivity/version-log/SKILL.md`：
 ```
 [ ] 更新 README 版本紀錄表
 [ ] 確認 commit message 符合 rules/git.md

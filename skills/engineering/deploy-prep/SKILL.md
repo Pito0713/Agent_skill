@@ -53,7 +53,7 @@ git status            # 確認無未提交的變更
 > - 使用者確認「上週已做過 code-review，問題已修正」
 > - 純設定檔 / 環境變數變更（無邏輯修改）
 
-觸發 `skills/engineering/code-review.md`（精簡模式）：
+觸發 `skills/engineering/code-review/SKILL.md`（精簡模式）：
 
 ```
 [ ] 邏輯與可讀性（Phase 1）

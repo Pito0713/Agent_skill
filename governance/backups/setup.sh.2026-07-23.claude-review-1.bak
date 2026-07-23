@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# setup.sh — 安裝三個 harness 的全域薄入口與 skill discovery adapters。
+
+set -euo pipefail
+
+REPOSITORY_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+INSTALL_HOME="${AGENT_SKILL_HOME:-$HOME}"
+
+ensure_link_target_is_safe() {
+  local target_path="$1"
+  if [[ -e "$target_path" && ! -L "$target_path" ]]; then
+    echo "⚠️  $target_path 已存在且不是 symlink；未覆蓋。" >&2
+    exit 1
+  fi
+}
+
+install_link() {
+  local source_path="$1"
+  local target_path="$2"
+  ensure_link_target_is_safe "$target_path"
+  mkdir -p "$(dirname "$target_path")"
+  ln -sfn "$source_path" "$target_path"
+  echo "✅ $target_path → $source_path"
+}
+
+python3 "$REPOSITORY_DIR/bin/validate-skill-index.py" --repo "$REPOSITORY_DIR"
+install_link "$REPOSITORY_DIR/skills" "$INSTALL_HOME/.claude/skills"
+install_link "$REPOSITORY_DIR/governance" "$INSTALL_HOME/.claude/governance"
+install_link "$REPOSITORY_DIR/CLAUDE.global.md" "$INSTALL_HOME/.claude/CLAUDE.md"
+install_link "$REPOSITORY_DIR/skills" "$INSTALL_HOME/.codex/skills"
+install_link "$REPOSITORY_DIR/AGENTS.md" "$INSTALL_HOME/.codex/AGENTS.md"
+install_link "$REPOSITORY_DIR/GEMINI.md" "$INSTALL_HOME/.gemini/GEMINI.md"
+
+echo "🎉 Setup 完成：Claude 與 Codex 共用同一份 SKILL.md package 正本。"

@@ -12,7 +12,7 @@
 |------|------|
 | 往 `governance/lessons.md` **append** 新教訓 | 只加不改不刪，照第 3 節格式 |
 | 修正確定的**事實錯誤**（路徑打錯、檔名改了、工具已停服）| 含 governance/ 下的檔案——事實錯誤修正優先於 🟡 的檔案範圍限制。修正前先用 `ls` / `command -v` 驗證新事實，diff 只准動錯的那幾行 |
-| 新增 skill 時更新 `skills/index.json` 與 `skills/llms.txt` | 照 `skills/convert-skill/SKILL.md` 流程並跑 validator；**禁止**同時往任何入口檔（CLAUDE.md / AGENTS.md / GEMINI.md）的路由表加列 |
+| 新增 skill 時更新 `skills/llms.txt` 索引 | 照 `skills/convert-skill/SKILL.md` 流程；**禁止**同時往任何索引檔（CLAUDE.md / AGENTS.md / GEMINI.md）的路由表加列 |
 
 ### 🟡 動之前必須先問使用者
 
@@ -70,7 +70,7 @@
 
 - [ ] 三份索引檔路由表指向的檔案都存在（`ls` 驗證）
 - [ ] 制度檔提到的工具都還可用（agy？subagent 類型？型號還在 §5 表上？）
-- [ ] `python3 bin/validate-skill-index.py` 通過（index / llms / package coverage 一致）
+- [ ] `skills/llms.txt` 與實際 skills/ 目錄一致
 - [ ] governance/backups/ 超過 10 個備份 → 問使用者要不要清舊的
 - [ ] 第 7 節的索引防漂移四查
 

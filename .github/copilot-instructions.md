@@ -34,8 +34,8 @@
 完整 skill 清單與觸發詞：`skills/llms.txt`
 
 常用 skill：
-- 新增功能 → `skills/engineering/new-feature.md`
-- 除錯 → `skills/engineering/debug-flow.md`
-- Code Review → `skills/engineering/code-review.md`
-- 安全審查 → `skills/engineering/security-review.md`
-- 精簡程式碼 → `skills/engineering/lazyengineer.md`
+- 新增功能 → `skills/engineering/new-feature/SKILL.md`
+- 除錯 → `skills/engineering/debug-flow/SKILL.md`
+- Code Review → `skills/engineering/code-review/SKILL.md`
+- 安全審查 → `skills/engineering/security-review/SKILL.md`
+- 精簡程式碼 → `skills/engineering/lazyengineer/SKILL.md`

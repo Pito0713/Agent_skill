@@ -38,7 +38,7 @@ metadata:
 > - 只修改單一 UI component 樣式，不影響導航 / 路由結構
 > - 使用者說「只改這個按鈕 / 表單 / 顏色」（純視覺微調）
 
-委派 `skills/design/information-architecture.md`：
+委派 `skills/design/information-architecture/SKILL.md`：
 
 ```
 [ ] 確認這個頁面在整體導航中的位置
@@ -58,7 +58,7 @@ metadata:
 > - 使用者明確說「跳過 wireframe，直接給視覺規格」
 > - 只改視覺樣式（顏色 / 字型 / 間距），版面不異動
 
-委派 `skills/design/wireframing.md`：
+委派 `skills/design/wireframing/SKILL.md`：
 
 ```
 [ ] 依 IA 輸出規劃每個頁面的區塊配置
@@ -78,7 +78,7 @@ metadata:
 > - 使用者明確說「只需要 wireframe，不需要視覺規格」
 > - 使用者說「先做 layout，視覺後面再定」
 
-委派 `skills/design/ui-visual-design.md`：
+委派 `skills/design/ui-visual-design/SKILL.md`：
 
 ```
 [ ] 依產品類型與目標用戶推薦視覺風格（8 種預設選一）

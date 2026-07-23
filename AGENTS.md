@@ -39,18 +39,20 @@
 
 | 情境 | 讀這份 |
 |------|--------|
-| 查 skill 觸發詞與完整索引 | `~/Agent_skill/skills/llms.txt` |
-| 語言/框架 rules 偵測條件 | `~/Agent_skill/skills/engineering/coding-workflow-core.md` Phase 0 |
+| 查 skill 路徑與完整 coverage | `~/Agent_skill/skills/index.json` |
+| 查自然語言觸發詞與說明 | `~/Agent_skill/skills/llms.txt` |
+| 語言/框架 rules 偵測條件 | `~/Agent_skill/skills/engineering/coding-workflow-core/SKILL.md` Phase 0 |
 | 委派、模型選擇、升降級、跨 harness 分工 | `~/Agent_skill/governance/model-orchestration.md` |
 | 完成判準、何時問人、何時換路 | `~/Agent_skill/governance/judgment-rubrics.md` |
 | 派工 prompt 模板 | `~/Agent_skill/governance/delegation-templates.md` |
-| 卡關/跨檔案/高風險實作 | `~/Agent_skill/skills/engineering/tech-lead-mode.md` |
+| 卡關/跨檔案/高風險實作 | `~/Agent_skill/skills/engineering/tech-lead-mode/SKILL.md` |
 | 修改制度檔的權限、記憶回寫、索引防漂移 | `~/Agent_skill/governance/maintenance-protocol.md` |
 
 ---
 
 ## Codex 專屬區塊（只適用本 harness）
 
+- **Skill discovery**：優先使用 `~/.codex/skills` 的 native discovery；未命中才讀 `skills/index.json`，再完整讀取對應 package 的 `SKILL.md`
 - **型號**（2026-07-07 官方文件查證）：`gpt-5.5`（旗艦）/ `gpt-5.4`（工作馬）/ `gpt-5.4-mini`（機械工）；effort 用 `model_reasoning_effort`：`minimal`/`low`/`medium`/`high`/`xhigh`。選擇與升降級查 `model-orchestration.md` §5/§6 的 Codex 欄
 - **AGENTS.md 逐層合併有 32KiB 上限**：本檔與專案層 AGENTS.md 都要保持薄，塞長內容會被靜默截斷
 - **subagent**：支援 manager-worker（最多 8 平行、雲端 sandbox）。委派參數照 `model-orchestration.md` §2 Codex 欄，禁止照抄 Claude Code 的 `subagent_type` 等參數名

@@ -48,7 +48,7 @@ metadata:
 
 ## Phase 1：系統性縮小範圍
 
-依據 `skills/engineering/debug.md`：
+依據 `skills/engineering/debug/SKILL.md`：
 
 ```
 [ ] 確認錯誤發生的最小可重現條件
@@ -83,7 +83,7 @@ find ./src -name "*.ts" -o -name "*.tsx" -o -name "*.py" | xargs cat | $CLI_CMD 
 ```
 
 **若使用者說「我看不懂為什麼」：**
-插入 `skills/learning/concrete-example.md`：
+插入 `skills/learning/concrete-example/SKILL.md`：
 - Plan A：正常邏輯逐步說明
 - Plan B：用具體資料跑一遍，視覺化每個步驟的狀態
 
@@ -91,7 +91,7 @@ find ./src -name "*.ts" -o -name "*.tsx" -o -name "*.py" | xargs cat | $CLI_CMD 
 
 **Phase 2.5：Tech Lead Mode 判斷（可選）**
 
-根因確認後，若符合 `skills/engineering/tech-lead-mode.md` 啟用條件（預估 >3 檔案 / 曾卡關 / 高風險 gate / 易 scope creep），詢問使用者是否切換為 tech-lead-mode 執行 Phase 3（工單化 + 委派 executor + close gate），取代直接修正。不符合條件則略過，直接進入 Phase 3。
+根因確認後，若符合 `skills/engineering/tech-lead-mode/SKILL.md` 啟用條件（預估 >3 檔案 / 曾卡關 / 高風險 gate / 易 scope creep），詢問使用者是否切換為 tech-lead-mode 執行 Phase 3（工單化 + 委派 executor + close gate），取代直接修正。不符合條件則略過，直接進入 Phase 3。
 
 ---
 

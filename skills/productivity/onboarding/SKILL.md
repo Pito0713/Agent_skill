@@ -30,7 +30,7 @@ metadata:
 
 ## Phase 0：Session 初始化 + 基本環境掃描
 
-首先觸發 `skills/productivity/smart-init.md` 讀取現有記憶與工作狀態，
+首先觸發 `skills/productivity/smart-init/SKILL.md` 讀取現有記憶與工作狀態，
 確認是否有前一次 session 留下的專案摘要可供參考。
 
 ```bash
@@ -114,7 +114,7 @@ grep -s '"react"\|"vue"\|"next"\|"express"\|"fastapi"' package.json 2>/dev/null
 > - 使用者明確說「只需要了解後端架構，不需要 IA 整理」
 > - 已有現成的路由文件 / sitemap（使用者確認）
 
-委派 `skills/design/information-architecture.md`（閱讀模式）：
+委派 `skills/design/information-architecture/SKILL.md`（閱讀模式）：
 
 ```
 [ ] 整理功能模組的層級關係
@@ -128,7 +128,7 @@ grep -s '"react"\|"vue"\|"next"\|"express"\|"fastapi"' package.json 2>/dev/null
 
 ## Phase 5：輸出專案摘要文件
 
-觸發 `skills/productivity/handoff.md`（生成模式）：
+觸發 `skills/productivity/handoff/SKILL.md`（生成模式）：
 
 產出可供後續 session 使用的摘要：
 

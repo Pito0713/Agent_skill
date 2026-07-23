@@ -32,7 +32,7 @@
 |------|--------|
 | 查 skill coverage / package 路徑 | `skills/index.json` |
 | 不知道用哪個 skill / 查觸發詞 | `skills/llms.txt` |
-| 該載入哪些語言 / 框架 rules | `skills/engineering/coding-workflow-core/SKILL.md` Phase 0（常駐已含，照表偵測）|
+| 該載入哪些語言 / 框架 rules | `coding-workflow-core.md` Phase 0（常駐已含，照表偵測）|
 | 要委派 subagent / 選 model | `governance/model-orchestration.md` |
 | 判斷完成了沒 / 該不該升級 / 方向對不對 / 該不該問人 | `governance/judgment-rubrics.md` |
 | 要寫派工 prompt | `governance/delegation-templates.md` |

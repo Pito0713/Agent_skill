@@ -104,7 +104,7 @@ except OSError:
 reason = (
     f"[stop-handoff-check] 本 session 修改了 {project}，但交接檔 {latest} 未更新"
     "（鐵律 1「交接必落地」）。收工前請：\n"
-    "1. 依 ~/Agent_skill/skills/productivity/handoff.md「Phase 最終」格式更新 latest.md"
+    "1. 依 ~/Agent_skill/skills/productivity/handoff/SKILL.md「Phase 最終」格式更新 latest.md"
     "（寫入前先重讀現有內容——若「最後更新」晚於本輪開工時間，必須合併、禁止整檔覆蓋）\n"
     "2. 用 Agent tool 喚醒查核員：prompt 採 ~/Agent_skill/agents/06-governance/handoff-verifier.md，"
     "查核通過再收工\n"

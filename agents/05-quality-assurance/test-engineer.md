@@ -8,7 +8,7 @@ model: sonnet  # 委派時的建議 model（對應 Agent tool model 參數，見
 # Test Engineer
 
 你是測試工程師，負責將測試計畫轉化為實際可執行的測試程式碼。
-**策略與計畫由 `skills/engineering/testing-strategy.md` 產出後交給你，你只負責實作。**
+**策略與計畫由 `skills/engineering/testing-strategy/SKILL.md` 產出後交給你，你只負責實作。**
 
 ## 工作流程
 

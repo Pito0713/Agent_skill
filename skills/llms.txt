@@ -1,4 +1,6 @@
-# Agent Skills Index
+# Agent Skills Human Index
+# Machine-readable 正本：skills/index.json。新增、移除或搬移 skill 時先改 index.json，
+# 再同步本檔的觸發詞與說明；bin/validate-skill-index.py 會阻止 coverage 漂移。
 # 當使用者需求符合觸發條件時，載入對應 SKILL.md 執行完整流程。
 # 格式：name | path | triggers | description
 
@@ -7,42 +9,42 @@
 ## Engineering — 核心工程
 
 name: coding-workflow-core
-path: skills/engineering/coding-workflow-core.md
+path: skills/engineering/coding-workflow-core/SKILL.md
 triggers: 每次 session 自動生效（常駐）
 description: 實作任何功能的強制四階段流程（理解→計畫→實作→驗證）與 commit 前 checklist。
 
 name: tech-lead-mode
-path: skills/engineering/tech-lead-mode.md
+path: skills/engineering/tech-lead-mode/SKILL.md
 triggers: tech lead 模式、照工單跑、這個任務容易 scope creep、orchestrator 模式
 description: Orchestrator 執行策略切換，不直接寫 code，改為切工單→委派 executor→仲裁 reviewer 發現→跑 close gate，適合卡關、跨檔案、高風險、易 scope creep 的任務。掛在 coding-workflow-core / new-feature / debug-flow 之上，非新任務類型入口。
 
 name: new-feature
-path: skills/engineering/new-feature.md
+path: skills/engineering/new-feature/SKILL.md
 triggers: 新增功能、實作 X、建立 Y 功能、我要做 Z、幫我做一個功能、新增 feature
 description: 新功能開發協調器，從需求確認 → API 設計 → 實作 → 測試 → 文件 → 版本記錄的完整流程。
 
 name: coding-workflow-ref
-path: skills/engineering/coding-workflow-ref.md
+path: skills/engineering/coding-workflow-ref/SKILL.md
 triggers: 查實作模式、怎麼寫 API、component 怎麼做、有沒有範本
 description: 常見實作模式速查手冊（API endpoint / React 元件 / bug 修復）。
 
 name: coding-workflow
-path: skills/engineering/coding-workflow.md
+path: skills/engineering/coding-workflow/SKILL.md
 triggers: （不直接觸發，完整版參考文件）
 description: coding-workflow-core + coding-workflow-ref 拆分前的完整版，僅供對照參考。
 
 name: debug-flow
-path: skills/engineering/debug-flow.md
+path: skills/engineering/debug-flow/SKILL.md
 triggers: bug、壞掉了、為什麼錯、不如預期、找不到原因、一直出錯、error、為什麼會這樣
 description: 除錯協調器，系統性縮小問題範圍，必要時切換具體舉例或委派 agy 交叉驗證。
 
 name: deploy-prep
-path: skills/engineering/deploy-prep.md
+path: skills/engineering/deploy-prep/SKILL.md
 triggers: 要上線了、deploy 前、release 前、上線檢查、準備 deploy、要 release 了
 description: 上線前安全檢查協調器，涵蓋 build / 環境變數 / migration / rollback 確認。
 
 name: debug
-path: skills/engineering/debug.md
+path: skills/engineering/debug/SKILL.md
 triggers: （一般不直接觸發，由 debug-flow 協調載入）
 description: 系統性除錯工作流程：重現→收集→假設→驗證→修復。debug-flow 的 Phase 1 執行依據。
 
@@ -56,27 +58,27 @@ description: 未知矩陣判斷程序：先判斷「未知的答案在誰手上�
 ## Quality & Security — 品質與安全
 
 name: code-review
-path: skills/engineering/code-review.md
+path: skills/engineering/code-review/SKILL.md
 triggers: code review、PR review、審查這段 code、有沒有問題、幫我看一下、merge 前
 description: Code Review 協調器，自動偵測專案類型，依序執行邏輯→安全→測試→PR 格式審查。
 
 name: security-review
-path: skills/engineering/security-review.md
+path: skills/engineering/security-review/SKILL.md
 triggers: 安全審查、OWASP、後端有漏洞嗎、前端安全、XSS、CORS 問題、token 怎麼存
 description: 安全審查協調器，依前後端情境委派對應 security agent，輸出統一報告。
 
 name: testing-strategy
-path: skills/engineering/testing-strategy.md
+path: skills/engineering/testing-strategy/SKILL.md
 triggers: 幫我寫測試、這個怎麼測、test plan、幫我規劃測試
 description: 測試策略設計，只輸出測試計畫文件，不寫程式碼（實作交 test-engineer agent）。
 
 name: lazyengineer
-path: skills/engineering/lazyengineer.md
+path: skills/engineering/lazyengineer/SKILL.md
 triggers: 精簡一下、有更簡單的寫法嗎、不要 over-engineering、能不能更少、lazyengineer、lazy mode、這段太複雜了
 description: Lazy Senior 模式，強制走完六關決策梯，確保只寫必要的最小程式碼。
 
 name: lazyengineer-review
-path: skills/engineering/lazyengineer-review.md
+path: skills/engineering/lazyengineer-review/SKILL.md
 triggers: 有沒有過度設計、可以刪什麼、lazyengineer review、找多餘的程式碼、掃一下有沒有過度設計
 description: Over-Engineering 偵測，掃描現有程式碼找出可刪除或簡化的部分，輸出 net: -N lines。
 
@@ -85,12 +87,12 @@ description: Over-Engineering 偵測，掃描現有程式碼找出可刪除或�
 ## Documentation — 文件
 
 name: documentation
-path: skills/engineering/documentation.md
+path: skills/engineering/documentation/SKILL.md
 triggers: 幫我寫文件、更新 README、API docs、建立 runbook、寫 API docs
 description: 撰寫技術文件，支援 README / API docs / runbook / inline 說明。
 
 name: version-log
-path: skills/productivity/version-log.md
+path: skills/productivity/version-log/SKILL.md
 triggers: 更新版本、記錄版本、準備 commit、version log
 description: commit 前記錄版本號與變更摘要到 README.md 的版本紀錄表。
 
@@ -99,22 +101,22 @@ description: commit 前記錄版本號與變更摘要到 README.md 的版本紀�
 ## Design — 設計
 
 name: ui-design-flow
-path: skills/design/ui-design-flow.md
+path: skills/design/ui-design-flow/SKILL.md
 triggers: 規劃 UI、設計這個頁面、這個畫面要怎麼做、UI 架構、幫我規劃這個頁面、設計這個功能的 UI
 description: UI 設計規劃協調器，從 IA → wireframe → 視覺風格 → 實作交接的完整流程。
 
 name: information-architecture
-path: skills/design/information-architecture.md
+path: skills/design/information-architecture/SKILL.md
 triggers: 幫我規劃導航、這些功能怎麼分類、資訊架構、IA、API 路由結構
 description: 規劃內容層級與導航結構，也適用於 API 路由結構設計。
 
 name: wireframing
-path: skills/design/wireframing.md
+path: skills/design/wireframing/SKILL.md
 triggers: 幫我規劃頁面結構、這個畫面要放什麼、wireframe
 description: 用文字快速規劃頁面版面與資訊層級骨架。
 
 name: ui-visual-design
-path: skills/design/ui-visual-design.md
+path: skills/design/ui-visual-design/SKILL.md
 triggers: 幫我決定視覺風格、UI 風格建議、這個產品應該用什麼設計風格
 description: 根據產品類型與目標用戶推薦顏色、字型、間距視覺風格方向。
 
@@ -123,81 +125,90 @@ description: 根據產品類型與目標用戶推薦顏色、字型、間距視�
 ## Learning — 學習
 
 name: concrete-example
-path: skills/learning/concrete-example.md
+path: skills/learning/concrete-example/SKILL.md
 triggers: 我看不懂、為什麼還是錯、這什麼意思、邏輯是什麼
 description: 用具體情境舉例說明正確邏輯的每一步，提供正常解法與跳脫框架替代解法。
 
 name: feedback-loop
-path: skills/learning/feedback-loop.md
+path: skills/learning/feedback-loop/SKILL.md
 triggers: 練習、幫我改進、給我回饋、feedback loop
 description: 刻意練習的立即回饋循環，每輪只指出一個最優先修改點。
 
 name: academic-mentor
-path: skills/learning/academic-mentor.md
+path: skills/learning/academic-mentor/SKILL.md
 triggers: 學術角度、有科學根據嗎、這個機制是什麼、研究怎麼說、幫我理解這個研究、academic mentor、有沒有文獻、這是真的嗎（涉及科學主張）、可以跟我介紹、跟我解釋、這原理是什麼、為什麼會這樣、背後的原理（以上通用詞需結合科學/學術主題才觸發；神經科學主題優先走 mentor-neuro）
 description: 切換為學術導師模式，四段結構回覆（機制→文獻→社會影響→深化提問），每個論點標注確定性等級，主動糾正常見迷思，絕不捏造文獻。
 
 name: mentor-neuro
-path: skills/learning/mentor-neuro.md
+path: skills/learning/mentor-neuro/SKILL.md
 triggers: 大腦、神經、多巴胺、血清素、皮質醇、前額葉、記憶機制、學習的神經機制、神經可塑性、成癮機制、情緒調節的神經機制、睡眠與大腦、神經科學、腦區、迴路（需涉及神經科學主題）
 description: 神經科學專屬導師。自動讀取 knowledge/neuro/ 既有筆記作為上下文，在使用者已知節點上延伸，永遠聲明路徑覆蓋範圍，機制確定性與介入確定性嚴格分離，內建神經迷思雷達，最後提示存入 vault 形成知識圖譜。
 
 name: mentor-invest
-path: skills/learning/mentor-invest.md
+path: skills/learning/mentor-invest/SKILL.md
 triggers: 投資、股票、ETF、資產配置、投資組合、市場走勢、報酬率、風險管理、退休規劃、被動投資、主動投資、行為偏誤（投資脈絡）、損失規避、過度自信（投資決策）
 description: 投資策略專屬導師。行為偏誤掃描優先於策略討論，四鐵律（過去報酬≠未來 / 報酬必須附風險 / 時間軸改變結論 / 市場預測永遠❓），行為偏誤表（7 條，含 Nobel 研究引用），投資迷思雷達（7 條），讀取 knowledge/invest/ vault 上下文，跨域連結 neuro（偏誤機制）/ society（總經脈絡），每次回覆附個人情境聲明與免責說明。
 
 name: mentor-tech
-path: skills/learning/mentor-tech.md
+path: skills/learning/mentor-tech/SKILL.md
 triggers: 架構設計、技術選型、這兩個技術差在哪、什麼時候該用、系統設計、分散式系統、資料庫選擇、效能優化、這個技術原理是什麼、微服務、雲端架構、API 設計概念（概念層，非實作）
 description: 科技與工程專屬導師。永遠從 tradeoff 出發，嚴格區分開放標準/架構模式/Best Practice/趨勢，三鐵律（效能比較附條件 / Best Practice 有時效性 / 技術可行≠工程適合），工程迷思雷達（8 條），讀取 knowledge/tech/ vault 上下文，與 coding-workflow 的界線是概念層 vs 實作層。
 
 name: mentor-science
-path: skills/learning/mentor-science.md
+path: skills/learning/mentor-science/SKILL.md
 triggers: 物理、化學、生物、演化、量子、熱力學、基因、分子、原子、科學定律、這個原理是什麼（涉及自然科學）、科學方法、第一原理
 description: 自然科學專屬導師。嚴格區分定律/理論/模型/假說，從第一原理推導，永遠聲明模型適用範圍與邊界條件，讀取 knowledge/science/ vault 上下文，內建科學迷思雷達（8 條），三鐵律（模型≠現實 / 自然≠安全 / 相關≠因果），建立概念層次知識圖譜。
 
 name: mentor-society
-path: skills/learning/mentor-society.md
+path: skills/learning/mentor-society/SKILL.md
 triggers: 社群媒體影響、數位社會、媒體識讀、教育制度、階級流動、群體行為、文化差異、科技對社會的影響、社會現象、傳播、輿論、政策效果、社會科學（需涉及社會科學主題；神經機制方向優先 mentor-neuro）
 description: 社會科學專屬導師。確定性天花板為 ⚠️（觀察性研究為主流），自動讀取 knowledge/society/ 上下文，永遠說明研究方法限制，呈現至少兩個競爭解釋框架，主動聲明脈絡邊界（文化/時期/人口），內建社會迷思雷達（7 條），提示存入 vault 形成知識節點。
+
+---
+
+## Investing — 投資操作
+
+name: tw-stock-tracker
+path: skills/investing/tw-stock-tracker/SKILL.md
+triggers: 進場點位、台股評分、幫我看 2330、這檔現在能不能進、技術面評分、跑對帳、我的判斷準不準、命中率、校準度（需帶台股代號或明確指向個股操作）
+description: 台股盤後技術面六維量化評分（100 分）+ 預測 track record 追蹤。三模式：分析（抓 TWSE 真實日線→評分→進場區間與停損）、對帳（到期抓真實價算報酬與命中）、報告（命中率與按分數分層的校準度）。所有數字由 script 計算，LLM 只寫 thesis。與 mentor-invest 的界線是操作層 vs 概念層。
 
 ---
 
 ## Productivity — 生產力
 
 name: project-dashboard
-path: skills/productivity/project-dashboard.md
+path: skills/productivity/project-dashboard/SKILL.md
 triggers: project dashboard、看一下所有專案、跨專案狀態、專案總覽
 description: 讀取 ~/.agent-sessions/ 下所有專案的 latest.md，輸出跨專案進度總覽表。
 
 name: rag-search
-path: skills/productivity/rag-search.md
+path: skills/productivity/rag-search/SKILL.md
 triggers: 查知識庫、rag、knowledge base、查一下我們的規範、這個我們有沒有記錄、有沒有相關規範
 description: 搜尋 knowledge/ 知識庫，找出相關規範或模式後回答，來源會標注檔案路徑。
 
 name: smart-init
-path: skills/productivity/smart-init.md
+path: skills/productivity/smart-init/SKILL.md
 triggers: session 開始、開始新工作、幫我初始化、smart init
 description: 初始化新的工作 session，讀取專案記憶建立工作上下文（完整接手新專案請走 onboarding）。
 
 name: onboarding
-path: skills/productivity/onboarding.md
+path: skills/productivity/onboarding/SKILL.md
 triggers: 接手新專案、幫我了解這個 repo、我剛加入這個專案、幫我看這個 codebase
 description: 新專案接手協調器，系統性了解架構、依賴、核心邏輯。
 
 name: handoff
-path: skills/productivity/handoff.md
+path: skills/productivity/handoff/SKILL.md
 triggers: 交接、handoff、總結一下、下次繼續
 description: 將當前對話壓縮成交接文件，供下一個 session 或 agent 接手。
 
 name: obsidian-query
-path: skills/productivity/obsidian-query.md
+path: skills/productivity/obsidian-query/SKILL.md
 triggers: 查我的筆記、Obsidian 有沒有記錄、之前有記過嗎、搜 Obsidian、查歷史筆記
 description: 從 Obsidian vault 搜尋相關歷史筆記並納入回答，來源會標注檔案路徑。需先設定 VAULT_PATH。
 
 name: obsidian-save
-path: skills/productivity/obsidian-save.md
+path: skills/productivity/obsidian-save/SKILL.md
 triggers: 記起來、存到 Obsidian、幫我記錄、結束並儲存、整理我的 Obsidian、分類 inbox
 description: 將本次對話重點整理成結構化筆記存入 Obsidian vault，自動分類並標注標籤。需先設定 VAULT_PATH。
 
@@ -206,7 +217,7 @@ description: 將本次對話重點整理成結構化筆記存入 Obsidian vault�
 ## Collaboration — 協作
 
 name: agy-assist
-path: skills/engineering/agy-assist.md
+path: skills/engineering/agy-assist/SKILL.md
 triggers: 幫我搜尋、查一下最新、給我第二個意見、交叉驗證、這個檔案太大、掃一下整個專案
 description: 將網路搜尋、大檔案掃描、對抗式審查委派給 agy CLI，節省 token 並提供交叉驗證。
 
@@ -215,7 +226,7 @@ description: 將網路搜尋、大檔案掃描、對抗式審查委派給 agy CL
 ## Meta — 系統維護
 
 name: convert-skill
-path: skills/convert-skill.md
+path: skills/convert-skill/SKILL.md
 triggers: 新增 GitHub Skill、收集這個 skill、把這個加進來
 description: 將 GitHub 原始 workflow/prompt 文件轉換為本專案標準 skill 格式。
 
@@ -247,6 +258,10 @@ description: 將 GitHub 原始 workflow/prompt 文件轉換為本專案標準 sk
     → 主題是程式邏輯、code 行為、技術概念 → concrete-example
     → 主題是 bug / 錯誤訊息 → debug-flow
     → 無法判斷主題類型 → 詢問使用者：「這是技術問題還是想了解科學原理？」
+- 「股票 / 投資」相關
+    → 帶具體台股代號、問進場點位或技術面評分、要對帳看自己準不準 → tw-stock-tracker（操作層）
+    → 問投資原則、資產配置、行為偏誤、學術研究怎麼說 → mentor-invest（概念層）
+    → 兩者都像（如「2330 我該不該存股」）→ 詢問使用者：「你要技術面評分，還是想討論存股策略的原則？」
 
 模糊觸發詞（需詢問使用者意圖）：
 「完善」、「優化」、「讓它更好」、「改進這個功能」、「怎麼讓這個更好」、「有什麼可以加強的」

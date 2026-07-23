@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+# inject.sh — 為下游專案建立 Claude/Codex adapters 與薄路由入口。
+
+set -euo pipefail
+
+REPOSITORY_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="${AGENT_SKILL_PROJECT_DIR:-$(pwd)}"
+INSTALL_HOME="${AGENT_SKILL_HOME:-$HOME}"
+BEGIN_MARKER="<!-- agent-skill:begin -->"
+END_MARKER="<!-- agent-skill:end -->"
+
+ensure_adapter() {
+  local target_path="$1"
+  local source_path="$2"
+  if [[ -e "$target_path" && ! -L "$target_path" ]]; then
+    echo "⚠️  $target_path 已存在且不是 symlink；未覆蓋。" >&2
+    exit 1
+  fi
+  mkdir -p "$(dirname "$target_path")"
+  ln -sfn "$source_path" "$target_path"
+}
+
+write_managed_block() {
+  local target_file="$1"
+  local harness_name="$2"
+  local begin_count=0
+  local end_count=0
+  local temporary_file
+  temporary_file="$(mktemp)"
+  if [[ -f "$target_file" ]]; then
+    begin_count="$(grep -cF "$BEGIN_MARKER" "$target_file" || true)"
+    end_count="$(grep -cF "$END_MARKER" "$target_file" || true)"
+  fi
+  if [[ "$begin_count" -ne "$end_count" || "$begin_count" -gt 1 ]]; then
+    echo "⚠️  $target_file 的 Agent Skill markers 不完整；未修改。" >&2
+    rm "$temporary_file"
+    exit 1
+  fi
+  if [[ -f "$target_file" ]] && grep -qF "$BEGIN_MARKER" "$target_file"; then
+    awk -v begin="$BEGIN_MARKER" -v end="$END_MARKER" '
+      $0 == begin { skipping=1; next }
+      $0 == end { skipping=0; next }
+      !skipping { print }
+    ' "$target_file" > "$temporary_file"
+  elif [[ -f "$target_file" ]]; then
+    cp "$target_file" "$temporary_file"
+  fi
+  {
+    printf '%s\n' "$BEGIN_MARKER"
+    printf '## Agent Skill adapter（%s）\n\n' "$harness_name"
+    printf '優先使用此 harness 的 native skill discovery；未命中時讀取 `skills/index.json`，再完整載入對應 `SKILL.md`。\n'
+    printf 'Skill 正本由專案 adapter `.%s/skills` 指向，禁止複製內容。\n' "$harness_name"
+    printf '%s\n' "$END_MARKER"
+    if [[ -s "$temporary_file" ]]; then
+      printf '\n'
+      cat "$temporary_file"
+    fi
+  } > "$target_file"
+  rm "$temporary_file"
+}
+
+if [[ ! -d "$INSTALL_HOME/.claude/skills" || ! -d "$INSTALL_HOME/.codex/skills" ]]; then
+  echo "⚠️  尚未安裝全域 adapters；請先執行 setup.sh。" >&2
+  exit 1
+fi
+
+ensure_adapter "$PROJECT_DIR/.claude/skills" "$INSTALL_HOME/.claude/skills"
+ensure_adapter "$PROJECT_DIR/.codex/skills" "$INSTALL_HOME/.codex/skills"
+write_managed_block "$PROJECT_DIR/CLAUDE.md" "claude"
+write_managed_block "$PROJECT_DIR/AGENTS.md" "codex"
+
+python3 "$REPOSITORY_DIR/bin/validate-skill-index.py" \
+  --repo "$REPOSITORY_DIR" \
+  --claude-adapter "$PROJECT_DIR/.claude/skills" \
+  --codex-adapter "$PROJECT_DIR/.codex/skills"
+
+echo "✅ 已注入 Claude/Codex 薄入口；既有內容保留於 managed block 後方。"
+echo "ℹ️  .codex/hooks.json 不分發：Codex hook 契約未穩定，避免覆蓋下游設定。"

@@ -6,7 +6,7 @@ description: |
   2. 決定分類（engineering / marketing / productivity）與命名
   3. 轉換為標準 frontmatter + 內容格式
   4. 品質確認（frontmatter 完整、觸發關鍵字、步驟清單）
-  5. 歸檔並同步更新 skills/llms.txt、inject.sh、README.md 版本紀錄
+  5. 歸檔並同步更新 skills/index.json、skills/llms.txt
 
   觸發場景：內部維護動作——有新的原始 workflow/prompt 文件放入 skills/_inbox/，需要轉換為本專案標準 skill 格式時。
   示例觸發：「把剛丟進 _inbox 的這份 prompt 轉成 skill」「新增這個 GitHub skill 進來」「幫我把這份收集到的 workflow 轉成標準格式」
@@ -46,7 +46,8 @@ metadata:
 | 行銷文案、SEO、廣告、社群、報告 | `marketing/` |
 | 任務管理、會議、記憶、溝通、規劃 | `productivity/` |
 
-命名規則：`<動詞>-<對象>.md`，例如：`review-pr.md`、`write-changelog.md`
+命名規則：package 目錄用 `<動詞>-<對象>`，內容檔固定為 `SKILL.md`，
+例如：`review-pr/SKILL.md`、`write-changelog/SKILL.md`
 
 ---
 
@@ -108,29 +109,20 @@ metadata:
 
 ```bash
 # 移動到對應分類
-mv skills/_inbox/<filename>.md skills/<category>/<new-name>.md
+mkdir -p skills/<category>/<new-name>
+mv skills/_inbox/<filename>.md skills/<category>/<new-name>/SKILL.md
 ```
 
-完成後必須同步更新以下三個地方，缺一不可：
+完成後必須同步更新以下兩個索引並執行 validator，缺一不可：
 
 ```
+[ ] skills/index.json            → 加入唯一 name / package path（machine coverage 正本）
 [ ] skills/llms.txt              → 在對應分類區塊加入 name / path / triggers / description
-[ ] inject.sh INJECT_BLOCK      → 決定此 skill 是否應進客戶專案
-                                   是 → 在對應分類區塊加入（預設以 # 註解）
-                                   否 → 記錄原因（Agent_skill 內部使用）
-[ ] README.md 版本紀錄           → 執行 version-log skill 更新版本號
+[ ] python3 bin/validate-skill-index.py
 ```
 
-> 🔴 **禁止**同步往 CLAUDE.md 加列：skill 路由的單一事實來源是 `skills/llms.txt`，
-> CLAUDE.md 只放指標（見 `governance/maintenance-protocol.md` 第 1 節）。
-
-**inject.sh 判斷標準：**
-
-| Skill 類型 | 是否加入 inject.sh |
-|-----------|------------------|
-| 所有使用者都會用到的工作流（handoff、version-log、rag-search）| ✅ 加入（按需，預設 # 註解）|
-| Agent_skill 專屬維護工具（convert-skill、onboarding Agent_skill 用）| ❌ 不加入 |
-| 有專案相依性的 skill（需要該專案有特定格式）| ⚠️ 加入但 skill 內部要加前置判斷 |
+> 🔴 **禁止**同步往 CLAUDE.md / AGENTS.md 加列。兩個 harness 的 adapter
+> 都連到完整 `skills/` 正本，入口檔只保留 index 指標。
 
 ---
 
@@ -143,7 +135,7 @@ Focus on: security, performance, readability.
 Output a list of issues with severity.
 ```
 
-**轉換後（engineering/review-code.md）**：
+**轉換後（engineering/review-code/SKILL.md）**：
 ```markdown
 ---
 name: review-code
