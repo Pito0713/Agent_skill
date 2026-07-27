@@ -219,8 +219,8 @@
       "description": "將本次對話重點整理成結構化筆記存入 Obsidian vault，自動分類並標注標籤。需先設定 VAULT_PATH。"
     },
     {
-      "name": "agy-assist",
-      "path": "skills/engineering/agy-assist/SKILL.md",
+      "name": "cli-delegate",
+      "path": "skills/engineering/cli-delegate/SKILL.md",
       "triggers": "幫我搜尋、查一下最新、給我第二個意見、交叉驗證、這個檔案太大、掃一下整個專案",
       "description": "將網路搜尋、大檔案掃描、對抗式審查委派給 agy CLI，節省 token 並提供交叉驗證。"
     },

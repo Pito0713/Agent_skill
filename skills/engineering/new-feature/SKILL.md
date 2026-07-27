@@ -151,7 +151,7 @@ Python → agents/02-language-specialists/python-expert.md（Python 專案）
 
 ---
 
-## Phase 7：版本記錄 + Gemini 交叉驗證
+## Phase 7：版本記錄 + 外部 CLI 交叉驗證
 
 ### Step 1：版本記錄
 
@@ -165,7 +165,7 @@ Python → agents/02-language-specialists/python-expert.md（Python 專案）
 
 詢問使用者：「是否啟用 agy 交叉驗證？(y/n)」
 
-**y：**（$CLI_CMD 與安全設定依 `agy-assist.md` 前置確認；agy 不可用時走模式 C 的 Claude Subagent Fallback）
+**y：**（$CLI_CMD 與安全設定依 `cli-delegate.md` 前置確認；agy 不可用時走模式 C 的 Claude Subagent Fallback）
 ```bash
 # Bash tool timeout: 570s（agy --print-timeout 9m + 30s 緩衝）
 git diff HEAD | $CLI_CMD --print-timeout 9m -p "
@@ -220,7 +220,7 @@ agy 驗證：[通過 / 發現 N 個問題已修正 / 未啟用]
 | `testing-strategy` + `test-engineer` + `e2e-tester` | Phase 5 測試 |
 | `documentation` | Phase 6 文件 |
 | `version-log` | Phase 7 版本記錄 |
-| `agy-assist` | Phase 7 交叉驗證 |
+| `cli-delegate` | Phase 7 交叉驗證 |
 
 ---
 

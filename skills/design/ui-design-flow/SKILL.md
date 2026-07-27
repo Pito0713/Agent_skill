@@ -122,7 +122,7 @@ metadata:
 
 詢問使用者：「是否啟用 agy 驗證設計合理性？(y/n)」
 
-**y：**（$CLI_CMD 依 `agy-assist.md` 前置確認；agy 不可用時走模式 C 的 Claude Subagent Fallback）
+**y：**（$CLI_CMD 依 `cli-delegate.md` 前置確認；agy 不可用時走模式 C 的 Claude Subagent Fallback）
 ```bash
 # Bash tool timeout: 570s（agy --print-timeout 9m + 30s 緩衝，模式 C）
 $CLI_CMD --print-timeout 9m -p "
@@ -179,4 +179,4 @@ agy 驗證：[通過 / 發現 N 個 UX 問題已調整 / 未啟用]
 | `ui-visual-design` | Phase 3 視覺規格 |
 | `frontend-engineer` | Phase 4 實作交接 |
 | `api-architect` | Phase 4 API 設計（若需要）|
-| `agy-assist` 模式 C | Phase 5 UX 合理性驗證 |
+| `cli-delegate` 模式 C | Phase 5 UX 合理性驗證 |

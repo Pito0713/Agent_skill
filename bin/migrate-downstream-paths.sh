@@ -35,9 +35,14 @@ fi
 # 分隔符一律用 #：ERE 的 alternation 也是 |，用 | 當分隔符會讓 sed 在第一個
 # alternation 處就認定 regex 結束，報 "parentheses not balanced"。
 
-# ADR-011 改名：舊 skill 名 → 新 skill 名（在路徑改寫之前先套用）
+# 歷次改名：舊 skill 名 → 新 skill 名（在路徑改寫之前先套用）
+# 規則**依序**套用形成改名鏈（gemini-assist → agy-assist → cli-delegate），
+# 下游停在任一舊名都能一路遷到現名——新增改名時必須 append 在陣列尾端。
+# 扁平化前（<category>/<name>.md）與扁平化後（<name>/SKILL.md）兩種形態都要收。
 RENAME_RULES=(
   's#/gemini-assist\.md#/agy-assist.md#g'
+  's#/agy-assist\.md#/cli-delegate.md#g'
+  's#/agy-assist/SKILL\.md#/cli-delegate/SKILL.md#g'
 )
 
 # 扁平化：<category>/<name>.md → <name>/SKILL.md。rules / governance 不在白名單內。

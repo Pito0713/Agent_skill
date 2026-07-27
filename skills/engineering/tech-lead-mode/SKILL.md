@@ -51,7 +51,7 @@ metadata:
 | ----------------------------------------- | ------------------------------------------------------------------------------------------------ | -------------------------------- |
 | **Orchestrator**（Claude 本身）           | 切工單、定驗收條件、委派 executor、仲裁 reviewer 發現、跑 close gate、決定 close/reopen/escalate | 親自大量寫 code                  |
 | **Executor**（見下方委派協定）            | 依工單執行、回報 plan + diff + 測試結果 + 剩餘風險                                               | 決定任務算不算完成、決定驗收標準 |
-| **Reviewer**（`agy-assist.md` Mode C） | 挑毛病、報風險、報 edge case                                                                     | 決定要不要修、直接改 code        |
+| **Reviewer**（`cli-delegate.md` Mode C） | 挑毛病、報風險、報 edge case                                                                     | 決定要不要修、直接改 code        |
 | **人類**（使用者）                        | 產品行為判斷、風險是否可接受、最終驗收                                                           | 盯每一行 diff                    |
 
 ---
@@ -119,7 +119,7 @@ Antigravity 等價參數：`TypeName: "self"` + `Workspace: "branch"`（隔離�
 
 高風險 ticket（金流、正式環境、既有 gate）預設啟用；一般 ticket 詢問使用者是否啟用。
 
-沿用 `agy-assist.md` Mode C：
+沿用 `cli-delegate.md` Mode C：
 
 ```
 git diff HEAD | agy --print-timeout 9m -p "審查這個 diff，僅回報問題，不提供修改方案。
@@ -134,7 +134,7 @@ git diff HEAD | agy --print-timeout 9m -p "審查這個 diff，僅回報問題�
 繁體中文。"
 ```
 
-agy 不可用時走 `agy-assist.md` 的 Claude Subagent Fallback（冷啟動審查，不可省略）。
+agy 不可用時走 `cli-delegate.md` 的 Claude Subagent Fallback（冷啟動審查，不可省略）。
 
 **鐵律：Reviewer 的發現不能直接被信任，也不能被直接忽略。** 進 Phase 4 逐條查證。
 
@@ -238,7 +238,7 @@ coding-workflow-core.md  Phase 2（計畫）完成後 → 同上邏輯
 | ------------ | -------------------------------------------------------------------------------------------- |
 | Orchestrator | Claude 本身，本 skill 全流程控制                                                             |
 | Executor     | harness subagent + 隔離工作區（預設，參數查 model-orchestration §2 適配表）或 agy CLI（需臨時授權，見 Phase 2 Path B） |
-| Reviewer     | `agy-assist.md` Mode C（agy 或 Claude Subagent Fallback）                                 |
+| Reviewer     | `cli-delegate.md` Mode C（agy 或 Claude Subagent Fallback）                                 |
 | 人類終審     | ESCALATE 結果的唯一裁決者                                                                    |
 
 ---

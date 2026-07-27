@@ -95,3 +95,10 @@
 - 錯誤/風險：① 用「逐條列舉」而非「通用規則」處理結構性改名，覆蓋率取決於樣本而非規則 ② 把註解掉的引用當成不存在——使用者取消註解那天才會發現斷鏈，且一樣是靜默失敗 ③ 只拿自己造的 fixture 測，沒先掃真實資料的全部變體
 - 修正：改成通用 regex（`<category>/<name>.md` → `<name>/SKILL.md`，rules/governance 白名單排除）＋ 舊名映射；並加「改寫後逐條驗證新路徑真的存在，否則不寫入」的防呆
 - 規則：寫批次改寫腳本前，先 `grep -oE ... | sort -u` 掃出真實資料的**所有變體**再設計規則；改寫結果一律用「目標是否真的存在」驗證，不能只看 diff 好不好看。註解掉的引用要照改——它是待啟用狀態，不是不存在
+
+## 2026-07-24 改名跑完 §7 四查全綠，skill farm 卻已經斷鏈
+
+- 情境：`agy-assist` → `cli-delegate` 改名，照 2026-07-22 那條規則做了全 repo 盤點、活引用 vs 歷史紀錄分流、改完跑 §7 索引防漂移四查——四查全過。但 `~/.claude/skills/agy-assist` 與 `~/.codex/skills/agy-assist` 是指向舊目錄的 symlink，`git mv` 當下就變成 dangling，兩個 harness 的該 skill 實際已不可用
+- 錯誤/風險：§7 四查的覆蓋範圍是「三份索引檔 + AGENTS/GEMINI 路由指標」，**不含 skill farm**。farm 由 `skills/index.json` 生成，改 index.json 只更新了正本、沒有重新 install，正本與已部署的接線之間存在一段沒有任何檢查覆蓋的落差。又是靜默失敗——harness 只是找不到該 skill，不報錯
+- 修正：跑 `bin/setup-claude.sh --all` 與 `bin/setup-codex.sh --all`（`install_farm` 內建 `prune_orphan_entries`，自動清孤兒 entry 並建新連結）；agy 無 farm 機制、只吃 GEMINI.md，不受影響
+- 規則：改動 `skills/index.json` 的 `name` 或 `path` 欄後，**必須重跑各 harness 的 setup 腳本**並掃一次 dangling（`for l in ~/.claude/skills/*; do [ -e "$l" ] || echo "$l"; done`），§7 四查不能替代這一步。凡是「正本改了但部署物是另一份實體」的結構（link farm、快取、複製出去的副本），驗證清單都要含一條「部署物已重新生成」

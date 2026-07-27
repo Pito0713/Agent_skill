@@ -61,7 +61,7 @@ metadata:
 若問題涉及大型檔案或整個 codebase，詢問：
 > 「是否啟用 agy 掃描協助定位？(y/n)」
 
-**y：**（$CLI_CMD 依 `agy-assist.md` 前置確認偵測；副檔名依專案語言調整）
+**y：**（$CLI_CMD 依 `cli-delegate.md` 前置確認偵測；副檔名依專案語言調整）
 ```bash
 # Bash tool timeout: 570s（agy --print-timeout 9m + 30s 緩衝，模式 B）
 find ./src -name "*.ts" -o -name "*.tsx" -o -name "*.py" | xargs cat | $CLI_CMD --print-timeout 9m -p "
@@ -118,7 +118,7 @@ find ./src -name "*.ts" -o -name "*.tsx" -o -name "*.py" | xargs cat | $CLI_CMD 
 
 詢問使用者：「是否啟用 agy 交叉驗證修正是否完整？(y/n)」
 
-**y：**（$CLI_CMD 依 `agy-assist.md` 前置確認；agy 不可用時走模式 C 的 Claude Subagent Fallback）
+**y：**（$CLI_CMD 依 `cli-delegate.md` 前置確認；agy 不可用時走模式 C 的 Claude Subagent Fallback）
 ```bash
 # Bash tool timeout: 570s（agy --print-timeout 9m + 30s 緩衝，模式 C）
 git diff HEAD | $CLI_CMD --print-timeout 9m -p "
@@ -183,8 +183,8 @@ agy 驗證：[通過 / 發現 N 個疑慮已處理 / 未啟用]
 | Orchestrator（本 skill）| 全流程控制、假設裁決 |
 | `debug.md` | Phase 1 系統性縮小範圍 |
 | `concrete-example.md` | Phase 2 理解障礙時切換 |
-| `agy-assist` 模式 B | Phase 1 大檔掃描協助定位 |
-| `agy-assist` 模式 C | Phase 4 修正交叉驗證 |
+| `cli-delegate` 模式 B | Phase 1 大檔掃描協助定位 |
+| `cli-delegate` 模式 C | Phase 4 修正交叉驗證 |
 
 ---
 

@@ -357,7 +357,7 @@ lazyengineer [lite|full|ultra|off]
 | 常駐 | `rules/coding-standards.md` | 語言無關，每次都適用 |
 | 常駐 | `rules/security.md` | 安全規範，不可省略 |
 | discovery | `skills/engineering/coding-workflow-core/SKILL.md` | Phase 0-4 實作守則（含自動偵測）；本 repo 內為常駐 |
-| discovery | `skills/engineering/agy-assist/SKILL.md` | 搜尋 / 掃大檔 / 交叉驗證時載入（v4.5 起由常駐降級，原因見 governance/harness-diagnosis.md）|
+| discovery | `skills/engineering/cli-delegate/SKILL.md` | 搜尋 / 掃大檔 / 交叉驗證時載入（v4.5 起由常駐降級，原因見 governance/harness-diagnosis.md）|
 | 自動偵測 | `rules/typescript.md` | tsconfig.json 存在時 |
 | 自動偵測 | `rules/react.md` / `nextjs.md` | package.json 含 react / next 時 |
 | 自動偵測 | `rules/python.md` | requirements.txt / pyproject.toml 存在時 |

@@ -52,7 +52,7 @@ wc -l $(find . -name "*.ts" -o -name "*.py" -o -name "*.go" 2>/dev/null) | tail 
 若專案規模大，詢問：
 > 「是否啟用 agy 掃描整個 codebase？(y/n)」
 
-**y：**（$CLI_CMD 依 `agy-assist.md` 前置確認偵測）
+**y：**（$CLI_CMD 依 `cli-delegate.md` 前置確認偵測）
 ```bash
 # Bash tool timeout: 570s（agy --print-timeout 9m + 30s 緩衝，模式 B）
 find ./src -name "*.ts" -o -name "*.py" -o -name "*.go" | \
@@ -164,7 +164,7 @@ grep -s '"react"\|"vue"\|"next"\|"express"\|"fastapi"' package.json 2>/dev/null
 |------|------|
 | Orchestrator（本 skill）| 全流程控制、摘要整合 |
 | `smart-init` | Phase 0 讀取既有記憶與工作狀態 |
-| `agy-assist` 模式 B | Phase 1 大型 codebase 掃描 |
+| `cli-delegate` 模式 B | Phase 1 大型 codebase 掃描 |
 | `coding-workflow-core` Phase 0 | Phase 2 技術堆疊自動偵測 |
 | `information-architecture` | Phase 4 功能地圖與路由整理 |
 | `handoff` | Phase 5 輸出結構化摘要文件 |

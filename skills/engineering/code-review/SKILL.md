@@ -124,12 +124,12 @@ metadata:
 
 ## Phase 5：交叉驗證（冷啟動）
 
-依 `agy-assist.md` 模式 C 執行。**鐵律：reviewer 不得看到 Phase 1–4 的初步報告**（避免錨定偏誤），只收原始碼與審查維度；agy 不可用時強制走模式 C 的 Claude Subagent Fallback，不得跳過。
+依 `cli-delegate.md` 模式 C 執行。**鐵律：reviewer 不得看到 Phase 1–4 的初步報告**（避免錨定偏誤），只收原始碼與審查維度；agy 不可用時強制走模式 C 的 Claude Subagent Fallback，不得跳過。
 
 ### Step 1：agy 冷啟動獨立審查
 
 ```bash
-# $CLI_CMD 依 agy-assist.md 前置確認偵測
+# $CLI_CMD 依 cli-delegate.md 前置確認偵測
 # Bash tool timeout: 570s（agy --print-timeout 9m + 30s 緩衝）
 
 # 範圍為 git diff
@@ -200,7 +200,7 @@ git diff HEAD | $CLI_CMD --print-timeout 9m -p "審查這個 diff，僅回報問
 | Orchestrator（本 skill）| 流程控制、phase 排序、最終裁決 |
 | `security-auditor` | 後端安全深度審查（Phase 2）|
 | `frontend-security-auditor` | 前端安全深度審查（Phase 2）|
-| `agy-assist` 模式 C | 冷啟動獨立交叉驗證，只收原始碼不收初步報告（Phase 5）|
+| `cli-delegate` 模式 C | 冷啟動獨立交叉驗證，只收原始碼不收初步報告（Phase 5）|
 | 各 rules | 各 phase 審查標準基準 |
 
 ---

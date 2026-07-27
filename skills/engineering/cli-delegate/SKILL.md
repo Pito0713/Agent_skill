@@ -1,5 +1,5 @@
 ---
-name: agy-assist
+name: cli-delegate
 description: |
   將資料密集型任務委派給 Antigravity CLI（agy）執行，節省 Claude token 並提供交叉驗證：
   1. 模式 A：網路搜尋（agy 取原始資料，Claude 翻譯整合）
@@ -11,10 +11,10 @@ description: |
 metadata:
   trigger: 網路搜尋 / 大檔案掃描 / 對抗式審查交叉驗證時觸發
   version: "1.0"
-  last_updated: "2026-07-07"
+  last_updated: "2026-07-24"
 ---
 
-# AGY Assist（AI 分工協作）
+# CLI Delegate（AI 分工協作）
 
 將三類任務委派給 Antigravity CLI（agy）：網路搜尋、大檔案掃描、對抗式審查。
 Claude 負責決策與整合，agy 負責資料密集工作。
@@ -101,9 +101,9 @@ fi
 「幫我搜尋」、「查一下最新」、「有沒有相關資料」
 
 **觸發後先詢問：**
-> 「這個任務可以透過 AI CLI（agy / gemini）進行網路搜尋，是否啟用協作？(y/n)」
+> 「這個任務可以透過 外部 AI CLI進行網路搜尋，是否啟用協作？(y/n)」
 > - **y**：繼續執行以下流程
-> - **n**：改由 Claude 以現有知識回答，不呼叫 Gemini
+> - **n**：改由 Claude 以現有知識回答，不呼叫外部 CLI
 
 ### 分工原則（搜尋與格式化分離）
 
@@ -127,7 +127,7 @@ Claude → 取得原始結果後 → 翻譯、整理、補充分析、整合輸�
 禁止：
   ❌ 要求 agy 翻譯成繁體中文（翻譯由 Claude 負責）
   ❌ 要求複雜結構輸出（多欄位、Markdown 表格）
-  ❌ 讓 Gemini 自行決定搜尋關鍵字
+  ❌ 讓外部 CLI 自行決定搜尋關鍵字
   ❌ 找不到時自行補充知識庫內容
 ```
 
@@ -136,7 +136,7 @@ Claude → 取得原始結果後 → 翻譯、整理、補充分析、整合輸�
 **Step 1：agy 搜尋，只取原始英文資料**
 
 ```bash
-# $CLI_CMD = agy / ~/.local/bin/agy / gemini（Step 1 偵測結果）
+# $CLI_CMD = Step 1 偵測並選定的 CLI
 # Bash tool timeout: 360s（agy --print-timeout 5m + 60s 緩衝）
 $CLI_CMD --print-timeout 5m -p "Use google_web_search to search: '<English keywords>'.
 Return ONLY: title, URL, one-line English summary for each result.
@@ -177,7 +177,7 @@ Claude 分析整合：
 「這個檔案太大」、「掃一下整個專案」、「幫我理解這個 codebase」
 
 **觸發後先詢問：**
-> 「這個任務可以透過 AI CLI（agy / gemini）的大上下文視窗進行掃描，是否啟用協作？(y/n)」
+> 「這個任務可以透過 外部 AI CLI的大上下文視窗進行掃描，是否啟用協作？(y/n)」
 > - **y**：繼續執行以下流程
 > - **n**：由 Claude 直接讀取，token 消耗較高
 
@@ -190,14 +190,14 @@ Claude 分析整合：
   ✅ 指定輸出語言
 
 禁止：
-  ❌ 讓 Gemini 建議修改方向（那是 Claude 的工作）
+  ❌ 讓外部 CLI 建議修改方向（那是 Claude 的工作）
   ❌ 同時要求多個提取目標（一次只問一件事）
 ```
 
 ### 指令模板
 
 ```bash
-# $CLI_CMD = agy / ~/.local/bin/agy / gemini（Step 1 偵測結果）
+# $CLI_CMD = Step 1 偵測並選定的 CLI
 # Bash tool timeout: 570s（agy --print-timeout 9m + 30s 緩衝）
 
 # 單一大檔案
@@ -217,7 +217,7 @@ find ./src -name "*.ts" | xargs cat | $CLI_CMD --print-timeout 9m -p "分析整�
 「幫我 review」、「給我第二個意見」、「交叉驗證」、「有沒有漏洞」
 
 **觸發後先詢問：**
-> 「這個任務可以透過 AI CLI（agy / gemini）進行獨立的對抗式審查，是否啟用協作？(y/n)」
+> 「這個任務可以透過 外部 AI CLI進行獨立的對抗式審查，是否啟用協作？(y/n)」
 > - **y**：繼續執行以下流程
 > - **n** 或 agy 不可用：**不得直接跳過**，改用 Claude Subagent Fallback（見下方）
 
@@ -230,14 +230,14 @@ find ./src -name "*.ts" | xargs cat | $CLI_CMD --print-timeout 9m -p "分析整�
   ✅ 無問題時明確說「未發現問題」
 
 禁止：
-  ❌ 讓 Gemini 直接提供修改方案（只回報問題，修改由 Claude 決定）
+  ❌ 讓外部 CLI 直接提供修改方案（只回報問題，修改由 Claude 決定）
   ❌ 問題描述模糊（要求：「第 X 行，原因是 Y，潛在影響是 Z」）
 ```
 
 ### 指令模板
 
 ```bash
-# $CLI_CMD = agy / ~/.local/bin/agy / gemini（Step 1 偵測結果）
+# $CLI_CMD = Step 1 偵測並選定的 CLI
 # Bash tool timeout: 570s（agy --print-timeout 9m + 30s 緩衝）
 
 # 審查 git diff
@@ -341,7 +341,7 @@ Step 4：收到 subagent 輸出後，主 agent 裁決
 
 ```
 Claude               → 決策、規劃、整合、最終輸出
-agy / gemini         → 資料收集、大量讀取、第二意見（異模型，獨立性高）
+外部 CLI（agy / codex） → 資料收集、大量讀取、第二意見（異模型，獨立性高）
 Claude Subagent      → 模式 C 的 fallback，冷啟動審查（同模型，獨立性較低但不可省略）
 ```
 

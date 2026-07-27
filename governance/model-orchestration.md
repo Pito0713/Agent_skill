@@ -13,7 +13,7 @@
 |------|------|------|
 | 掃整個 repo / 找檔案 / 找符號定義 | 唯讀搜尋型 subagent（§2 查對應參數） | 讀取量大，塞爆主對話 context |
 | 需要讀 >3 個檔案的研究 / 理解 | 全工具 subagent | 同上 |
-| 網路搜尋 | agy 模式 A（`agy-assist.md`）或本 harness 的搜尋 subagent | 異質模型 + 不佔主對話 |
+| 網路搜尋 | agy 模式 A（`cli-delegate.md`）或本 harness 的搜尋 subagent | 異質模型 + 不佔主對話 |
 | 批次改檔（>3 檔或重複套用同一 pattern）| 全工具 subagent + 隔離（§2） | 隔離、可整批驗收 |
 | 長 log / 大檔分析 | agy 模式 B 或全工具 subagent | 讀取量大 |
 | 對抗式審查 | agy 模式 C，不可用時冷啟動 subagent | 異質性、獨立性 |
@@ -140,5 +140,5 @@
 ## 9. 誠實標註
 
 - 拆解、驗證、多樣本評審補得了執行品質；**品味與模糊題補不了**（產品方向、命名美感、寫作風格）→ 升級模型、外部第二意見、或明說做不到，見 `judgment-rubrics.md`。
-- agy 的 review 幻覺率不低（見 agy-assist.md），發現一律逐條查證後才採信，查證流程見 `tech-lead-mode.md` Phase 4。
+- agy 的 review 幻覺率不低（見 cli-delegate.md），發現一律逐條查證後才採信，查證流程見 `tech-lead-mode.md` Phase 4。
 - **未確認事項**（2026-07-07，查不到就標，不編造）：Codex 對話中逐次指定 model 是否可行；agy 的 `TypeName` / `Workspace` 參數名（來自 agy session 回報，本端無法驗證）；agy 付費 credit 換算比例；Claude「被導向 Opus 4.8 的請求是否消耗原方案額度」→ 到對應平台 usage 頁實測後回填本檔。

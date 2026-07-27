@@ -155,7 +155,7 @@ git status            # 確認無未提交的變更
 
 詢問使用者：「是否啟用 agy 最終交叉驗證？(y/n)」
 
-**y：**（$CLI_CMD 依 `agy-assist.md` 前置確認；agy 不可用時走模式 C 的 Claude Subagent Fallback）
+**y：**（$CLI_CMD 依 `cli-delegate.md` 前置確認；agy 不可用時走模式 C 的 Claude Subagent Fallback）
 ```bash
 # 審查範圍：上次 release 到現在的全部變更，不是只有最後一個 commit
 # 無 tag 時改用使用者指定的範圍（例：main..release-branch）
@@ -221,4 +221,4 @@ agy 驗證：[通過 / 發現 N 個風險，已處理 N 個 / 未啟用]
 | `owasp-reviewer` | Phase 2 合規報告（重大版本）|
 | `e2e-tester` | Phase 3 關鍵 journey 驗證 |
 | `version-log` | Phase 5 版本記錄 |
-| `agy-assist` 模式 C | Phase 6 上線風險交叉驗證 |
+| `cli-delegate` 模式 C | Phase 6 上線風險交叉驗證 |

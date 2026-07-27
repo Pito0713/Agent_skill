@@ -36,7 +36,7 @@
 | 要委派 subagent / 選 model | `governance/model-orchestration.md` |
 | 判斷完成了沒 / 該不該升級 / 方向對不對 / 該不該問人 | `governance/judgment-rubrics.md` |
 | 要寫派工 prompt | `governance/delegation-templates.md` |
-| 網路搜尋 / 掃大檔 / 交叉驗證（agy）| `skills/engineering/agy-assist/SKILL.md` |
+| 網路搜尋 / 掃大檔 / 交叉驗證（agy）| `skills/engineering/cli-delegate/SKILL.md` |
 | 卡關 / 跨檔案 / 高風險 / 易 scope creep 的實作 | `skills/engineering/tech-lead-mode/SKILL.md` |
 | 要修改 CLAUDE.md 或 governance/ 制度檔 | `governance/maintenance-protocol.md` |
 | 想了解制度設計的原因 | `governance/harness-diagnosis.md` |

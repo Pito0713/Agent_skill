@@ -22,7 +22,7 @@
 - 不要貼大段程式碼，不要建議修改方式
 ```
 
-**網路搜尋**改用 agy 模式 A（`skills/engineering/agy-assist/SKILL.md`），不用 subagent。
+**網路搜尋**改用 agy 模式 A（`skills/engineering/cli-delegate/SKILL.md`），不用 subagent。
 
 ---
 
@@ -107,7 +107,7 @@
 
 ## T5. 審查（對抗式 review）
 
-**首選**：與 executor **不同模型家族**的 reviewer（盲點不重疊，見 model-orchestration §8）——Claude 寫的 code 用 agy 模式 C（照 `agy-assist.md` 指令模板）；agy / Codex 寫的可用 Claude subagent 審。
+**首選**：與 executor **不同模型家族**的 reviewer（盲點不重疊，見 model-orchestration §8）——Claude 寫的 code 用 agy 模式 C（照 `cli-delegate.md` 指令模板）；agy / Codex 寫的可用 Claude subagent 審。
 **異質來源不可用時**：本 harness 冷啟動 subagent（Claude Code：`subagent_type: "general-purpose"` + `model: "sonnet"`），不給任何主對話的分析脈絡：
 
 ```
