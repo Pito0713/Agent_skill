@@ -1,7 +1,6 @@
 # 執行力分層設計（Enforcement Layers）
 
 > **狀態：v1 已實作（2026-07-10，使用者核准第 4 節清單後動工，決策記錄 ADR-010）**。觀察期驗收標準見 §6。
-> **⚠️ 2026-07-27 更新（ADR-014）**：第 4 節 #1 的 **Stop hook（`hooks/stop-handoff-check.sh`）已停用**——從 `.claude/settings.json` 移除掛載，hook 檔保留 dormant。原因：它在每次 session 結束自動逼寫 latest.md，與新政策「latest.md 只由使用者明確『收工/交接』指令觸發」直接衝突。handoff-verifier cop（#2）不再由 Stop hook 喚醒，改為使用者說收工時手動委派。L2 Stop 層本項失效，回退純 L1 文字約束。
 > 動機：現行防呆全靠文字制度，仰賴模型自主遵守——模型發散或遺忘時規則就失效。本文件規劃把高風險規則**下沉**到確定性腳本（hooks）與乾淨 context 守門員（cop agents）。
 
 ---

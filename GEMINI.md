@@ -31,7 +31,7 @@
 4. **卡住就停**：同一件事重試兩輪失敗 → 停下，帶失敗軌跡升級或問使用者
 5. **動 repo 前先 `git status`**：非預期變更 → 停下來問，不默默覆蓋（使用者多 harness 並行是常態）
 6. **完成要有證據**：「應該會過」「邏輯上正確」= 進行中，不是完成
-7. **交接必落地**：開工先讀、收工必寫 `~/.agent-sessions/<專案>/latest.md`；踩坑教訓 append 到 `~/Agent_skill/governance/lessons.md`
+7. **交接必落地**：`~/.agent-sessions/<專案>/latest.md` 開工先讀；**只在使用者明確說「收工/交接」時才寫**（完成一段工作、session 自然結束都不算收工，不主動寫）；踩坑教訓 append 到 `~/Agent_skill/governance/lessons.md`
 8. **專案規則優先，安全底線除外**：目標專案自身的規範與本制度衝突時照專案的做；唯安全底線（`~/Agent_skill/rules/security.md`）不得被專案放寬——要放寬先問使用者
 
 ---
@@ -56,7 +56,7 @@
 - **模型池**（2026-07-07 本機 `agy models` 實測）：`Gemini 3.5 Flash`（L/M/H）、`Gemini 3.1 Pro`（Low/High）、`Claude Sonnet 4.6 (Thinking)`、`Claude Opus 4.6 (Thinking)`、`GPT-OSS 120B`。啟動時 `agy --model` 指定；選擇與升降級查 `model-orchestration.md` §5/§6 的 agy 欄
 - **額度按 model 分池**（Gemini / Claude 各自獨立）：Gemini 池耗盡切 Claude 池是合法橫向移動，不算升級
 - **委派參數未經本端驗證**（`TypeName` / `Workspace` 來自 session 回報）：委派前以當前工具 schema 為準；**禁止**照抄 Claude Code 的 `subagent_type` / `isolation` 參數名；**禁止**往工具 payload 塞 `model` 欄位（會 Validation Error）
-- **自動記憶（brain / conversations）是二進位、不可回寫正本**：session 內的重要結論不落到 `~/.agent-sessions/` 交接檔就等於丟失，收工必寫
+- **自動記憶（brain / conversations）是二進位、不可回寫正本**：session 內的重要結論不落到 `~/.agent-sessions/` 交接檔就等於丟失，使用者說「收工/交接」時務必寫回
 - shell 偵測類操作優先用原生唯讀工具（本 harness 對 shell 逐次核准，見 coding-workflow-core Phase 0）
 
 ---
@@ -73,7 +73,7 @@
 
 ## 記憶與交接（三 harness 共用約定）
 
-- **跨 harness 交接正本** = `~/.agent-sessions/<專案>/latest.md`（開工先讀、收工必寫）
+- **跨 harness 交接正本** = `~/.agent-sessions/<專案>/latest.md`（開工先讀；**只在使用者明確說「收工/交接」時才寫**，完成一段工作或 session 自然結束都不主動寫）
 - **教訓正本** = `~/Agent_skill/governance/lessons.md`（append-only，格式見 maintenance-protocol §3）
 - 各 harness 自帶的自動記憶（Codex Memories、agy brain）**不作為制度記憶**，重要結論必須落到上面兩處
 

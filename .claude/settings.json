@@ -1,14 +1,3 @@
 {
-  "hooks": {
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$HOME/Agent_skill/hooks/stop-handoff-check.sh"
-          }
-        ]
-      }
-    ]
-  }
+  "hooks": {}
 }

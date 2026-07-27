@@ -102,3 +102,10 @@
 - 錯誤/風險：§7 四查的覆蓋範圍是「三份索引檔 + AGENTS/GEMINI 路由指標」，**不含 skill farm**。farm 由 `skills/index.json` 生成，改 index.json 只更新了正本、沒有重新 install，正本與已部署的接線之間存在一段沒有任何檢查覆蓋的落差。又是靜默失敗——harness 只是找不到該 skill，不報錯
 - 修正：跑 `bin/setup-claude.sh --all` 與 `bin/setup-codex.sh --all`（`install_farm` 內建 `prune_orphan_entries`，自動清孤兒 entry 並建新連結）；agy 無 farm 機制、只吃 GEMINI.md，不受影響
 - 規則：改動 `skills/index.json` 的 `name` 或 `path` 欄後，**必須重跑各 harness 的 setup 腳本**並掃一次 dangling（`for l in ~/.claude/skills/*; do [ -e "$l" ] || echo "$l"; done`），§7 四查不能替代這一步。凡是「正本改了但部署物是另一份實體」的結構（link farm、快取、複製出去的副本），驗證清單都要含一條「部署物已重新生成」
+
+## 2026-07-27 「收工必寫」定義太鬆，latest.md 在 session 中途被過度觸發
+
+- 情境：交接檔 `~/.agent-sessions/<專案>/latest.md` 的鐵律寫成「開工先讀、收工必寫」。使用者觀察到模型把「完成一段 content」就當成「收工」，同一 session 中途反覆寫 latest.md，交接檔內容過早定稿。另有 Stop hook 在每次 session 結束自動逼寫，是第二條非使用者指令的自動觸發源
+- 錯誤/風險：「收工」是主觀詞，交給模型自主判斷必然發散——模型傾向把任何階段性完成解讀成收工。制度用「必寫」這種強制語氣配上模糊的觸發條件，等於預設模型會過度觸發。自動化防線（Stop hook）在使用者要的是「明確指令才動」時反而變成雜訊
+- 修正：ADR-014 把觸發收緊為「只由使用者明確『收工/交接』指令觸發」，寫進 4 份索引鐵律 + maintenance-protocol §6；停用 Stop hook（settings.json 移除掛載，hook 檔留 dormant）；version-log 與 latest.md 解耦
+- 規則：制度裡凡是「必做 X」配上主觀觸發詞（收工、告一段落、完成、差不多好了），要嘛把觸發詞換成客觀可判定的條件，要嘛把觸發權收回給使用者明確指令。不要用強制語氣（必寫/必做）去約束一個模型會自行擴大解釋的模糊邊界——那只會保證它過度執行

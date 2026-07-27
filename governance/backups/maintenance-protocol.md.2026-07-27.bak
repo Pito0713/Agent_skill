@@ -84,7 +84,7 @@
 
 | 資訊類型 | 唯一正本 | 規則 |
 |---------|---------|------|
-| 跨 session / 跨 harness 交接 | `~/.agent-sessions/<專案>/latest.md` | 開工先讀；**只在使用者明確下「收工/交接」指令時才寫**（完成一段工作、session 自然結束都不算收工，不主動寫）；harness 中立 markdown（狀態燈號、進行中、下一步、卡點）|
+| 跨 session / 跨 harness 交接 | `~/.agent-sessions/<專案>/latest.md` | 開工先讀、收工必寫；harness 中立 markdown（狀態燈號、進行中、下一步、卡點）|
 | 踩坑教訓 | `governance/lessons.md` | append-only，格式見第 3 節 |
 | 架構決策 | `memory/project-context.md`（ADR）| 重大變更追加，不改史 |
 | Claude 專案記憶（`~/.claude/projects/*/memory/`）| 僅存 Claude 專屬操作提示 | 不放制度內容；與正本衝突時**以正本為準**，發現過時當場更新或刪除 |
@@ -94,7 +94,6 @@
 **回寫紀律**：任何 harness 的 session 結束前自檢一題——「這輪學到的東西落在正本了嗎？」同一結論只寫一處正本，其他地方放指標。
 
 **交接檔的具體規約**（弱模型照做）：
-- **觸發定義（2026-07-27 收緊，見 ADR-014）**：latest.md 只由使用者**明確指令**觸發——命中「收工」「交接」「handoff」「今天做到這」「先存進度」等收工意圖詞才寫。**「完成一段工作」「告一段落」「session 即將結束」都不是觸發條件**，一律不主動寫；不確定算不算收工 → 不寫、繼續工作。唯一合法寫入路徑是 `handoff` skill（或使用者明講的收工）；`version-log`（commit）與 session 結束都**不再**寫 latest.md
 - `<專案>` = 專案根目錄的資料夾名（`basename` 該路徑，例：`~/Agent_skill` → `Agent_skill`）；目錄不存在先 `mkdir -p ~/.agent-sessions/<專案>`
 - **無鎖併發**：同一專案避免同時開兩個「會寫交接」的 session。寫入前先重讀 latest.md——若「最後更新」比你開工時間晚，代表有別的 session 動過 → 把對方內容**合併進來再寫**，禁止整檔覆蓋
 

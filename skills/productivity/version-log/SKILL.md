@@ -4,7 +4,7 @@ description: |
   每次 commit 前，將此次變更以版本號形式記錄到 README.md 的版本紀錄表：
   1. 確認 README.md 是否已有版本紀錄表（無則略過並告知使用者）
   2. 讀取當前版本號，依變更類型判斷 major / minor bump
-  3. 產生新版本條目寫入 README.md 並 git add，同步寫入 ~/.agent-sessions/<專案>/latest.md 快照
+  3. 產生新版本條目寫入 README.md 並 git add
 
   觸發場景：準備要 commit，需要先把這次的變更以版本號摘要記錄下來，供後續回溯版本歷史。
   示例觸發：「準備 commit 了，幫我記一下版本」「這次改動幫我更新版本號」「version log」
@@ -40,7 +40,7 @@ grep -q '| v' README.md 2>/dev/null && echo "有版本表" || echo "無版本表
 ```
 
 - **有版本表** → 執行以下 Step 1–5
-- **無版本表** → 跳過 README 更新，直接執行 Step 6（只寫 `~/.agent-sessions/` 快照），並告知使用者「此專案 README.md 無版本紀錄表，略過版本更新」
+- **無版本表** → 跳過 README 更新，並告知使用者「此專案 README.md 無版本紀錄表，略過版本更新」
 
 ---
 
@@ -101,13 +101,4 @@ git add README.md
 - 版本紀錄只追蹤**功能層級**的變更，不記錄拼字修正等微調
 - 同一天的多次 commit 可合併為一個版本條目
 - major bump 前請確認使用者同意
-
----
-
-## Step 6：寫入跨專案進度快照
-
-README.md 版本條目確認後，同步寫入 `~/.agent-sessions/<project>/latest.md`（完整格式，觸發來源標記為 `commit`）。
-
-格式與欄位同 `handoff` skill 的 Phase 最終，狀態根據當前對話判斷填入。
-
-完成後輸出確認：「✅ 已更新 ~/.agent-sessions/<project>/latest.md」
+- **不寫 `~/.agent-sessions/latest.md`**（2026-07-27 ADR-014 決策：commit 與交接檔解耦）。latest.md 只由使用者明確說「收工/交接」時經 `handoff` skill 寫入；version-log 只管 README 版本表

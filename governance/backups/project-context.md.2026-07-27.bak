@@ -379,32 +379,3 @@ entry 因前綴不符而豁免。
 v4.6/v4.7 建立的舊 `@` 路徑重新生效。舊下游專案的
 `@~/.claude/skills/<category>/<name>.md` 仍需 `bin/migrate-downstream-paths.sh`
 一次性改寫（link farm 是扁平的，symlink 救不回分類層路徑）。
-
----
-
-## ADR-014：latest.md 觸發收緊為明確指令 + 停用 Stop hook（2026-07-27）
-
-**決策**：`~/.agent-sessions/<專案>/latest.md` 的寫入觸發從「收工必寫」（模型自主
-判斷）收緊為**只由使用者明確「收工/交接」指令觸發**。連帶三項：① 從
-`.claude/settings.json` 移除 Stop hook 掛載（`hooks/stop-handoff-check.sh` 保留
-dormant，不刪）；② `version-log`（commit）不再寫 latest.md，commit 與交接檔解耦；
-③ latest.md 唯一合法寫入路徑收斂為 `handoff` skill。開工先讀不變。
-
-**原因**：實務觀察到模型把「完成一段 content」誤判為「收工」，同一 session 中途就
-反覆寫 latest.md，造成交接檔過度觸發、內容過早定稿。根因是「收工」定義太鬆——
-既靠模型自主判斷、又有 Stop hook 在每次 session 結束自動逼寫，兩條都是「非使用者
-指令」的自動觸發源。使用者要的是「除非我說 commit 或收工，否則不動 latest.md」。
-
-**部分回退 ADR-010**：ADR-010 的 L2 Stop hook 守門層本項失效，回退為純 L1 文字約束
-（鐵律 7 + maintenance-protocol §6 已同步改）。handoff-verifier cop 不再由 Stop hook
-自動喚醒，改為使用者說收工時手動委派。ADR-010 的其餘設計（cop 附證據、三層模型）
-不受影響。
-
-**已知取捨**：失去「session 結束漏寫交接」的自動防線——使用者若忘記說收工，latest.md
-可能落後 repo（正是 2026-07-07 觀察到的失敗模式）。這是使用者明確選擇：寧可承擔漏
-寫風險，也要消除過度觸發。跨 harness 一致性由文字正本（4 份索引鐵律 + §6）保證，
-Codex/agy 本就不吃 `.claude/settings.json`、原本就只有 L1 約束，不受停用 hook 影響。
-
-**後果**：latest.md 只在使用者明說收工/交接時更新；commit、完成一段工作、session
-自然結束都不再觸發。維護者若日後想恢復自動防線，實作與待辦見 `governance/TODO.md`
-與 `enforcement-layers.md` §4（已標註本項停用）。
