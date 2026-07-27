@@ -1,10 +1,9 @@
-# Antigravity（agy）— Agent Skill Entry Point
+# Agent Skills — Codex / AGENTS.md 平台入口
 
 > **正本在 `~/Agent_skill`（唯一 source of truth）**。本檔是薄索引：只放常駐核心與路由，不放制度正文。
-> 全域生效：`setup.sh` 將 `~/.gemini/GEMINI.md` symlink 到本檔，任何專案的 agy session 都會讀到。
-> Claude Code 讀 CLAUDE.md、Codex 讀 AGENTS.md——三份索引指向同一份正本。
-> 2026-07-07 起 agy 是**完整 harness**（可實作、可寫檔），不再只是唯讀協作者；唯讀約束只在「被委派模式」（見下）生效。
-> 本檔不依賴 `@file` 語法，核心規則 inline；下方 inline 段與 AGENTS.md 逐字相同，改規則先改 `~/Agent_skill/rules/` 正本，再同步兩份索引的 inline 段。
+> 全域生效：`setup.sh` 將 `~/.codex/AGENTS.md` symlink 到本檔，任何專案的 Codex session 都會讀到。
+> Claude Code 讀 CLAUDE.md、Antigravity（agy）讀 GEMINI.md——三份索引指向同一份正本。
+> 本檔不依賴 `@file` 語法，核心規則 inline；下方 inline 段與 GEMINI.md 逐字相同，改規則先改 `~/Agent_skill/rules/` 正本，再同步兩份索引的 inline 段。
 
 ---
 
@@ -51,23 +50,14 @@
 
 ---
 
-## agy 專屬區塊（只適用本 harness）
+## Codex 專屬區塊（只適用本 harness）
 
-- **模型池**（2026-07-07 本機 `agy models` 實測）：`Gemini 3.5 Flash`（L/M/H）、`Gemini 3.1 Pro`（Low/High）、`Claude Sonnet 4.6 (Thinking)`、`Claude Opus 4.6 (Thinking)`、`GPT-OSS 120B`。啟動時 `agy --model` 指定；選擇與升降級查 `model-orchestration.md` §5/§6 的 agy 欄
-- **額度按 model 分池**（Gemini / Claude 各自獨立）：Gemini 池耗盡切 Claude 池是合法橫向移動，不算升級
-- **委派參數未經本端驗證**（`TypeName` / `Workspace` 來自 session 回報）：委派前以當前工具 schema 為準；**禁止**照抄 Claude Code 的 `subagent_type` / `isolation` 參數名；**禁止**往工具 payload 塞 `model` 欄位（會 Validation Error）
-- **自動記憶（brain / conversations）是二進位、不可回寫正本**：session 內的重要結論不落到 `~/.agent-sessions/` 交接檔就等於丟失，使用者說「收工/交接」時務必寫回
-- shell 偵測類操作優先用原生唯讀工具（本 harness 對 shell 逐次核准，見 coding-workflow-core Phase 0）
-
----
-
-## 被委派模式（當其他 harness 以 cli-delegate 委派你時才適用）
-
-主 AI 委派時會註明模式；**命中下列觸發詞也視為被委派**：模式 A「幫我搜尋」「查一下最新」／模式 B「這個檔案太大」「掃一下整個專案」／模式 C「交叉驗證」「給我第二個意見」「有沒有漏洞」。分不清是一般任務還是被委派 → 先問。被委派時**即使工具權限允許寫檔，也維持唯讀、只回報**：
-
-- **模式 A 網路搜尋**：只回原始英文結果，每筆 title + URL + one-line summary，3-5 筆；找不到輸出 `NOT FOUND`。不翻譯、不加格式、不評論
-- **模式 B 大檔掃描**：條列輸出 ≤ 20 行，不建議修改方向，繁體中文
-- **模式 C 對抗式審查**：每個問題 `[CRITICAL/HIGH/MEDIUM/LOW] 位置：描述 → 潛在影響`；無問題輸出「未發現問題」；只報有把握的問題，寧缺勿濫（你的發現會被逐條查證）
+- **Skill discovery**：優先使用 `~/.codex/skills` 的 native discovery；未命中才讀 `skills/index.json`，再完整讀取對應 package 的 `SKILL.md`
+- **型號**（2026-07-07 官方文件查證）：`gpt-5.5`（旗艦）/ `gpt-5.4`（工作馬）/ `gpt-5.4-mini`（機械工）；effort 用 `model_reasoning_effort`：`minimal`/`low`/`medium`/`high`/`xhigh`。選擇與升降級查 `model-orchestration.md` §5/§6 的 Codex 欄
+- **AGENTS.md 逐層合併有 32KiB 上限**：本檔與專案層 AGENTS.md 都要保持薄，塞長內容會被靜默截斷
+- **subagent**：支援 manager-worker（最多 8 平行、雲端 sandbox）。委派參數照 `model-orchestration.md` §2 Codex 欄，禁止照抄 Claude Code 的 `subagent_type` 等參數名
+- **Memories 功能保持關閉**（`[features] memories` 不設 true）：自動記憶不可控且不回寫正本；跨 session 記憶一律走 `~/.agent-sessions/` 交接檔
+- 逐次指定 model 是否可行未確認：需要更強模型時，開新 session 前先在 `~/.codex/config.toml` 或 profile 指定
 
 ---
 
@@ -82,5 +72,5 @@
 ## 溝通規範
 
 - 繁體中文溝通，技術詞彙保留英文
-- **回應深度分級（預設偏簡）**：查事實 / yes-no / 狀態確認 / 小澄清 → 直接答 1–5 句，不用表格與分段標題；實作 / 除錯 / 設計 / review / 跨檔 / 委派 → 完整結構。不確定先簡答 +「要展開嗎？」。使用者說「簡答 / 短」強制簡答、「詳細 / 完整」強制完整
+- 回應先給極短摘要，再給可執行內容
 - 指出邏輯漏洞，不為友善而同意
