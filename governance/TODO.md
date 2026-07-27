@@ -5,6 +5,64 @@
 
 ---
 
+## 交接檔並發控制：改 per-session 分檔 + git 化
+
+**狀態**：🔴 已設計待實作（使用者 2026-07-23 決定方案，時機延後——避免與當時仍活躍的
+WakaWaka session 撞規則）
+
+**問題**：`~/.agent-sessions/<專案>/latest.md` 是**單一共享可變檔案**，Claude 與 Codex
+並行時靠 `maintenance-protocol §6`「讀 → 比對最後更新 → 合併 → 寫」的自律規約保護。
+2026-07-23 20:05–20:08 WakaWaka 真實發生一次並發寫入（該輪交接檔自留「併發註記」，
+`hook.log` 有 `20:07:22 BLOCK repo=/Users/wits/WakaWaka`），該次靠時間錯開才沒出事。
+
+五個漏洞：
+
+1. **TOCTOU**：讀與寫之間有時間窗。兩個 agent 都讀到同一舊版、各自合併、先後寫入 →
+   後寫者連同對方的合併成果一起覆蓋，而且它「有照規則做」
+2. **只有 L1 強制力**：規則寫在 markdown 給模型讀，忘了執行就是靜默整檔覆蓋，無機制阻擋
+3. **覆蓋即永久丟失**：`~/.agent-sessions` 不是 git repo，也無任何 `.bak`
+4. **無寫入者身分**：所有 `latest.md` 都沒有 harness 欄位，事後查不出誰蓋掉誰
+5. **「開工時間」對模型是主觀的**：沒有客觀時戳，實務上憑印象判斷「這比我記得的新」
+
+**方案**：消除共享可變狀態，而非加鎖。每輪收工只**建一個新檔案**，檔名含時戳與
+harness，天然不碰撞——兩個 agent 同時收工也不碰同一個檔案，沒有失敗模式。
+
+```
+~/.agent-sessions/<專案>/
+├── latest.md                          # 聚合產物，不手改
+└── entries/
+    ├── 20260723-155300-claude.md
+    └── 20260723-200800-codex.md
+```
+
+- 檔名：`<YYYYMMDD>-<HHMMSS>-<harness>.md`（秒級 + harness 名，碰撞機率可忽略）
+- `latest.md` = 最新一筆 entry 全文 + 檔尾附歷史 entries 索引（含時間、harness、
+  一行焦點）。任何時候重跑聚合都得到一致結果
+- entry 標頭增設 `> 寫入者：claude | codex | agy` 欄位（補漏洞 4）
+- `~/.agent-sessions` 執行 `git init`，寫入後 auto-commit（補漏洞 3；不解決並發，
+  但這是目前最大的實質風險，且成本最低）。`hook.log` 進 `.gitignore`
+
+**待辦**：
+
+- [ ] 新增 `bin/rebuild-latest.sh`：讀 `entries/` 重建 `latest.md`（冪等）
+- [ ] `skills/productivity/handoff/SKILL.md` Phase 最終：改為「寫新 entry + 跑聚合」，
+      移除「重讀 / 比對時間 / 合併」那套規約（不再需要）
+- [ ] `hooks/stop-handoff-check.sh`：檢查對象從 `latest.md` mtime 改為
+      `entries/` 是否有本 session 之後的新檔
+- [ ] `skills/productivity/project-dashboard/SKILL.md`：確認讀 `latest.md` 仍可用
+      （聚合後格式不變的話可不改）
+- [ ] `governance/maintenance-protocol.md §6`：改寫並發段落
+- [ ] 遷移既有 7 份：`latest.md` → `entries/<其最後更新時戳>-legacy.md`，再跑聚合。
+      `WakaWaka/bug-menubar-white-flash.md` 這類額外檔案不在 `entries/` 下，不動
+
+**取捨**：讀取多一層聚合；`entries/` 會累積（定期歸檔或只保留最近 N 筆全文）。
+換來的是寫入端完全無衝突——不需要鎖、CAS、時間比對，也不依賴模型記得合併。
+
+**實作前提**：三個 harness 讀同一份 handoff skill 正本，改完即全域生效；動手前確認
+沒有其他 harness 的 session 正在跑，否則它會讀到改到一半的規則。
+
+---
+
 ## Stop hook 下游分發：暫緩
 
 **狀態**：🟡 暫緩（使用者決定，2026-07-23）
