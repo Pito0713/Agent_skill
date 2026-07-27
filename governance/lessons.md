@@ -109,3 +109,10 @@
 - 錯誤/風險：「收工」是主觀詞，交給模型自主判斷必然發散——模型傾向把任何階段性完成解讀成收工。制度用「必寫」這種強制語氣配上模糊的觸發條件，等於預設模型會過度觸發。自動化防線（Stop hook）在使用者要的是「明確指令才動」時反而變成雜訊
 - 修正：ADR-014 把觸發收緊為「只由使用者明確『收工/交接』指令觸發」，寫進 4 份索引鐵律 + maintenance-protocol §6；停用 Stop hook（settings.json 移除掛載，hook 檔留 dormant）；version-log 與 latest.md 解耦
 - 規則：制度裡凡是「必做 X」配上主觀觸發詞（收工、告一段落、完成、差不多好了），要嘛把觸發詞換成客觀可判定的條件，要嘛把觸發權收回給使用者明確指令。不要用強制語氣（必寫/必做）去約束一個模型會自行擴大解釋的模糊邊界——那只會保證它過度執行
+
+## 2026-07-27 codex exec 的 sandbox 擋 .codex 寫入，Codex 不能當 farm 安裝類 executor
+
+- 情境：把「WakaWaka farm dangling 修復」派給 Codex（`codex exec`，sandbox=workspace-write）。Codex 跑 `inject.sh`，Claude farm 成功，但 Codex farm 在建 `.codex/skills/*` symlink 時 `ln: Operation not permitted` 中止——codex exec 的 sandbox 保護自己的 `.codex/` 目錄、禁止寫入。同一路徑我（Claude Code）手動建 symlink 成功，證明是 codex sandbox 專屬限制、非 FS 問題
+- 錯誤/風險：多 CLI 委派時只問「executor 會不會做這件事」，沒問「它對要寫的路徑有沒有權」。farm 安裝本質要寫 `.codex/`（全域 `~/.codex/skills` 或下游 `.codex/skills`），Codex 結構性永遠做不到；盲派會派出一個註定失敗的工單
+- 修正：FIX-1 的 `.codex` 半邊改由 orchestrator（Claude）直接跑 inject.sh 補完。探針策略生效——先派最低風險的 FIX-1 試水，撞牆立刻換手，沒有三份盲派
+- 規則：委派前先確認 executor 對「它要寫入的路徑」有無寫權；sandbox/自我保護目錄（`.codex/`、可能還有各 harness 的 config 目錄）是比「能力」更硬的結構性邊界。凡任務會寫到某 harness 的自我保護目錄，該 harness 一律標「不可當此類 executor」，farm/接線類任務只能派 Claude 或由 orchestrator 收口

@@ -36,6 +36,7 @@ run_preflight() {
   fi
   preflight_farm "$CODEX_ADAPTER"
   preflight_markers "$PROJECT_ENTRY"
+  warn_legacy_content_outside_managed_block "$PROJECT_ENTRY"
 }
 
 run_install() {

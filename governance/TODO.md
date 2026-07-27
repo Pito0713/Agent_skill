@@ -136,3 +136,14 @@ Codex/agy 是紀律要求。
 **待辦（想讓 Codex 也變硬保證時）**：
 - [ ] 評估走 hook（`.codex/hooks.json` 目前不分發）或把安全規範精簡後內嵌進
       AGENTS.md managed block（受 32KiB 上限約束，現況 AGENTS.md 約 5KB）
+
+## inject 殘留偵測與下游 stale：FIX-3 已落地，尚有後續
+
+**已完成（2026-07-27，FIX-3）**：`warn_legacy_content_outside_managed_block`（preflight 偵測 block 外死引用、只警告不刪）+ `bin/scan-downstream.sh`（唯讀掃下游 farm dangling）+ `bin/test-fix-3.sh`。
+
+**尚未做**：
+- [ ] 改名後**自動重跑下游 farm**仍未實作——目前 skill 改名後，各下游要人工跑 `inject.sh` 才會清 dangling（實例：WakaWaka 停在改名前，靠本次手動修）。可做：`setup` 後選擇性掃已知下游 + 提示重跑。
+- [ ] **冗餘但功能正常的舊 body 偵測不到**（保守設計，避免 false-positive）：如 shopee/CLAUDE.md 仍有 6 條 `@` 當代格式常駐（能 resolve、但新設計已改由 on-demand），FIX-3 不會警告。要清得人工判斷。
+- [ ] 可選：加 opt-in `inject.sh --clean-legacy`，**只在 body 逐字比對到已知舊自動生成模板時**才移除，其餘一律保留——唯一能安全自動化清 body 的路徑。
+
+**已知硬邊界（見 lessons 2026-07-27）**：farm 安裝寫 `.codex/`，Codex exec sandbox 擋、不能當此類 executor。

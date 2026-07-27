@@ -154,6 +154,31 @@ preflight_markers() {
   fi
 }
 
+# warn_legacy_content_outside_managed_block <target_file>
+# 只讀取 marker 外內容並提示疑似舊代引用；不修改檔案、不影響 preflight 結果。
+warn_legacy_content_outside_managed_block() {
+  local target_file="$1"
+  [[ -f "$target_file" ]] || return 0
+
+  awk -v begin="$AGENT_SKILL_BEGIN_MARKER" -v end="$AGENT_SKILL_END_MARKER" '
+    $0 == begin { managed=1; next }
+    $0 == end { managed=0; next }
+    managed { next }
+    /@~\/\.Codex\// ||
+    /@~\/\.claude\/skills\/(engineering|productivity|learning|design|investing)\/[a-z0-9-]+\.md/ ||
+    /(~\/)?\.(claude|codex)\/skills\/(gemini-assist|agy-assist)(\/SKILL\.md|\.md)?/ {
+      printf "⚠️  %s:%d: %s\n", FILENAME, FNR, $0
+      found=1
+    }
+    END {
+      if (found) {
+        print "   疑似舊代殘留，請人工確認後手動移除。"
+      }
+    }
+  ' "$target_file" >&2
+  return 0
+}
+
 # write_managed_block <target_file> <block_body>
 # 只替換自己的 managed block，marker 外的既有內容原樣保留在區塊之後。
 write_managed_block() {
