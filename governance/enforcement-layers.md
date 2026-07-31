@@ -76,14 +76,24 @@
   「填路徑」的欄位，所以 wrapper 是 git hook 唯一能達成「指向正本」的方式：
   ```bash
   #!/usr/bin/env bash
-  exec "$HOME/Agent_skill/hooks/pre-commit-audit.sh" "$@"
+  CANON="$HOME/Agent_skill/hooks/pre-commit-audit.sh"
+  [ -x "$CANON" ] || exit 0   # fail-open：正本遺失/不可執行/$HOME 失效 → 放行
+  exec "$CANON" "$@"
   ```
   `exec` 取代 process，正本的 exit code 直接成為 hook 的 exit code。已刪除的
   post-commit hook 是 5 份實體副本，改正本對它們毫無作用——正是要避開的反模式。
-- **正本必須 `chmod +x`**。否則 `exec` 失敗回 126，git 把任何 commit 都擋掉。
+- **`[ -x ]` 那道守衛不可省**。初版直接 `exec`，正本忘了 `chmod +x` 時回 126，
+  git 把 6 個 repo 的**所有** commit 都擋掉——與正本自稱的 fail-open 直接矛盾。
+  **fail-open 的宣稱寫在正本裡，不會自動繼承到 wrapper**：兩者是不同檔案，
+  各自都要有放行路徑。
 - **只掃 staged 新增行**，不翻舊帳、不掃工作區。
-- **旁路**：`git commit --no-verify`（git 原生）或該行加 `audit-ok` 標記。
+- **旁路**：`git commit --no-verify`（git 原生）或該行加**獨立 token** 的
+  `audit-ok` 標記（子字串不算——初版用子字串比對，`audit-oklahoma` 這類路徑會
+  靜默旁路）。
 - **fail-open**：git 指令失敗、無 staged 內容等一律放行。
+- **已知限制**（刻意接受，理由見腳本檔頭）：binary 檔不掃；個人目錄底下只有單一
+  segment 時會誤報（同名的 REST 路由會中）——**不收窄，因為漏掉洩漏不可逆、誤報
+  只需加 `audit-ok`，成本不對稱**；`file://<host>/` 不命中；rename 未加 `-M`。
 
 已安裝：`Agent_skill`、`AG_knowledge`、`gps_position`、`shopee`、`tabetemiru`、
 `WakaWaka`（6 份 wrapper md5 一致）。**尚未接進 `inject.sh`**——新專案要手動裝，

@@ -474,3 +474,22 @@ commit 都對其他 session 發出假的並發訊號**，污染 maintenance-prot
 repo 全部有 GitHub remote，AG_knowledge commit `9cac18f` 就是在補這個坑。
 
 **已知缺口**：未接進 `inject.sh`，新專案要手動裝（見 TODO）。
+
+**2026-07-31 補記（獨立 review 後）**：依鐵律 2「驗證不自驗」把
+`hooks/pre-commit-audit.sh` 交冷啟動 subagent 對抗式審查（delegation-templates T5）。
+**我自己的 9 項測試全綠，reviewer 仍找出 7 個實測可重現的缺陷**，逐條複驗後 3 個修掉：
+
+- **wrapper 沒有 fail-open**（最嚴重）：原版直接 `exec`，正本不可執行時回 126，
+  6 個 repo 的所有 commit 都會被擋。**fail-open 的宣稱寫在正本裡不會自動繼承到
+  wrapper——兩個檔案各自都要有放行路徑**。已加 `[ -x "$CANON" ] || exit 0`。
+- **`audit-ok` 用子字串比對**：`/Users/x/audit-oklahoma/secret.json` 靜默放行。
+  改為獨立 token 比對。
+- **非 ASCII 檔名歸屬錯置**：`core.quotepath` 讓 git 輸出 `+++ "b/\350...`，
+  前置雙引號使檔頭 regex 失配，洩漏被歸到上一個檔名。改用 `-c core.quotepath=false`
+  並容忍引號。
+
+不修的 4 項（binary 不掃、`/Users/<單一 segment>` 誤報、`file://<host>/` 漏網、
+rename 重掃）已寫進腳本檔頭與 `enforcement-layers.md §4b` 當已知限制。誤報那項
+**刻意不收窄**：漏掉洩漏不可逆（git 歷史刪不掉），誤報只需加 `audit-ok`——成本不對稱。
+
+回歸測試 12/12 通過（原 9 項 + 3 條缺陷回歸），6 份 wrapper 已更新且 md5 一致。
