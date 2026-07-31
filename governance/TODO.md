@@ -125,10 +125,32 @@ hook 檔頭第 5 行自稱對應「鐵律 1『交接必落地』」，但它的�
 - [ ] `~/Agent_skill`（正本自己也掛著）
 - [ ] `~/WakaWaka`
 
+**`hook.log` 實證（ADR-014 之後仍持續擋人）**：
+
+```
+2026-07-29 17:30:31  BLOCK repo=~/WakaWaka
+2026-07-29 17:32:19  BLOCK repo=~/WakaWaka      ← 同 session 相隔 2 分鐘再擋
+2026-07-29 22:36:41  BLOCK repo=~/shopee
+2026-07-30 11:47:47  BLOCK repo=~/AG_knowledge
+2026-07-31 11:51:07  BLOCK repo=~/AG_knowledge
+2026-07-31 13:45:47  BLOCK repo=~/AG_knowledge  ← 同 session 相隔 2 小時再擋
+```
+
+ADR-014 是 2026-07-27 停用的，之後仍有 6 次 BLOCK 橫跨 3 個專案——停用完全沒生效。
+
+**額外缺陷：「每 session 僅出現一次」是假的**。hook 回饋訊息結尾聲稱
+「本提醒每 session 僅出現一次」，但防死循環靠的是 `stop_hook_active`，那只在
+**單次 Stop 續跑內**為真；跨使用者輪次會重置。而 `wrote_repo` 是掃整份 transcript，
+一旦本 session 有過 commit 就永遠為真。結果是**只要使用者不寫 latest.md，
+每一輪對話結束都會再擋一次**（上表 07-29 與 07-31 的成對紀錄即為實證）。
+使用者若照鐵律 1 拒寫，就會被無限重複騷擾。
+
 **待辦**：
 
 - [ ] 逐一從上列 7 個檔案移除 Stop hook 掛載（settings.json 若移除後只剩空 `hooks`
       物件，一併清掉避免留空殼）
+- [ ] 若最終決定保留 dormant 而非刪檔：修掉訊息中「每 session 僅出現一次」的錯誤宣稱，
+      或改成真正的 once-per-session（需落地標記，如 `hook.log` 比對 transcript 路徑）
 - [ ] `hooks/stop-handoff-check.sh` 檔頭第 5 行的「對應正本條文」已失真——標為
       dormant 並註明 ADR-014 停用，或直接刪檔（`enforcement-layers.md` 說保留 dormant，
       但保留就得同步修檔頭，否則下次有人看檔頭會以為它仍是鐵律 1 的執行層）
