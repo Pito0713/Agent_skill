@@ -47,6 +47,8 @@ harness，天然不碰撞——兩個 agent 同時收工也不碰同一個檔案
 - [ ] 新增 `bin/rebuild-latest.sh`：讀 `entries/` 重建 `latest.md`（冪等）
 - [ ] `skills/productivity/handoff/SKILL.md` Phase 最終：改為「寫新 entry + 跑聚合」，
       移除「重讀 / 比對時間 / 合併」那套規約（不再需要）
+- [ ] `hooks/stop-handoff-check.sh`：檢查對象從 `latest.md` mtime 改為
+      `entries/` 是否有本 session 之後的新檔
 - [ ] `skills/productivity/project-dashboard/SKILL.md`：確認讀 `latest.md` 仍可用
       （聚合後格式不變的話可不改）
 - [ ] `governance/maintenance-protocol.md §6`：改寫並發段落
@@ -61,54 +63,114 @@ harness，天然不碰撞——兩個 agent 同時收工也不碰同一個檔案
 
 ---
 
-## post-commit hook 與 `audit_personal_paths()` 的去留未定
+## Stop hook 下游分發：暫緩
 
-**狀態**：🟡 待決（從已結案的「Stop hook 下游分發」項拆出，2026-07-31）
+**狀態**：🟡 暫緩（使用者決定，2026-07-23）
 
-**背景**：ADR-012 重構 `inject.sh` 時，`install_stop_hook()` 連同
-`install_hook()`（post-commit）、`audit_personal_paths()`（下游 CLAUDE.md 個人
-絕對路徑審計）一併移除；ADR-013 拆分後仍未恢復。Stop hook 那條已由 ADR-015
-永久放棄，但**另外兩個函式的去留從沒被單獨決定過**——它們是搭便車消失的。
+**背景**：ADR-010 執行力分層 v1 的接線方式是 `inject.sh` 的 `install_stop_hook()`，
+在下游專案 `.claude/settings.json` 掛指向正本的 Stop hook。ADR-012 重構
+`inject.sh` 時該函式連同 `install_hook()`（post-commit）、`audit_personal_paths()`
+一併移除；ADR-013 拆分後仍未恢復。`.codex/hooks.json` 也明確不分發。
 
-**待辦**：
-- [ ] 確認 post-commit hook 的功能是否已由其他機制承擔，或確定不再需要
-- [ ] 同上，`audit_personal_paths()`（`bin/scan-downstream.sh` 是否已涵蓋？）
-- [ ] 決定後把結論寫進 `enforcement-layers.md`，避免又變成無主狀態
+**暫緩原因**：Stop hook 的收工攔截會與其他需求衝突，先關閉不恢復。
+
+**待辦（解除暫緩時才做）**：
+- [ ] `governance/enforcement-layers.md` §4 第 3 列仍寫著「`inject.sh` 增
+      `install_stop_hook()`」——文件與實作不一致，恢復或永久放棄時都要一併更新
+- [ ] 恢復的話實作位置是 `bin/inject-claude.sh`（不是總入口 `inject.sh`）
+- [ ] 決定 post-commit hook 與 `audit_personal_paths()`（下游 CLAUDE.md 個人絕對
+      路徑審計）是否一併恢復，或確認已由其他機制承擔
 
 ---
 
-## Stop hook 移除：下游 6 個掛載 + 刪檔（ADR-015 收尾）
+## ADR-014 停用 Stop hook 未落實到下游：4 個專案仍會被擋收工
 
-**狀態**：🟠 進行中（2026-07-31，ADR-015 已定案並落地正本；剩下游清理）
+**狀態**：🔴 待執行（決策早已存在，只是從未執行；2026-07-31 於 AG_knowledge 實地撞到）
 
-**已完成**：`hooks/stop-handoff-check.sh` 加 kill-switch（`exit 0`）——因下游全部
-「指向正本、不複製」，7 個掛載當場全部失效，已無人被擋。正本側四份索引、
-`maintenance-protocol §6`、`enforcement-layers §4`、handoff skill 三處觸發詞
-均已同步；`Agent_skill/.codex/hooks.json` 已刪。
+**背景**：ADR-014（2026-07-27）已決定**停用** `hooks/stop-handoff-check.sh`——
+`enforcement-layers.md:4` 寫明「從 `.claude/settings.json` 移除掛載，hook 檔保留
+dormant」，理由正是它與收緊後的觸發政策直接衝突。但**「移除掛載」這個動作從沒真的做**，
+下游專案的 settings.json 至今原封不動，hook 仍在正常擋收工。
 
-**剩餘（需使用者授權才動下游 repo）**：
+2026-07-31 在 AG_knowledge 整理筆記 + commit 後，Stop hook 如期擋下收工，要求補寫
+`latest.md` 並用 Agent tool 喚醒 handoff-verifier——而使用者全程沒說過「收工」。
+模型依鐵律 1 拒絕照做，形成「制度文件說 A、執行層強制 B」的對撞。
 
-`.claude/settings.json`（內容僅 Stop 掛載 → 整檔刪除，不留空殼）：
-- [ ] `~/AG_knowledge`（**git 已追蹤**，需 commit）
-- [ ] `~/shopee`（未追蹤，直接刪）
-- [ ] `~/WakaWaka`（**git 已追蹤**，需 commit）
-- [ ] `~/tabetemiru`（未追蹤，直接刪）
+**衝突的精確形狀**（不是模糊地帶，是字面相反）：
+
+| | 說法 |
+|---|---|
+| `CLAUDE.global.md` 鐵律 1 / `Agent_skill/CLAUDE.md` 鐵律 6 | 「**只在使用者明確說「收工/交接」時才寫**，完成一段工作或 session 自然結束都不算收工、不主動寫」 |
+| `hooks/stop-handoff-check.sh` 觸發條件 | `wrote_repo`（session 內有 Write/Edit/NotebookEdit 落在 repo，或 Bash 跑過 `git commit`）+ Stop 時機 |
+
+hook 檔頭第 5 行自稱對應「鐵律 1『交接必落地』」，但它的實際觸發條件
+（session 自然結束 + 有寫入）**正好是鐵律 1 明文排除的情況**。引用的條文與實作的
+行為相反，而不只是嚴格一點。
+
+**次要衝突**：hook 回饋訊息第 2 步要求「用 Agent tool 喚醒查核員」。多數 harness
+的預設指示是「未經使用者要求不主動開 subagent」，照做等於未經授權開銷 token；不照做
+則 hook 的補救路徑走不完。ADR-014 已把 handoff-verifier 改為「使用者說收工時手動委派」，
+但 hook 內的訊息文字沒同步更新。
+
+**殘留清單**（2026-07-31 掃 `~` 得出，全部指向正本腳本、非副本）：
+
+`.claude/settings.json`：
+- [ ] `~/AG_knowledge`
+- [ ] `~/shopee`
+- [ ] `~/WakaWaka`
+- [ ] `~/tabetemiru`
 
 `.codex/hooks.json`：
-- [ ] `~/AG_knowledge`（僅 Stop → 整檔刪；**git 已追蹤**）
-- [ ] `~/WakaWaka`（**另有 PreToolUse / PermissionRequest（cost-aware-approval）→ 只刪 Stop 區塊**；git 已追蹤）
+- [ ] `~/AG_knowledge`
+- [ ] `~/Agent_skill`（正本自己也掛著）
+- [ ] `~/WakaWaka`
 
-最後一步：
-- [ ] 下游清空後才 `git rm hooks/stop-handoff-check.sh`（先刪檔會讓殘留掛載變成
-      exit 127「command not found」，順序不可顛倒）
+**`hook.log` 實證（ADR-014 之後仍持續擋人）**：
 
-**牽連**：AG_knowledge commit `96e9342` 已把 `.claude/settings.json` 與
-`.codex/hooks.json` 納入版控，清理時該 repo 要一併 commit 移除。
+```
+2026-07-29 17:30:31  BLOCK repo=~/WakaWaka
+2026-07-29 17:32:19  BLOCK repo=~/WakaWaka      ← 同 session 相隔 2 分鐘再擋
+2026-07-29 22:36:41  BLOCK repo=~/shopee
+2026-07-30 11:47:47  BLOCK repo=~/AG_knowledge
+2026-07-31 11:51:07  BLOCK repo=~/AG_knowledge
+2026-07-31 13:45:47  BLOCK repo=~/AG_knowledge  ← 同 session 相隔 2 小時再擋
+```
 
-**防復發（可與上述分開做）**：
-- [ ] `bin/scan-downstream.sh` 加 deprecated-mount 唯讀掃描：列出下游指向已停用
-      hook 的掛載。不做通用反注入——會動下游未知設定，風險不對稱；沿用 FIX-3
-      「只警告不刪」的既有設計
+ADR-014 是 2026-07-27 停用的，之後仍有 6 次 BLOCK 橫跨 3 個專案——停用完全沒生效。
+
+**額外缺陷：「每 session 僅出現一次」是假的**。hook 回饋訊息結尾聲稱
+「本提醒每 session 僅出現一次」，但防死循環靠的是 `stop_hook_active`，那只在
+**單次 Stop 續跑內**為真；跨使用者輪次會重置。而 `wrote_repo` 是掃整份 transcript，
+一旦本 session 有過 commit 就永遠為真。結果是**只要使用者不寫 latest.md，
+每一輪對話結束都會再擋一次**（上表 07-29 與 07-31 的成對紀錄即為實證）。
+使用者若照鐵律 1 拒寫，就會被無限重複騷擾。
+
+**待辦**：
+
+- [ ] 逐一從上列 7 個檔案移除 Stop hook 掛載（settings.json 若移除後只剩空 `hooks`
+      物件，一併清掉避免留空殼）
+- [ ] 若最終決定保留 dormant 而非刪檔：修掉訊息中「每 session 僅出現一次」的錯誤宣稱，
+      或改成真正的 once-per-session（需落地標記，如 `hook.log` 比對 transcript 路徑）
+- [ ] `hooks/stop-handoff-check.sh` 檔頭第 5 行的「對應正本條文」已失真——標為
+      dormant 並註明 ADR-014 停用，或直接刪檔（`enforcement-layers.md` 說保留 dormant，
+      但保留就得同步修檔頭，否則下次有人看檔頭會以為它仍是鐵律 1 的執行層）
+- [ ] hook 訊息第 2 步的「用 Agent tool 喚醒查核員」與 ADR-014「改為手動委派」不一致，
+      若保留 dormant 檔則一併修
+- [ ] 決定 `inject.sh` 是否需要**主動反注入**：目前 ADR-013 重構後 inject 不再安裝
+      Stop hook（見下方「Stop hook 下游分發：暫緩」），但**不安裝 ≠ 移除既有的**。
+      沒有反注入機制的話，這類「政策已改、下游殘留」會反覆發生
+- [ ] 補一條 lessons：**停用決策要含「下游反注入」步驟才算完成**。ADR-014 只改了正本
+      文件就結案，L2 執行層實際上活著又跑了 4 天
+
+**牽連**：AG_knowledge 於 2026-07-31 commit `96e9342` 把 `.claude/settings.json` 與
+`.codex/hooks.json` 納入版控（當時未察覺 ADR-014 已停用），等於把殘留掛載寫進該 repo
+歷史。清理時該專案要一併從版控移除或改內容。
+
+**相關**：下方「Stop hook 下游分發：暫緩」談的是**不再由 inject 分發**（2026-07-23），
+本項談的是**既有掛載未移除**（ADR-014, 2026-07-27）。兩者同主題但不同動作，前者做了、
+後者沒做。
+
+**決策者與日期**：待使用者裁示（2026-07-31 由 AG_knowledge session 提出）
 
 ---
 
@@ -166,11 +228,7 @@ Codex/agy 是紀律要求。
 - [ ] 評估走 hook（`.codex/hooks.json` 目前不分發）或把安全規範精簡後內嵌進
       AGENTS.md managed block（受 32KiB 上限約束，現況 AGENTS.md 約 5KB）
 
----
-
 ## inject 殘留偵測與下游 stale：FIX-3 已落地，尚有後續
-
-**狀態**：🟡 部分完成（FIX-3 已落地，餘項無時效壓力）
 
 **已完成（2026-07-27，FIX-3）**：`warn_legacy_content_outside_managed_block`（preflight 偵測 block 外死引用、只警告不刪）+ `bin/scan-downstream.sh`（唯讀掃下游 farm dangling）+ `bin/test-fix-3.sh`。
 

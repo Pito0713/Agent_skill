@@ -203,7 +203,7 @@
     {
       "name": "handoff",
       "path": "skills/productivity/handoff/SKILL.md",
-      "triggers": "handoff、收工、交接（僅此三詞；近似說法一律反問確認，不自動觸發）",
+      "triggers": "交接、handoff、總結一下、下次繼續",
       "description": "將當前對話壓縮成交接文件，供下一個 session 或 agent 接手。"
     },
     {

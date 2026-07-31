@@ -1,16 +1,20 @@
 #!/usr/bin/env bash
-# stop-handoff-check.sh — Claude Code Stop hook：收工守門（交接必落地）
+# stop-handoff-check.sh — 【已停用，待刪除】ADR-015（2026-07-31）
 #
-# 對應正本條文（enforcement-layers.md §5 防漂移：改正本時同步檢查本檔）：
-#   - ~/.claude/CLAUDE.md 鐵律 1「交接必落地」；Agent_skill CLAUDE.md 鐵律 6
-#   - ~/Agent_skill/governance/maintenance-protocol.md §6（交接正本規約）
-#   - 設計與驗收標準：~/Agent_skill/governance/enforcement-layers.md §4
+# 本檔即將刪除。保留至下游 6 個掛載點移除為止——先刪檔會讓那些掛載變成
+# exit 127「command not found」，故順序為：kill-switch → 清下游掛載 → 刪本檔。
 #
-# 行為：本 session 對 git repo 有寫入、但 ~/.agent-sessions/<專案>/latest.md 未更新
-#       → 擋下這次收工並提示補交接 + 喚醒 handoff-verifier。
-# 防死循環：stop_hook_active=true（已因 Stop hook 續跑過）→ 放行，每 session 僅擋一次。
-# 旁路：AGENT_SKILL_HOOK_BYPASS=1（事件記入 ~/.agent-sessions/hook.log 供事後審）。
-# 失敗策略：fail-open——解析失敗、python3 缺席、任何內部錯誤一律放行，不阻塞收工。
+# 停用原因（ADR-015）：交接觸發權全數歸還使用者。Stop hook 的觸發源是 harness
+# 生命週期事件（一輪回應結束），而「收工」是使用者的意圖宣告——hook 在原理上
+# 觀測不到後者，只能猜。ADR-014 已停用本 hook 但未移除下游掛載，導致 2026-07-27
+# 至 07-31 間仍有 6 次 BLOCK 橫跨 3 個專案。
+#
+# 取代方案：純 L1——使用者說「handoff / 收工 / 交接」才寫 latest.md，模型只負責
+# 在段落完成時提醒一次，不攔截。見 governance/enforcement-layers.md §4。
+#
+# 以下原始邏輯保留供考古，永不執行。
+
+exit 0
 
 set -u   # 不用 -e：fail-open
 

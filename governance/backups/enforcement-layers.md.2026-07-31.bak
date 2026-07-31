@@ -1,8 +1,7 @@
 # 執行力分層設計（Enforcement Layers）
 
 > **狀態：v1 已實作（2026-07-10，使用者核准第 4 節清單後動工，決策記錄 ADR-010）**。觀察期驗收標準見 §6。
-> **⚠️ 2026-07-31 更新（ADR-015，取代下方 ADR-014 註記）**：第 4 節 #1 的 Stop hook 與 #3 的接線 **永久移除，非暫時停用**。`hooks/stop-handoff-check.sh` 已加 kill-switch（`exit 0`）待刪，7 個下游掛載清除中。**L2 對「交接必落地」這條規則永久放棄**——理由不是實作缺陷，而是原理性的：Stop hook 的觸發源是 harness 生命週期事件（一輪回應結束），而「收工」是使用者的意圖宣告，hook 觀測不到後者。改由純 L1 承擔：使用者說「handoff / 收工 / 交接」才寫，模型只在段落完成時提醒一次、不攔截。
-> **歷史（ADR-014, 2026-07-27）**：當時決定停用並「保留 dormant」，但**移除下游掛載的動作從未執行**——hook 續活 4 天、6 次 BLOCK 橫跨 3 個專案。教訓見 lessons.md 2026-07-31 條目。
+> **⚠️ 2026-07-27 更新（ADR-014）**：第 4 節 #1 的 **Stop hook（`hooks/stop-handoff-check.sh`）已停用**——從 `.claude/settings.json` 移除掛載，hook 檔保留 dormant。原因：它在每次 session 結束自動逼寫 latest.md，與新政策「latest.md 只由使用者明確『收工/交接』指令觸發」直接衝突。handoff-verifier cop（#2）不再由 Stop hook 喚醒，改為使用者說收工時手動委派。L2 Stop 層本項失效，回退純 L1 文字約束。
 > 動機：現行防呆全靠文字制度，仰賴模型自主遵守——模型發散或遺忘時規則就失效。本文件規劃把高風險規則**下沉**到確定性腳本（hooks）與乾淨 context 守門員（cop agents）。
 
 ---
@@ -50,9 +49,9 @@
 
 | # | 產物 | 型 | 內容 | 誤報風險 |
 |---|------|-----|------|---------|
-| 1 | ~~`hooks/stop-handoff-check.sh`~~ **已廢止（ADR-015）** | ~~L2 注入~~ | ~~Stop hook：本 session 有 repo 寫入但 latest.md 未更新 → 擋一次~~。實測誤報風險不是「中」而是**必然**：`wrote_repo` 掃整份 transcript、一旦為真就永遠為真，而防重複的 `stop_hook_active` 只在單次 Stop 續跑內有效、跨輪重置 → 每一輪對話結束都再擋一次。檔內「每 session 僅出現一次」的宣稱為假 | ~~中~~ **實為必然誤報** |
+| 1 | `hooks/stop-handoff-check.sh` | L2 注入 | Stop hook：本 session 有 repo 寫入但 `~/.agent-sessions/<專案>/latest.md` 未更新 → 擋一次並提示喚醒 handoff-verifier | 中；需「僅擋一次」防死循環 |
 | 2 | `agents/06-governance/handoff-verifier.md` | L3 | 乾淨 context 查核 latest.md：格式合規（maintenance-protocol §6）、與 `git log` 事實對帳、下一步可執行性。**回傳必附證據**（引用行號與 git hash），防主模型抄結論 | — |
-| 3 | ~~接線~~ **已廢止（ADR-015）** | — | ~~專案 `.claude/settings.json` 掛 Stop hook；`inject.sh` 增 `install_stop_hook()`~~。`install_stop_hook()` 已於 ADR-012 重構時移除、ADR-013 拆分後未恢復，**不再恢復**。「指向正本、不複製」的設計本身是對的——正是它讓 ADR-015 能靠一行 kill-switch 同時停掉 7 個掛載。但**不安裝 ≠ 移除既有的**：政策改變後無反注入機制，是 ADR-014 殘留 4 天的根因。改由 `bin/scan-downstream.sh` 唯讀掃描承擔偵測 | — |
+| 3 | 接線 | — | 專案 `.claude/settings.json` 掛 Stop hook（PreToolUse 不動，已有全域 cost-aware-approval 承擔）；`inject.sh` 增 `install_stop_hook()`：下游 settings.json **指向正本腳本、不複製**（實作時偏離原稿「複製」方案——複製即產生會漂移的下游副本，2026-07-07 lessons 教訓） | 極低；下游零副本，正本改動即全域生效 |
 
 **明確不做**（本批）：
 - **PreToolUse 層攔截／注入**（`~/.claude/settings.json` 已有全域 pretooluse.mjs，擴充攔截規則進該 hook，不另建腳本）

@@ -116,3 +116,10 @@
 - 錯誤/風險：多 CLI 委派時只問「executor 會不會做這件事」，沒問「它對要寫的路徑有沒有權」。farm 安裝本質要寫 `.codex/`（全域 `~/.codex/skills` 或下游 `.codex/skills`），Codex 結構性永遠做不到；盲派會派出一個註定失敗的工單
 - 修正：FIX-1 的 `.codex` 半邊改由 orchestrator（Claude）直接跑 inject.sh 補完。探針策略生效——先派最低風險的 FIX-1 試水，撞牆立刻換手，沒有三份盲派
 - 規則：委派前先確認 executor 對「它要寫入的路徑」有無寫權；sandbox/自我保護目錄（`.codex/`、可能還有各 harness 的 config 目錄）是比「能力」更硬的結構性邊界。凡任務會寫到某 harness 的自我保護目錄，該 harness 一律標「不可當此類 executor」，farm/接線類任務只能派 Claude 或由 orchestrator 收口
+
+## 2026-07-31 停用決策沒含「下游反注入」就不算完成——ADR-014 的 hook 續活 4 天
+
+- 情境：ADR-014（2026-07-27）決定停用 `hooks/stop-handoff-check.sh`，`enforcement-layers.md` 寫明「從 `.claude/settings.json` 移除掛載，hook 檔保留 dormant」。但**「移除掛載」這個動作從沒執行**——只改了正本文件就結案。7 個下游掛載原封不動，`hook.log` 顯示停用後仍有 6 次 BLOCK 橫跨 3 個專案（07-29 WakaWaka ×2、07-29 shopee、07-30～07-31 AG_knowledge ×3），直到 07-31 在 AG_knowledge 實地撞到才被發現
+- 錯誤/風險：形成「制度文件說 A、執行層強制 B」的對撞——模型依鐵律拒寫 latest.md，hook 依舊擋收工，使用者被無限重複騷擾。根因是 `inject.sh` 只有「安裝」沒有「移除」：**不安裝 ≠ 移除既有的**。政策改變後沒有任何機制會回頭清理下游殘留，這類漂移會反覆發生。次要風險是殘留掛載被下游 repo 納入版控（AG_knowledge commit `96e9342`），寫進歷史
+- 修正：ADR-015 改為永久移除。順序上先在正本腳本頂端加 kill-switch（`exit 0`）——因為下游全部「指向正本、不複製」，一行改動即同時停掉 7 個掛載，把清理從緊急止血降級成清潔工作；再逐一移除掛載；最後才刪檔（先刪檔會讓掛載變成 exit 127）
+- 規則：**停用 / 廢止決策的完成判準包含「下游反注入」，不是改完正本文件就結案**。寫 ADR 時把「已生效的執行層在哪些下游還活著」列成 checklist 逐項打勾；若該執行層是「下游指向正本」的設計，先在正本加 kill-switch 取得即時止血，再慢慢清。另：驗收要看**行為證據**（`hook.log` 有沒有新 BLOCK），不能只看文件寫了什麼

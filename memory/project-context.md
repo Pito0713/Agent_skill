@@ -408,3 +408,34 @@ Codex/agy 本就不吃 `.claude/settings.json`、原本就只有 L1 約束，不
 **後果**：latest.md 只在使用者明說收工/交接時更新；commit、完成一段工作、session
 自然結束都不再觸發。維護者若日後想恢復自動防線，實作與待辦見 `governance/TODO.md`
 與 `enforcement-layers.md` §4（已標註本項停用）。
+
+---
+
+## ADR-015：交接觸發權全歸使用者，L2 Stop hook 永久移除（2026-07-31）
+
+**決策**：`~/.agent-sessions/<專案>/latest.md` 的觸發權**全數歸還使用者**，模型與
+harness 都沒有自動觸發路徑。四項：① 唯一觸發詞收斂為「handoff」「收工」「交接」；
+② 近似說法（「今天到這」「明天繼續」「總結一下進度」）一律**反問確認**，不自動執行；
+③ 模型可在完成可交付段落且本 session 有 repo 寫入時**提醒一次**「要 handoff 嗎？」
+（每 session 至多一次，除非之後又有新 commit），僅止於提醒；④ `hooks/stop-handoff-check.sh`
+**永久移除**（非 ADR-014 的「保留 dormant」），下游掛載一併清除。
+
+**原因（原理性，非實作缺陷）**：Stop hook 的觸發源是 harness 生命週期事件——一輪
+回應結束——而「收工」是使用者的**意圖宣告**。hook 收到的 input 只有 `cwd` /
+`transcript_path` / `stop_hook_active`，裡面沒有「使用者是否宣告收工」這個欄位；要
+取得只能 grep transcript，那正是 ADR-014 剛廢掉的「模型自主判斷收工」的更笨版本。
+把觸發條件收窄成「只在收工時擋」之後，hook 唯一還會開火的場合恰恰是 L1 已在正常
+運作的場合，而它想防的「使用者忘了說收工」按定義不觸發——**與存在理由互斥**。
+
+**取代 ADR-014 的取捨**：ADR-014 承認「失去 session 結束漏寫交接的自動防線」。本
+ADR 用 ③ 的主動提醒補回，但改**提醒**而非**攔截**——失敗方向從此安全：模型忘了
+提醒只是漏寫一次（可補救），hook 誤判則是擋住使用者（不可補救）。
+
+**連帶發現（本次實地核對）**：真正的過度觸發源不只 hook，還有 `handoff` skill 自身
+的自然語言觸發詞（「總結一下目前進度，我明天繼續」「這個 session 先做到這」）。hook
+拿掉後那條路徑仍活著且更隱蔽——不是擋人，是自作主張直接寫。已同步收窄
+SKILL.md / llms.txt / index.json 三處。
+
+**後果**：本規則回退為純 L1 文字約束，三 harness 一致（Codex/agy 本就只有 L1）。
+`enforcement-layers.md` §4 #1 與 #3 標為廢止。反注入偵測改由 `bin/scan-downstream.sh`
+唯讀掃描承擔（待實作）。

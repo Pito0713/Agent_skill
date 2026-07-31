@@ -7,15 +7,12 @@ description: |
   3. 寫入跨專案進度快照到 ~/.agent-sessions/<專案>/latest.md（三 harness 共用交接正本）
   4. 收工前自檢：踩坑教訓與架構決策是否已落地到 lessons.md / project-context.md
 
-  觸發場景：**只由使用者明確下指令觸發**（ADR-015）。觸發詞限「handoff」「收工」「交接」三個。
-  「完成一段工作」「session 即將結束」「告一段落」**都不是觸發條件**，一律不自動觸發。
-  示例觸發：「handoff」「收工」「幫我交接一下」
-  近似說法一律**反問確認、不自動執行**：「今天到這」「先這樣」「明天繼續」「總結一下目前進度」
-  「這個 session 先做到這」→ 反問「要一併寫 handoff 嗎？」，等使用者回答才執行。
+  觸發場景：一段工作要結束、要交給下一個 session 或另一個 harness 接手、想把目前進度存下來以防中斷。
+  示例觸發：「幫我交接一下」「總結一下目前進度，我明天繼續」「這個 session 先做到這，寫個 handoff」
 metadata:
-  trigger: 使用者明確說出 handoff / 收工 / 交接 時觸發；近似說法反問確認
-  version: "2.0"
-  last_updated: "2026-07-31"
+  trigger: 對話結束需交接給下一個 session / harness 時觸發
+  version: "1.0"
+  last_updated: "2026-07-07"
 ---
 
 # Handoff Skill

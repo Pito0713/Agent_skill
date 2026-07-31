@@ -199,7 +199,7 @@ description: 新專案接手協調器，系統性了解架構、依賴、核心�
 
 name: handoff
 path: skills/productivity/handoff/SKILL.md
-triggers: handoff、收工、交接（僅此三詞；近似說法一律反問確認，不自動觸發）
+triggers: 交接、handoff、總結一下、下次繼續
 description: 將當前對話壓縮成交接文件，供下一個 session 或 agent 接手。
 
 name: obsidian-query
@@ -262,13 +262,6 @@ description: 將 GitHub 原始 workflow/prompt 文件轉換為本專案標準 sk
     → 帶具體台股代號、問進場點位或技術面評分、要對帳看自己準不準 → tw-stock-tracker（操作層）
     → 問投資原則、資產配置、行為偏誤、學術研究怎麼說 → mentor-invest（概念層）
     → 兩者都像（如「2330 我該不該存股」）→ 詢問使用者：「你要技術面評分，還是想討論存股策略的原則？」
-
-- 「收工 / 交接」相關（ADR-015，觸發權全歸使用者）
-    → 明確說出「handoff」「收工」「交接」→ 執行 handoff skill
-    → 近似說法「今天到這」「先這樣」「明天繼續」「總結一下目前進度」「這個 session 先做到這」
-      → **反問**「要一併寫 handoff 嗎？」，等回答才執行；**禁止**逕自寫 latest.md
-    → 完成一段工作、session 自然結束、剛 commit 完 → **都不觸發**。可在回應末尾提醒一次
-      「要 handoff 嗎？」（每 session 最多一次，除非之後又有新 commit），寫不寫由使用者決定
 
 模糊觸發詞（需詢問使用者意圖）：
 「完善」、「優化」、「讓它更好」、「改進這個功能」、「怎麼讓這個更好」、「有什麼可以加強的」
