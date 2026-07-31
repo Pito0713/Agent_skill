@@ -61,21 +61,6 @@ harness，天然不碰撞——兩個 agent 同時收工也不碰同一個檔案
 
 ---
 
-## `pre-commit-audit` 尚未接進 `inject.sh`
-
-**狀態**：🟡 待決（2026-07-31，ADR-016 落地後的唯一缺口）
-
-**背景**：`hooks/pre-commit-audit.sh` 已在 6 個 repo 以 exec wrapper 安裝並實測
-生效，但 `inject.sh` 不會自動裝——新專案注入後沒有這道 lint。
-
-**待辦**：
-- [ ] 決定是否讓 `bin/inject-claude.sh`（或新的 harness 中立步驟，因為 git hook
-      與 harness 無關）安裝 wrapper。注意 `inject.sh` 是 🟡 級，動之前要問使用者
-- [ ] 部分 repo 的 `.git/hooks/` 目錄不存在（Agent_skill 自己就是），安裝前要
-      `mkdir -p`——commit `6170e81` 曾修過同一個問題，別再踩
-
----
-
 ## 7 個下游專案的舊 `@` 路徑尚未遷移
 
 **狀態**：🔴 待執行（工具已就緒，等使用者確認才動別人的 repo）

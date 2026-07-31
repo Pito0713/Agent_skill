@@ -17,10 +17,13 @@ python3 "$REPOSITORY_DIR/bin/validate-skill-index.py" --repo "$REPOSITORY_DIR"
 for harness in "${HARNESSES[@]}"; do
   bash "$REPOSITORY_DIR/bin/inject-$harness.sh" --preflight
 done
+# git hook 與 harness 無關（三家共用同一份 .git/hooks），故不放進 inject-<harness>.sh
+bash "$REPOSITORY_DIR/bin/install-git-hooks.sh" --preflight
 
 for harness in "${HARNESSES[@]}"; do
   bash "$REPOSITORY_DIR/bin/inject-$harness.sh" --install
 done
+bash "$REPOSITORY_DIR/bin/install-git-hooks.sh" --install
 
 python3 "$REPOSITORY_DIR/bin/validate-skill-index.py" \
   --repo "$REPOSITORY_DIR" \
