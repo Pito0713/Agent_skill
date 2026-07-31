@@ -83,6 +83,75 @@ harness，天然不碰撞——兩個 agent 同時收工也不碰同一個檔案
 
 ---
 
+## ADR-014 停用 Stop hook 未落實到下游：4 個專案仍會被擋收工
+
+**狀態**：🔴 待執行（決策早已存在，只是從未執行；2026-07-31 於 AG_knowledge 實地撞到）
+
+**背景**：ADR-014（2026-07-27）已決定**停用** `hooks/stop-handoff-check.sh`——
+`enforcement-layers.md:4` 寫明「從 `.claude/settings.json` 移除掛載，hook 檔保留
+dormant」，理由正是它與收緊後的觸發政策直接衝突。但**「移除掛載」這個動作從沒真的做**，
+下游專案的 settings.json 至今原封不動，hook 仍在正常擋收工。
+
+2026-07-31 在 AG_knowledge 整理筆記 + commit 後，Stop hook 如期擋下收工，要求補寫
+`latest.md` 並用 Agent tool 喚醒 handoff-verifier——而使用者全程沒說過「收工」。
+模型依鐵律 1 拒絕照做，形成「制度文件說 A、執行層強制 B」的對撞。
+
+**衝突的精確形狀**（不是模糊地帶，是字面相反）：
+
+| | 說法 |
+|---|---|
+| `CLAUDE.global.md` 鐵律 1 / `Agent_skill/CLAUDE.md` 鐵律 6 | 「**只在使用者明確說「收工/交接」時才寫**，完成一段工作或 session 自然結束都不算收工、不主動寫」 |
+| `hooks/stop-handoff-check.sh` 觸發條件 | `wrote_repo`（session 內有 Write/Edit/NotebookEdit 落在 repo，或 Bash 跑過 `git commit`）+ Stop 時機 |
+
+hook 檔頭第 5 行自稱對應「鐵律 1『交接必落地』」，但它的實際觸發條件
+（session 自然結束 + 有寫入）**正好是鐵律 1 明文排除的情況**。引用的條文與實作的
+行為相反，而不只是嚴格一點。
+
+**次要衝突**：hook 回饋訊息第 2 步要求「用 Agent tool 喚醒查核員」。多數 harness
+的預設指示是「未經使用者要求不主動開 subagent」，照做等於未經授權開銷 token；不照做
+則 hook 的補救路徑走不完。ADR-014 已把 handoff-verifier 改為「使用者說收工時手動委派」，
+但 hook 內的訊息文字沒同步更新。
+
+**殘留清單**（2026-07-31 掃 `~` 得出，全部指向正本腳本、非副本）：
+
+`.claude/settings.json`：
+- [ ] `~/AG_knowledge`
+- [ ] `~/shopee`
+- [ ] `~/WakaWaka`
+- [ ] `~/tabetemiru`
+
+`.codex/hooks.json`：
+- [ ] `~/AG_knowledge`
+- [ ] `~/Agent_skill`（正本自己也掛著）
+- [ ] `~/WakaWaka`
+
+**待辦**：
+
+- [ ] 逐一從上列 7 個檔案移除 Stop hook 掛載（settings.json 若移除後只剩空 `hooks`
+      物件，一併清掉避免留空殼）
+- [ ] `hooks/stop-handoff-check.sh` 檔頭第 5 行的「對應正本條文」已失真——標為
+      dormant 並註明 ADR-014 停用，或直接刪檔（`enforcement-layers.md` 說保留 dormant，
+      但保留就得同步修檔頭，否則下次有人看檔頭會以為它仍是鐵律 1 的執行層）
+- [ ] hook 訊息第 2 步的「用 Agent tool 喚醒查核員」與 ADR-014「改為手動委派」不一致，
+      若保留 dormant 檔則一併修
+- [ ] 決定 `inject.sh` 是否需要**主動反注入**：目前 ADR-013 重構後 inject 不再安裝
+      Stop hook（見下方「Stop hook 下游分發：暫緩」），但**不安裝 ≠ 移除既有的**。
+      沒有反注入機制的話，這類「政策已改、下游殘留」會反覆發生
+- [ ] 補一條 lessons：**停用決策要含「下游反注入」步驟才算完成**。ADR-014 只改了正本
+      文件就結案，L2 執行層實際上活著又跑了 4 天
+
+**牽連**：AG_knowledge 於 2026-07-31 commit `96e9342` 把 `.claude/settings.json` 與
+`.codex/hooks.json` 納入版控（當時未察覺 ADR-014 已停用），等於把殘留掛載寫進該 repo
+歷史。清理時該專案要一併從版控移除或改內容。
+
+**相關**：下方「Stop hook 下游分發：暫緩」談的是**不再由 inject 分發**（2026-07-23），
+本項談的是**既有掛載未移除**（ADR-014, 2026-07-27）。兩者同主題但不同動作，前者做了、
+後者沒做。
+
+**決策者與日期**：待使用者裁示（2026-07-31 由 AG_knowledge session 提出）
+
+---
+
 ## 7 個下游專案的舊 `@` 路徑尚未遷移
 
 **狀態**：🔴 待執行（工具已就緒，等使用者確認才動別人的 repo）
