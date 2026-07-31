@@ -100,7 +100,7 @@
   - **明確不觸發**：完成一段工作、告一段落、session 即將結束、剛跑完 commit。不確定算不算 → **不寫**、繼續工作。
   - **主動提醒（取代已移除的 Stop hook 防線）**：完成可交付段落**且**本 session 有 repo 寫入時，可在回應末尾提醒一次「要 handoff 嗎？」——**每 session 至多一次**（除非之後又有新 commit），且僅止於提醒，不得逕自寫入。
   - **唯一合法寫入路徑**是 `handoff` skill；`version-log`（commit）與 session 結束都**不**寫 latest.md。
-  - **L2 執行層已永久移除**：`hooks/stop-handoff-check.sh` 停用待刪，下游掛載清空。本條純靠 L1 文字約束，三 harness 一致。
+  - **L2 執行層已永久移除**：`hooks/stop-handoff-check.sh` 與 7 個下游掛載均已刪除（2026-07-31）。本條純靠 L1 文字約束，三 harness 一致——**沒有任何機制會替你攔截，觸發權完全在使用者手上**。
 - `<專案>` = 專案根目錄的資料夾名（`basename` 該路徑，例：`~/Agent_skill` → `Agent_skill`）；目錄不存在先 `mkdir -p ~/.agent-sessions/<專案>`
 - **無鎖併發**：同一專案避免同時開兩個「會寫交接」的 session。寫入前先重讀 latest.md——若「最後更新」比你開工時間晚，代表有別的 session 動過 → 把對方內容**合併進來再寫**，禁止整檔覆蓋
 

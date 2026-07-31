@@ -1,6 +1,6 @@
 ---
 name: handoff-verifier
-description: 交接檔查核員（cop）。在乾淨 context 中查核 ~/.agent-sessions/<專案>/latest.md 是否格式合規、與 git 事實一致、下一步可執行。由 stop-handoff-check hook 強制喚醒，或手動委派。只查核回報，不修改任何檔案。
+description: 交接檔查核員（cop）。在乾淨 context 中查核 ~/.agent-sessions/<專案>/latest.md 是否格式合規、與 git 事實一致、下一步可執行。**僅由使用者說收工時手動委派**（ADR-015 移除 Stop hook 後已無自動喚醒路徑）。只查核回報，不修改任何檔案。
 tools: [Read, Grep, Glob, Bash]
 model: sonnet  # 查核任務，中量推理即可（對應 Agent tool model 參數，見 governance/model-orchestration.md 第 5 節）
 ---

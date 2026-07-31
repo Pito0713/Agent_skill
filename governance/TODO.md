@@ -77,41 +77,6 @@ harness，天然不碰撞——兩個 agent 同時收工也不碰同一個檔案
 
 ---
 
-## Stop hook 移除：下游 6 個掛載 + 刪檔（ADR-015 收尾）
-
-**狀態**：🟠 進行中（2026-07-31，ADR-015 已定案並落地正本；剩下游清理）
-
-**已完成**：`hooks/stop-handoff-check.sh` 加 kill-switch（`exit 0`）——因下游全部
-「指向正本、不複製」，7 個掛載當場全部失效，已無人被擋。正本側四份索引、
-`maintenance-protocol §6`、`enforcement-layers §4`、handoff skill 三處觸發詞
-均已同步；`Agent_skill/.codex/hooks.json` 已刪。
-
-**剩餘（需使用者授權才動下游 repo）**：
-
-`.claude/settings.json`（內容僅 Stop 掛載 → 整檔刪除，不留空殼）：
-- [ ] `~/AG_knowledge`（**git 已追蹤**，需 commit）
-- [ ] `~/shopee`（未追蹤，直接刪）
-- [ ] `~/WakaWaka`（**git 已追蹤**，需 commit）
-- [ ] `~/tabetemiru`（未追蹤，直接刪）
-
-`.codex/hooks.json`：
-- [ ] `~/AG_knowledge`（僅 Stop → 整檔刪；**git 已追蹤**）
-- [ ] `~/WakaWaka`（**另有 PreToolUse / PermissionRequest（cost-aware-approval）→ 只刪 Stop 區塊**；git 已追蹤）
-
-最後一步：
-- [ ] 下游清空後才 `git rm hooks/stop-handoff-check.sh`（先刪檔會讓殘留掛載變成
-      exit 127「command not found」，順序不可顛倒）
-
-**牽連**：AG_knowledge commit `96e9342` 已把 `.claude/settings.json` 與
-`.codex/hooks.json` 納入版控，清理時該 repo 要一併 commit 移除。
-
-**防復發（可與上述分開做）**：
-- [ ] `bin/scan-downstream.sh` 加 deprecated-mount 唯讀掃描：列出下游指向已停用
-      hook 的掛載。不做通用反注入——會動下游未知設定，風險不對稱；沿用 FIX-3
-      「只警告不刪」的既有設計
-
----
-
 ## 7 個下游專案的舊 `@` 路徑尚未遷移
 
 **狀態**：🔴 待執行（工具已就緒，等使用者確認才動別人的 repo）
@@ -177,6 +142,10 @@ Codex/agy 是紀律要求。
 **尚未做**：
 - [ ] 改名後**自動重跑下游 farm**仍未實作——目前 skill 改名後，各下游要人工跑 `inject.sh` 才會清 dangling（實例：WakaWaka 停在改名前，靠本次手動修）。可做：`setup` 後選擇性掃已知下游 + 提示重跑。
 - [ ] **冗餘但功能正常的舊 body 偵測不到**（保守設計，避免 false-positive）：如 shopee/CLAUDE.md 仍有 6 條 `@` 當代格式常駐（能 resolve、但新設計已改由 on-demand），FIX-3 不會警告。要清得人工判斷。
+- [ ] **加 deprecated-mount 掃描**（ADR-015 遺留）：列出下游指向已刪除 / 已停用 hook
+      的掛載。動機是 ADR-014 的殘留掛載活了 4 天沒人發現——`inject.sh` 只有「安裝」
+      沒有「移除」，**不安裝 ≠ 移除既有的**。不做通用反注入（會動下游未知設定，風險
+      不對稱），沿用 FIX-3「只警告不刪」。
 - [ ] 可選：加 opt-in `inject.sh --clean-legacy`，**只在 body 逐字比對到已知舊自動生成模板時**才移除，其餘一律保留——唯一能安全自動化清 body 的路徑。
 
 **已知硬邊界（見 lessons 2026-07-27）**：farm 安裝寫 `.codex/`，Codex exec sandbox 擋、不能當此類 executor。
