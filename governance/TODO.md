@@ -61,19 +61,18 @@ harness，天然不碰撞——兩個 agent 同時收工也不碰同一個檔案
 
 ---
 
-## post-commit hook 與 `audit_personal_paths()` 的去留未定
+## `pre-commit-audit` 尚未接進 `inject.sh`
 
-**狀態**：🟡 待決（從已結案的「Stop hook 下游分發」項拆出，2026-07-31）
+**狀態**：🟡 待決（2026-07-31，ADR-016 落地後的唯一缺口）
 
-**背景**：ADR-012 重構 `inject.sh` 時，`install_stop_hook()` 連同
-`install_hook()`（post-commit）、`audit_personal_paths()`（下游 CLAUDE.md 個人
-絕對路徑審計）一併移除；ADR-013 拆分後仍未恢復。Stop hook 那條已由 ADR-015
-永久放棄，但**另外兩個函式的去留從沒被單獨決定過**——它們是搭便車消失的。
+**背景**：`hooks/pre-commit-audit.sh` 已在 6 個 repo 以 exec wrapper 安裝並實測
+生效，但 `inject.sh` 不會自動裝——新專案注入後沒有這道 lint。
 
 **待辦**：
-- [ ] 確認 post-commit hook 的功能是否已由其他機制承擔，或確定不再需要
-- [ ] 同上，`audit_personal_paths()`（`bin/scan-downstream.sh` 是否已涵蓋？）
-- [ ] 決定後把結論寫進 `enforcement-layers.md`，避免又變成無主狀態
+- [ ] 決定是否讓 `bin/inject-claude.sh`（或新的 harness 中立步驟，因為 git hook
+      與 harness 無關）安裝 wrapper。注意 `inject.sh` 是 🟡 級，動之前要問使用者
+- [ ] 部分 repo 的 `.git/hooks/` 目錄不存在（Agent_skill 自己就是），安裝前要
+      `mkdir -p`——commit `6170e81` 曾修過同一個問題，別再踩
 
 ---
 

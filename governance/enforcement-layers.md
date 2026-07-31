@@ -62,6 +62,35 @@
 
 ---
 
+## 4b. 現行實際存在的 L2（2026-07-31 起）
+
+第 4 節整批已全數廢止。目前唯一活著的自建 L2 是：
+
+| 產物 | 型 | 觸發條件 | 為什麼這個可以用 L2 |
+|------|-----|---------|-------------------|
+| `hooks/pre-commit-audit.sh` | L2 攔截 | staged 的**新增行**含個人絕對路徑或本機 file URL → 擋 commit（實際 pattern 見腳本內 awk） | 觸發條件是 **regex 命中，客觀可判定、零意圖推斷**。對照 ADR-015 廢除 Stop hook 的理由——那個要判斷「使用者是否宣告收工」，是 hook 在原理上觀測不到的主觀意圖。兩者不同類，不要因為廢了一個 hook 就對所有 hook 過敏 |
+
+設計要點（全部是 2026-07-31 當天的教訓）：
+
+- **下游用 exec wrapper 指向正本，不複製**。git 只認 `.git/hooks/<固定檔名>`，沒有
+  「填路徑」的欄位，所以 wrapper 是 git hook 唯一能達成「指向正本」的方式：
+  ```bash
+  #!/usr/bin/env bash
+  exec "$HOME/Agent_skill/hooks/pre-commit-audit.sh" "$@"
+  ```
+  `exec` 取代 process，正本的 exit code 直接成為 hook 的 exit code。已刪除的
+  post-commit hook 是 5 份實體副本，改正本對它們毫無作用——正是要避開的反模式。
+- **正本必須 `chmod +x`**。否則 `exec` 失敗回 126，git 把任何 commit 都擋掉。
+- **只掃 staged 新增行**，不翻舊帳、不掃工作區。
+- **旁路**：`git commit --no-verify`（git 原生）或該行加 `audit-ok` 標記。
+- **fail-open**：git 指令失敗、無 staged 內容等一律放行。
+
+已安裝：`Agent_skill`、`AG_knowledge`、`gps_position`、`shopee`、`tabetemiru`、
+`WakaWaka`（6 份 wrapper md5 一致）。**尚未接進 `inject.sh`**——新專案要手動裝，
+見 `governance/TODO.md`。
+
+---
+
 ## 5. 失敗模式與防線
 
 - **過度攔截自毀**：誤報多 → 摩擦 → 使用者關掉 hook → 比純文字更糟。防線：第一批只收「高風險 + 低誤報」；每個攔截都要能用環境變數一鍵旁路（`AGENT_SKILL_HOOK_BYPASS=1`），旁路事件寫 log 供事後審

@@ -439,3 +439,38 @@ SKILL.md / llms.txt / index.json 三處。
 **後果**：本規則回退為純 L1 文字約束，三 harness 一致（Codex/agy 本就只有 L1）。
 `enforcement-layers.md` §4 #1 與 #3 標為廢止。反注入偵測改由 `bin/scan-downstream.sh`
 唯讀掃描承擔（待實作）。
+
+---
+
+## ADR-016：刪除 post-commit hook，改由讀取時現算；新增 pre-commit 個人路徑 lint（2026-07-31）
+
+**決策**：① 刪除 `bin/post-commit-hook.sh` 與 5 份下游副本；② `latest.md` 的
+`最後 commit` / `分支` 等衍生欄位改由 `project-dashboard` **讀取時現跑 git**；
+③ 新增 `hooks/pre-commit-audit.sh`（個人絕對路徑洩漏 lint），下游以 exec wrapper
+指向正本，已裝 6 個 repo。
+
+**post-commit 為什麼該刪**：它每次 commit 自動改寫 `latest.md` 前 7 行，屬
+ADR-014「commit 與交接檔解耦」與 ADR-015「唯一合法寫入路徑是 handoff skill」
+明文禁止的自動寫入路徑——與 Stop hook 同類，只是沒人執行下游反注入（2026-07-31
+清 Stop hook 掛載時，我自己在 AG_knowledge / WakaWaka 的兩個 commit 當場觸發了
+它，寫入時戳 14:52 即為實證）。它還有第二層傷害：改寫「最後更新」等於**每次
+commit 都對其他 session 發出假的並發訊號**，污染 maintenance-protocol §6 的無鎖
+規約——是 TODO「交接檔並發控制」的噪音源之一。
+
+**為什麼不需要有人接手那些欄位**：`latest.md` 的唯一程式化消費者是
+`project-dashboard`，它只讀 狀態 / 最後更新 / 觸發來源 / 當前焦點 / blocker。
+`最後 commit` / `分支` **零讀者**，且是衍生資料——讀取時 `git -C <path> log -1`
+又快又準，存進檔案反而必然過期（hook 只裝在部分 repo）。
+
+**意外收穫**：dashboard 改為現跑 git 後，可比對「latest.md 最後更新」與
+「repo 之後的 commit 數」，得出**交接落後**。ADR-015 接受的取捨是「使用者忘了說
+收工 → latest.md 落後 repo，失去自動防線」——這一欄把該代價從不可見變成查得到。
+**攔截 → 偵測，寫入時 → 讀取時，強制 → 資訊**，且只在使用者主動叫 dashboard 時跑。
+
+**pre-commit lint 為什麼可以用 L2**（對照 ADR-015 廢 Stop hook）：本檢查的觸發
+條件是 regex 命中，**客觀可判定、零意圖推斷**；Stop hook 廢除的原因是它要觀測
+「使用者是否宣告收工」這種主觀意圖。兩者不同類。且洩漏不可逆（git 歷史刪不掉），
+攔截點必須在 commit 之前——事後掃描只能告訴你「已經寫進歷史了」。前提成立：6 個
+repo 全部有 GitHub remote，AG_knowledge commit `9cac18f` 就是在補這個坑。
+
+**已知缺口**：未接進 `inject.sh`，新專案要手動裝（見 TODO）。

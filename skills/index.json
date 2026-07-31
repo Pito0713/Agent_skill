@@ -180,7 +180,7 @@
       "name": "project-dashboard",
       "path": "skills/productivity/project-dashboard/SKILL.md",
       "triggers": "project dashboard、看一下所有專案、跨專案狀態、專案總覽",
-      "description": "讀取 ~/.agent-sessions/ 下所有專案的 latest.md，輸出跨專案進度總覽表。"
+      "description": "讀取 ~/.agent-sessions/ 下所有專案的 latest.md，並對各專案 repo 現跑 git，輸出含「交接落後」的跨專案總覽表。"
     },
     {
       "name": "rag-search",
