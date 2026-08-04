@@ -6,14 +6,11 @@
 
 set -euo pipefail
 
+# 只列仍在維護的下游。棄用專案不留在此——留著只會讓每次掃描都跳出永不會處理的項目。
 KNOWN_DOWNSTREAMS=(
   "$HOME/WakaWaka"
   "$HOME/AG_knowledge"
-  "$HOME/gps_position"
-  "$HOME/quant_platform"
   "$HOME/shopee"
-  "$HOME/Stock_model"
-  "$HOME/tabetemiru"
 )
 
 if [[ $# -gt 0 ]]; then

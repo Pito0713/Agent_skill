@@ -473,7 +473,14 @@ commit 都對其他 session 發出假的並發訊號**，污染 maintenance-prot
 攔截點必須在 commit 之前——事後掃描只能告訴你「已經寫進歷史了」。前提成立：6 個
 repo 全部有 GitHub remote，AG_knowledge commit `9cac18f` 就是在補這個坑。
 
-**已知缺口**：未接進 `inject.sh`，新專案要手動裝（見 TODO）。
+**已知缺口**：~~未接進 `inject.sh`~~ → 已於 commit `7227931` 接入
+（`bin/install-git-hooks.sh`）。
+
+**2026-08-04 補記**：實測發現本 ADR 宣稱的成果**兩項都沒真正落地**——既有 repo 的
+wrapper 一份都不存在（文件寫「已裝 6 個 repo」），`shopee` 的 post-commit 副本也
+還活著（文件寫「刪除 5 份下游副本」）。當日已補裝四份（`Agent_skill` /
+`AG_knowledge` / `shopee` / `WakaWaka`，md5 一致）並刪除該 post-commit，四象限
+行為測試通過。防復發待辦見 `governance/TODO.md`。
 
 **2026-07-31 補記（獨立 review 後）**：依鐵律 2「驗證不自驗」把
 `hooks/pre-commit-audit.sh` 交冷啟動 subagent 對抗式審查（delegation-templates T5）。

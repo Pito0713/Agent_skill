@@ -61,28 +61,21 @@ harness，天然不碰撞——兩個 agent 同時收工也不碰同一個檔案
 
 ---
 
-## 7 個下游專案的舊 `@` 路徑尚未遷移
+## hook 部署狀態改由腳本現算，不再手抄
 
-**狀態**：🔴 待執行（工具已就緒，等使用者確認才動別人的 repo）
+**狀態**：🟡 待做（2026-08-04 的安裝漂移已修完，這是防復發的那一半）
 
-**背景**：link farm 是扁平的，舊式 `@~/.claude/skills/<category>/<name>.md` 救不回，
-必須改寫。`rules/` 三條已由 `setup-claude.sh` 的 extra entry 自動復活，不需改。
+**背景**：`enforcement-layers.md` 的「已安裝 N 份」是人工抄的快照。2026-08-04 實測
+發現它宣稱 6 份、實際 0 份——文件說有防護而實際沒有，比明擺著沒有更危險。當下已
+補裝四份並改寫該段為「現跑指令」，但清單本身仍是手抄。
 
-**待遷移清單**（掃描 `~/*/CLAUDE.md`、`~/*/*/CLAUDE.md` 得出）：
+**待辦**：
 
-- [ ] `~/AG_knowledge`
-- [ ] `~/gps_position`
-- [ ] `~/quant_platform`
-- [ ] `~/shopee`
-- [ ] `~/Stock_model`
-- [ ] `~/tabetemiru`
-- [ ] `~/WakaWaka`
-
-（`~/SavingsApp` 已注入但無舊路徑，不需處理）
-
-**做法**：`bash bin/migrate-downstream-paths.sh <專案路徑>` 先看 dry-run，確認後
-加 `--apply`（會留 `CLAUDE.md.pre-migrate.bak`）。遷移後該專案要重跑
-`bash ~/Agent_skill/inject.sh` 才會拿到新的 managed block 與 adapter。
+- [ ] 加 `bin/check-hook-install.sh`（唯讀）：對 `scan-downstream.sh` 的
+      `KNOWN_DOWNSTREAMS` 逐一現算 `.git/hooks/pre-commit` 是否存在、md5 是否等於
+      wrapper 正本，輸出表格
+- [ ] 併進 `bin/scan-downstream.sh` 或維護協議健康檢查，讓「部署物與正本不一致」
+      變成查得到而非靠人記得
 
 ---
 

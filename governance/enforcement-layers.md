@@ -95,9 +95,19 @@
   segment 時會誤報（同名的 REST 路由會中）——**不收窄，因為漏掉洩漏不可逆、誤報
   只需加 `audit-ok`，成本不對稱**；`file://<host>/` 不命中；rename 未加 `-M`。
 
-已安裝：`Agent_skill`、`AG_knowledge`、`gps_position`、`shopee`、`tabetemiru`、
-`WakaWaka`（6 份 wrapper md5 一致）。**尚未接進 `inject.sh`**——新專案要手動裝，
-見 `governance/TODO.md`。
+已接進 `inject.sh`（commit `7227931`，走 `bin/install-git-hooks.sh` 的
+`--preflight` / `--install`），新專案注入時自動裝。
+
+**已安裝（2026-08-04 現算）**：`Agent_skill` / `AG_knowledge` / `shopee` /
+`WakaWaka` 四個維護中的 repo，wrapper md5 均為 `e69bca9c…`。
+
+> 本清單是**手抄快照**，會漂移——2026-08-04 就實測到原記載的「6 份已安裝」實際為
+> 0 份。要確認現況一律現跑：
+> ```bash
+> for p in Agent_skill AG_knowledge shopee WakaWaka; do
+>   printf '%s: ' "$p"; md5 -q "$HOME/$p/.git/hooks/pre-commit" 2>/dev/null || echo "未安裝"
+> done
+> ```
 
 ---
 
