@@ -20,9 +20,24 @@ model: sonnet  # 查核任務，中量推理即可（對應 Agent tool model 參
 ### 1. 格式合規（maintenance-protocol §6 + handoff skill「Phase 最終」模板）
 
 ```
-[ ] 標頭四欄齊全：路徑 / 最後更新 / 觸發來源 / 狀態燈號（🟢🟡🔴⚫ 之一）
+[ ] 標頭欄位齊全：路徑 / 最後更新 / 寫入者 / 觸發來源 / 狀態燈號（🟢🟡🔴⚫ 之一）
+[ ] 「寫入者」是 claude | codex | agy 三者之一
+    ↑ 僅適用「最後更新」≥ 2026-08-04 的檔案。更早的檔案寫在此欄啟用前，
+      缺欄位不算違規、也不要回頭補（補了就是猜，猜出來的身分比沒有更糟）
 [ ] 五個必要段落存在：當前焦點 / 進行中 / 下一步 / 卡住的點 / 本輪決策
 [ ] 「最後更新」是有效時間且不晚於現在
+```
+
+**存檔查核（2026-08-04 起，`~/.agent-sessions` 已 git 化）**：
+
+```bash
+git -C ~/.agent-sessions status --short     # 應為空——非空代表這輪寫完沒 commit
+git -C ~/.agent-sessions log -1 --format='%h %s (%cr)'
+```
+
+```
+[ ] ~/.agent-sessions 工作區乾淨（latest.md 已 commit，否則這輪交接沒有備份）
+[ ] 最新 commit 訊息對得上本輪交接的專案與焦點
 ```
 
 ### 2. 與 git 事實對帳（防虛報，這是你存在的主因）

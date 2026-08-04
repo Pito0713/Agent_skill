@@ -4,7 +4,7 @@ description: |
   將當前對話壓縮成一份讓任何人（或新 session）能在 5 分鐘內接手的交接文件：
   1. 掃描對話歷史，補充 memory/project-context.md 背景，套入標準交接文件模板
   2. 確認後存檔到 memory/handoff-<YYYYMMDD>.md
-  3. 寫入跨專案進度快照到 ~/.agent-sessions/<專案>/latest.md（三 harness 共用交接正本）
+  3. 寫入跨專案進度快照到 ~/.agent-sessions/<專案>/latest.md（三 harness 共用交接正本），寫完立刻 git commit 存檔
   4. 收工前自檢：踩坑教訓與架構決策是否已落地到 lessons.md / project-context.md
 
   觸發場景：**只由使用者明確下指令觸發**（ADR-015）。觸發詞限「handoff」「收工」「交接」三個。
@@ -14,8 +14,8 @@ description: |
   「這個 session 先做到這」→ 反問「要一併寫 handoff 嗎？」，等使用者回答才執行。
 metadata:
   trigger: 使用者明確說出 handoff / 收工 / 交接 時觸發；近似說法反問確認
-  version: "2.0"
-  last_updated: "2026-07-31"
+  version: "2.1"
+  last_updated: "2026-08-04"
 ---
 
 # Handoff Skill
@@ -147,6 +147,7 @@ metadata:
 
 > 路徑：<$PWD>
 > 最後更新：<YYYY-MM-DD HH:mm>
+> 寫入者：claude | codex | agy
 > 觸發來源：handoff
 > 狀態：🟢 順暢 | 🟡 進行中 | 🔴 卡住 | ⚫ 暫停
 
@@ -172,7 +173,22 @@ metadata:
 - <決策及原因>
 ```
 
-5. 完成後輸出確認：「✅ 已更新 ~/.agent-sessions/<project>/latest.md」
+5. **存檔（寫入後必做）**：`~/.agent-sessions` 自 2026-08-04 起是 git repo，寫完
+   立刻 commit——這是「覆蓋即永久丟失」的唯一防線，漏做等於這輪交接沒有備份。
+
+   ```bash
+   git -C ~/.agent-sessions add -A
+   git -C ~/.agent-sessions commit -q -m "handoff(<project>): <當前焦點一句話>"
+   ```
+
+   - **在同一個使用者觸發流程內做完**，不掛任何 git hook。自動寫入路徑是
+     ADR-014／ADR-015 明文禁止的（已移除的 post-commit hook 就是這樣被廢的）
+   - commit 失敗不阻斷交接流程：latest.md 已寫入是既成事實，改為回報
+     「⚠️ latest.md 已更新但 commit 失敗：<原因>」讓使用者決定
+   - **這個 repo 永遠不加 remote、不裝 `pre-commit-audit`**——`> 路徑：` 欄位依設計
+     含個人絕對路徑，兩者的前提相反（理由見 `~/.agent-sessions/README.md`）
+
+6. 完成後輸出確認：「✅ 已更新 ~/.agent-sessions/<project>/latest.md（已 commit <短 hash>）」
 
 ---
 

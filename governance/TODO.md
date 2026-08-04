@@ -7,8 +7,9 @@
 
 ## 交接檔並發控制：改 per-session 分檔 + git 化
 
-**狀態**：🔴 已設計待實作（使用者 2026-07-23 決定方案，時機延後——避免與當時仍活躍的
-WakaWaka session 撞規則）
+**狀態**：🔴 已設計、Phase 已切、**使用者 2026-08-04 決定暫緩實作**（先留計畫）。
+原延後理由「避免與活躍的 WakaWaka session 撞規則」當日實查已消失（該 repo 工作區
+clean、最後 commit 在 17 小時前）——現在不做是基率判斷，不是被擋住。
 
 **問題**：`~/.agent-sessions/<專案>/latest.md` 是**單一共享可變檔案**，Claude 與 Codex
 並行時靠 `maintenance-protocol §6`「讀 → 比對最後更新 → 合併 → 寫」的自律規約保護。
@@ -20,12 +21,12 @@ WakaWaka session 撞規則）
 1. **TOCTOU**：讀與寫之間有時間窗。兩個 agent 都讀到同一舊版、各自合併、先後寫入 →
    後寫者連同對方的合併成果一起覆蓋，而且它「有照規則做」
 2. **只有 L1 強制力**：規則寫在 markdown 給模型讀，忘了執行就是靜默整檔覆蓋，無機制阻擋
-3. **覆蓋即永久丟失**：`~/.agent-sessions` 不是 git repo，也無任何 `.bak`
-4. **無寫入者身分**：所有 `latest.md` 都沒有 harness 欄位，事後查不出誰蓋掉誰
+3. ~~**覆蓋即永久丟失**~~ → **已解除**（2026-08-04 Phase D：`~/.agent-sessions` 已 git 化）
+4. ~~**無寫入者身分**~~ → **已解除**（2026-08-04 Phase D：標頭加 `> 寫入者：` 必填欄）
 5. **「開工時間」對模型是主觀的**：沒有客觀時戳，實務上憑印象判斷「這比我記得的新」
 
 **方案**：消除共享可變狀態，而非加鎖。每輪收工只**建一個新檔案**，檔名含時戳與
-harness，天然不碰撞——兩個 agent 同時收工也不碰同一個檔案，沒有失敗模式。
+harness，寫入端天然不碰撞。
 
 ```
 ~/.agent-sessions/<專案>/
@@ -42,19 +43,73 @@ harness，天然不碰撞——兩個 agent 同時收工也不碰同一個檔案
 - `~/.agent-sessions` 執行 `git init`，寫入後 auto-commit（補漏洞 3；不解決並發，
   但這是目前最大的實質風險，且成本最低）。`hook.log` 進 `.gitignore`
 
-**待辦**：
+---
 
-- [ ] 新增 `bin/rebuild-latest.sh`：讀 `entries/` 重建 `latest.md`（冪等）
-- [ ] `skills/productivity/handoff/SKILL.md` Phase 最終：改為「寫新 entry + 跑聚合」，
-      移除「重讀 / 比對時間 / 合併」那套規約（不再需要）
-- [ ] `skills/productivity/project-dashboard/SKILL.md`：確認讀 `latest.md` 仍可用
-      （聚合後格式不變的話可不改）
-- [ ] `governance/maintenance-protocol.md §6`：改寫並發段落
-- [ ] 遷移既有 7 份：`latest.md` → `entries/<其最後更新時戳>-legacy.md`，再跑聚合。
-      `WakaWaka/bug-menubar-white-flash.md` 這類額外檔案不在 `entries/` 下，不動
+### 2026-08-04 實地重勘：三項事實與原描述不符
+
+動手前重讀了 `handoff` / `project-dashboard` / `maintenance-protocol §6` /
+`handoff-verifier` 與 `~/.agent-sessions` 實況，三處要更正：
+
+1. **要遷移的是 2 份不是 7 份**——只剩 `WakaWaka`、`shopee`，其餘隨棄用專案消失
+2. **四份索引檔（CLAUDE / AGENTS / GEMINI / CLAUDE.global）不用動**——它們只寫
+   「觸發詞 + 開工先讀」，沒寫寫入機制。**因此不必跑 §7 索引防漂移四查**，
+   風險面比原估小一圈
+3. **延後理由已消失**——WakaWaka 工作區 clean、最後 commit 在 17 小時前
+
+### 原描述的兩個過度宣稱（實作時不得沿用）
+
+- **「沒有失敗模式」不成立**：`latest.md` 聚合產物**仍是共享可變檔**。兩個 agent
+  同時 rebuild，後寫者可能產出少一筆的版本。真正的保證是**「entries 不可變 →
+  資料永不遺失」**，不是「沒有並發」。最糟情況：latest.md 短暫落後一筆，下次
+  rebuild 自愈。ADR 要照這個誠實版本寫，並用 write-temp + 原子 `mv` 收斂窗口
+- **auto-commit 必須寫死在 `handoff` skill 內，絕不掛任何 git hook**——掛 hook
+  就是第三次重演 post-commit 那個坑（ADR-014/015 禁止的自動寫入路徑）
+
+### 基率評估（決定要不要做的關鍵）
+
+實際風險基數：**單人使用、2 個追蹤中的專案、歷史上並發 1 次且靠時間錯開沒出事**。
+下面 Phase A–C 解的是「並發覆蓋」（發生過 1 次、零損失），Phase D 解的是「覆蓋即
+永久丟失」（唯一不可逆的那個，且成本最低）。**若要縮減範圍，先做 Phase D。**
+
+### 實作 Phase（2026-08-04 規劃，使用者暫緩實作）
+
+**Phase A — 寫入端**
+- [ ] 新增 `bin/rebuild-latest.sh`：掃 `entries/*.md` → 依檔名時戳排序 → 產出
+      `latest.md`。寫 temp 再 `mv` 原子換檔，冪等
+- [ ] 新增 `bin/test-rebuild-latest.sh`：四象限（零 entry / 單筆 / 多筆排序 /
+      重跑冪等 + 壞檔名略過）。陰性案例不可省（lessons 2026-07-31）
+
+**Phase B — 規約端**
+- [ ] `skills/productivity/handoff/SKILL.md` Phase 最終：改為「寫新 entry + 跑
+      rebuild」，**刪除「重讀 / 比對時間 / 合併」整套規約**，entry 標頭加寫入者欄位
+- [ ] `governance/maintenance-protocol.md §6`：改寫並發段落（觸發詞規則一字不動）
+- [ ] `agents/06-governance/handoff-verifier.md`：格式查核改對 entry，新增一項
+      「latest.md 與 entries/ 是否同步」
+
+**Phase C — 讀取端**
+- [ ] `skills/productivity/project-dashboard/SKILL.md`：聚合後 `latest.md` 前段格式
+      不變 → 預期只加一行來源註記。**先實跑驗證再決定改不改**
+
+**Phase D — git 化（✅ 2026-08-04 完成）**
+- [x] `~/.agent-sessions` 執行 `git init`，`hook.log` 進 `.gitignore`，初始 commit `dda6f19`
+- [x] 新增 `~/.agent-sessions/README.md`：記載三條紅線（不加 remote／不裝
+      `pre-commit-audit`／commit 不掛 hook）與「git 化不解決並發」的界線
+- [x] `handoff/SKILL.md` Phase 最終加第 5 步（寫完立刻 commit，失敗不阻斷流程）、
+      標頭加 `> 寫入者：` 欄位、frontmatter bump 2.1
+- [x] `maintenance-protocol §6` 加寫入者身分、版本控制三紅線、「git 化不解決並發」
+- [x] `handoff-verifier.md` 格式查核改五欄 + 新增存檔查核（工作區應乾淨）
+- [x] 漏洞 3（覆蓋即永久丟失）與漏洞 4（無寫入者身分）**已解除**
+- ⏭ **`latest.md` → `entries/` 遷移移出 Phase D**：它需要 `bin/rebuild-latest.sh`
+      才能做（沒有聚合器就搬檔，`project-dashboard` 的 `find -name "latest.md"`
+      會當場找不到），已併入 Phase A 的相依。原列的
+      `WakaWaka/bug-menubar-white-flash.md` 該檔已不存在，該項自動失效
+
+**Phase E — 落地**
+- [ ] ADR-017 進 `memory/project-context.md`、README 版本條目、commit
+- [ ] 驗收另委派冷啟動 subagent 對抗式審查（鐵律 2：驗證不自驗）
 
 **取捨**：讀取多一層聚合；`entries/` 會累積（定期歸檔或只保留最近 N 筆全文）。
-換來的是寫入端完全無衝突——不需要鎖、CAS、時間比對，也不依賴模型記得合併。
+換來的是寫入端無衝突——不需要鎖、CAS、時間比對，也不依賴模型記得合併。
 
 **實作前提**：三個 harness 讀同一份 handoff skill 正本，改完即全域生效；動手前確認
 沒有其他 harness 的 session 正在跑，否則它會讀到改到一半的規則。

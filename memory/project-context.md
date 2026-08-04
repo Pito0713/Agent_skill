@@ -5,13 +5,12 @@
 
 ---
 
-## 跨專案進度追蹤（v3.1）
+## 跨專案進度追蹤（v5.4，2026-08-04 更新）
 
-- 快照路徑：`~/.agent-sessions/<project>/latest.md`
-- 完整寫入觸發：`handoff` skill、`version-log` skill（commit）
-- 輕量寫入觸發：git post-commit hook（metadata only，無 Claude）
-- 聚合 skill：`skills/productivity/project-dashboard/SKILL.md`
-- hook 安裝方式：`inject.sh` 執行時自動安裝至 `.git/hooks/post-commit`
+- 快照路徑：`~/.agent-sessions/<project>/latest.md`（該目錄自 2026-08-04 起是 git repo，見 ADR-017）
+- **唯一寫入觸發**：`handoff` skill，且只在使用者說出「handoff / 收工 / 交接」時（ADR-015）
+- **無自動寫入路徑**：`version-log`（commit）已解耦（ADR-014）；post-commit hook 已刪除（ADR-016）；Stop hook 已永久移除（ADR-015）
+- 聚合 skill：`skills/productivity/project-dashboard/SKILL.md`（`最後 commit`／`分支` 等衍生欄位改讀取時現跑 git，不存檔）
 
 ---
 
@@ -500,3 +499,34 @@ rename 重掃）已寫進腳本檔頭與 `enforcement-layers.md §4b` 當已知�
 **刻意不收窄**：漏掉洩漏不可逆（git 歷史刪不掉），誤報只需加 `audit-ok`——成本不對稱。
 
 回歸測試 12/12 通過（原 9 項 + 3 條缺陷回歸），6 份 wrapper 已更新且 md5 一致。
+---
+
+## ADR-017：交接檔納入版本控制（TODO Phase D 單獨落地，2026-08-04）
+
+**決策**：`~/.agent-sessions` 執行 `git init`，`handoff` skill 寫完 `latest.md`
+在**同一個使用者觸發流程內**立刻 commit；latest.md 標頭新增 `> 寫入者：claude |
+codex | agy` 必填欄。三條紅線寫入 `~/.agent-sessions/README.md`：不加 remote、
+不裝 `pre-commit-audit.sh`、commit 不掛任何 git hook。
+
+**為什麼只做這一段**：TODO 的完整方案（per-session `entries/` 拆檔 + 聚合器）解的是
+「並發覆蓋」，實際基率是**單人使用、2 個追蹤中的專案、歷史發生 1 次且零損失**；
+而 git 化解的是「**覆蓋即永久丟失**」——此前該目錄無版控、無 `.bak`，被整檔覆蓋
+後物理上救不回。後者是唯一不可逆的風險，且成本最低。使用者 2026-08-04 決定先做
+這一段，Phase A–C 留在 TODO。
+
+**為什麼 commit 不掛 hook**：自動寫入路徑是 ADR-014／ADR-015 明文禁止的。已移除的
+post-commit hook 正是這樣被廢的——同一天還在 `shopee` 發現它的殘留副本仍在跑。
+commit 動作必須跟在使用者說「收工」之後，不能由 git 生命週期事件觸發。
+
+**為什麼這裡不能裝 `pre-commit-audit.sh`**：`latest.md` 的 `> 路徑：` 欄位**依設計**
+含個人絕對路徑（`/Users/<你>/WakaWaka`）。那支 hook 的職責就是擋個人絕對路徑，
+兩者前提相反，裝了會擋掉此 repo 的每一次 commit。同理此 repo 永遠不得加 remote。
+
+**誠實界線**：**git 化不解決並發覆蓋**——它讓覆蓋「可還原」，不讓覆蓋「不發生」。
+`maintenance-protocol §6` 的「重讀 → 合併」自律規約在 Phase A–C 完成前仍然必要。
+五個漏洞中本次解除的是 #3（永久丟失）與 #4（無寫入者身分），#1／#2／#5 未動。
+
+**驗證**：實跑 handoff 第 5 步指令 → commit 成功；寫入探針後 `git revert` → 探針
+清除、`latest.md` 完好、工作區乾淨（`dda6f19` → `b843f60` → `be1ac45`），即
+「覆蓋可還原」的行為證據。`hook.log` 確認未被追蹤。
+

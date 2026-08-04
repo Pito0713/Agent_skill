@@ -103,6 +103,12 @@
   - **L2 執行層已永久移除**：`hooks/stop-handoff-check.sh` 與 7 個下游掛載均已刪除（2026-07-31）。本條純靠 L1 文字約束，三 harness 一致——**沒有任何機制會替你攔截，觸發權完全在使用者手上**。
 - `<專案>` = 專案根目錄的資料夾名（`basename` 該路徑，例：`~/Agent_skill` → `Agent_skill`）；目錄不存在先 `mkdir -p ~/.agent-sessions/<專案>`
 - **無鎖併發**：同一專案避免同時開兩個「會寫交接」的 session。寫入前先重讀 latest.md——若「最後更新」比你開工時間晚，代表有別的 session 動過 → 把對方內容**合併進來再寫**，禁止整檔覆蓋
+- **寫入者身分**：標頭必填 `> 寫入者：claude | codex | agy`（2026-08-04 起）。事後追查「誰蓋掉誰」靠這一欄，沒有它 git log 只看得到「改了」看不到「誰改的」
+- **版本控制（2026-08-04，TODO Phase D）**：`~/.agent-sessions` 已 `git init`。`handoff` skill 寫完 latest.md **必須立刻 commit**（指令見該 skill Phase 最終第 5 步）——這是「覆蓋即永久丟失」的唯一防線。三條紅線：
+  - **不掛任何 git hook**——自動寫入路徑是 ADR-014／015 明文禁止的
+  - **永遠不加 remote**——`> 路徑：` 欄位依設計含個人絕對路徑
+  - **不裝 `hooks/pre-commit-audit.sh`**——該 hook 的職責就是擋個人絕對路徑，前提相反，裝了會擋掉這裡每一次 commit
+- **git 化不解決並發覆蓋**：它讓覆蓋**可還原**，不讓覆蓋**不發生**。真正消除寫入端衝突要靠 per-session entries 拆檔（`governance/TODO.md` Phase A–C，未實作）。在那之前，上面「重讀 → 合併」的自律規約仍然有效且必要
 
 ---
 
