@@ -92,22 +92,15 @@ harness，寫入端天然不碰撞。
 - [ ] `skills/productivity/project-dashboard/SKILL.md`：聚合後 `latest.md` 前段格式
       不變 → 預期只加一行來源註記。**先實跑驗證再決定改不改**
 
-**Phase D — git 化（✅ 2026-08-04 完成）**
-- [x] `~/.agent-sessions` 執行 `git init`，`hook.log` 進 `.gitignore`，初始 commit `dda6f19`
-- [x] 新增 `~/.agent-sessions/README.md`：記載三條紅線（不加 remote／不裝
-      `pre-commit-audit`／commit 不掛 hook）與「git 化不解決並發」的界線
-- [x] `handoff/SKILL.md` Phase 最終加第 5 步（寫完立刻 commit，失敗不阻斷流程）、
-      標頭加 `> 寫入者：` 欄位、frontmatter bump 2.1
-- [x] `maintenance-protocol §6` 加寫入者身分、版本控制三紅線、「git 化不解決並發」
-- [x] `handoff-verifier.md` 格式查核改五欄 + 新增存檔查核（工作區應乾淨）
-- [x] 漏洞 3（覆蓋即永久丟失）與漏洞 4（無寫入者身分）**已解除**
-- ⏭ **`latest.md` → `entries/` 遷移移出 Phase D**：它需要 `bin/rebuild-latest.sh`
-      才能做（沒有聚合器就搬檔，`project-dashboard` 的 `find -name "latest.md"`
-      會當場找不到），已併入 Phase A 的相依。原列的
-      `WakaWaka/bug-menubar-white-flash.md` 該檔已不存在，該項自動失效
+**~~Phase D — git 化~~ 已完成**（2026-08-04，見 ADR-017 與 commit `a51315b`；
+細項查 git log，此處不留已完成紀錄）。
 
-**Phase E — 落地**
-- [ ] ADR-017 進 `memory/project-context.md`、README 版本條目、commit
+> Phase D 原列的「`latest.md` → `entries/` 遷移」**移入 Phase A 相依**：沒有
+> `bin/rebuild-latest.sh` 就搬檔，`project-dashboard` 的 `find -name "latest.md"`
+> 會當場找不到。原列的 `WakaWaka/bug-menubar-white-flash.md` 該檔已不存在。
+
+**Phase E — 落地（A–C 完成後才需要）**
+- [ ] ADR 追加、README 版本條目、commit
 - [ ] 驗收另委派冷啟動 subagent 對抗式審查（鐵律 2：驗證不自驗）
 
 **取捨**：讀取多一層聚合；`entries/` 會累積（定期歸檔或只保留最近 N 筆全文）。

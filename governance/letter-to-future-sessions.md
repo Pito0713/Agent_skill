@@ -57,7 +57,7 @@
 
 - **其他機器**需重跑 `bash ~/Agent_skill/setup.sh` 才有四條 symlink（本機 2026-07-07 已完成並實測）
 - 下游專案的專案層 AGENTS.md / GEMINI.md 注入（inject.sh 目前只管 CLAUDE.md）——全域 symlink 已覆蓋大多數需求，專案層等真的需要再做
-- 本輪 commits 未 push（使用者指示只 commit）；連同更早的 cd8d0bd 一起等使用者指示
-- `memory/project-context.md` 的技術選型欄位仍是模板占位，等實際有選型再填
+- commits 未 push 是本 repo 常態（使用者指示只 commit，push 另外說）——接手時看到未 push 不要自作主張推
+- ~~`memory/project-context.md` 的技術選型欄位仍是模板占位~~ → **2026-08-04 已刪除**。那些空欄位（架構概覽 / 技術選型 / 環境設定 / 外部依賴等，共 17 處「（填入）」）在制度倉庫永遠不會有內容，卻被連續 4 份 handoff 當成待辦掃到。刪除理由與「不要加回來」寫在該檔同名段落
 
 制度補得了執行品質，補不了品味與模糊題。遇到時：升級模型、外部第二意見、或明說做不到。這句話值得每個 session 重讀一次。
