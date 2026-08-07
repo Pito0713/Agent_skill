@@ -49,10 +49,7 @@ metadata:
 ---
 name: <kebab-case 名稱>
 description: |
-  <能力簡述，若有明確步驟可用 1. 2. 3. 編號列出>
-
-  觸發場景：<什麼情況下該喚起這個 skill>
-  示例觸發：「<逐字使用者話術1>」「<話術2>」「<話術3>」
+  <一句話能力定位，說清楚「做什麼」> 觸發：<觸發詞，頓號分隔，必要時附消歧義條款>
 metadata:
   trigger: <一行簡短情境描述，勿整串複製 llms.txt 觸發詞>
   version: "1.0"
@@ -86,8 +83,11 @@ metadata:
 ## Step 4：品質確認
 
 ```
-[ ] frontmatter 完整（name、多行 description、metadata: trigger/version/last_updated）
-[ ] description 含「觸發場景」+「示例觸發」（≥3 個逐字使用者話術例句，讓 Claude 知道何時啟動）
+[ ] frontmatter 完整（name、description、metadata: trigger/version/last_updated）
+[ ] description = 一句話定位 + 「觸發：」觸發詞清單，**不列內部步驟**
+      （步驟屬 body。description 每個 session 常駐載入，body 只在觸發時才付費）
+[ ] description ≤ 400 bytes；超過須具名 waiver 並附理由（承載跨 skill 分流條款者常見）
+[ ] description 的「觸發：」段與 `skills/index.json` 的 `triggers` 欄**逐字一致**
 [ ] 不加 allowed-tools（Claude Code 中為功能性限制欄，會綁死疊加型判斷 skill）
 [ ] 步驟清單明確可執行（不模糊）
 [ ] 有輸出格式說明
@@ -105,11 +105,15 @@ mkdir -p skills/<category>/<new-name>
 mv skills/_inbox/<filename>.md skills/<category>/<new-name>/SKILL.md
 ```
 
-完成後必須同步更新以下兩個索引並執行 validator，缺一不可：
+完成後必須同步更新以下兩個索引並執行 validator，缺一不可。
+**先寫 `index.json`**——它是 `triggers` / `description` 的正本，frontmatter 與
+`llms.txt` 的對應欄位都要跟它逐字一致：
 
 ```
-[ ] skills/index.json            → 加入唯一 name / package path（machine coverage 正本）
+[ ] skills/index.json            → name / path / triggers / description（正本，先寫這份）
+[ ] SKILL.md frontmatter         → description = index 的 description + " 觸發：" + index 的 triggers
 [ ] skills/llms.txt              → 在對應分類區塊加入 name / path / triggers / description
+                                    （分類歸屬只存在於本檔，index.json 無 category 欄）
 [ ] python3 bin/validate-skill-index.py
 ```
 
