@@ -350,7 +350,7 @@ lazyengineer [lite|full|ultra|off]
 > 本 repo 自身的 `CLAUDE.md` 另外常駐 `coding-workflow-core`，那是制度倉庫的特例。
 >
 > Codex 沒有 `@` 語法且 AGENTS.md 有 32KiB 上限，只能寫成「開工必讀」的文字要求，
-> **強制力弱於 Claude**；agy 同理。此不對等為已知取捨，見 ADR-013 與 `governance/TODO.md`。
+> **強制力弱於 Claude**；agy 同理。此不對等為已知取捨，見 ADR-013。
 
 | 類型 | 內容 | 說明 |
 |------|------|------|

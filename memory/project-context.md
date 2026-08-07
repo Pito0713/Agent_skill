@@ -320,8 +320,8 @@ dormant，不刪）；② `version-log`（commit）不再寫 latest.md，commit 
 Codex/agy 本就不吃 `.claude/settings.json`、原本就只有 L1 約束，不受停用 hook 影響。
 
 **後果**：latest.md 只在使用者明說收工/交接時更新；commit、完成一段工作、session
-自然結束都不再觸發。維護者若日後想恢復自動防線，實作與待辦見 `governance/TODO.md`
-與 `enforcement-layers.md` §4（已標註本項停用）。
+自然結束都不再觸發。維護者若日後想恢復自動防線，見
+`enforcement-layers.md` §4（已標註本項停用）。
 
 ---
 
@@ -394,7 +394,9 @@ repo 全部有 GitHub remote，AG_knowledge commit `9cac18f` 就是在補這個�
 wrapper 一份都不存在（文件寫「已裝 6 個 repo」），`shopee` 的 post-commit 副本也
 還活著（文件寫「刪除 5 份下游副本」）。當日已補裝四份（`Agent_skill` /
 `AG_knowledge` / `shopee` / `WakaWaka`，md5 一致）並刪除該 post-commit，四象限
-行為測試通過。防復發待辦見 `governance/TODO.md`。
+行為測試通過。防復發手段（部署狀態改腳本現算，不再手抄）原列 TODO，2026-08-07
+隨 TODO 清空撤除——`enforcement-layers.md` 的部署清單目前仍是人工快照，查真實狀態
+一律現跑該檔所附指令，不要相信「已安裝 N 份」這種寫死的數字。
 
 **2026-07-31 補記（獨立 review 後）**：依鐵律 2「驗證不自驗」把
 `hooks/pre-commit-audit.sh` 交冷啟動 subagent 對抗式審查（delegation-templates T5）。
