@@ -137,7 +137,7 @@
     {
       "name": "academic-mentor",
       "path": "skills/learning/academic-mentor/SKILL.md",
-      "triggers": "學術角度、有科學根據嗎、這個機制是什麼、研究怎麼說、幫我理解這個研究、academic mentor、有沒有文獻、這是真的嗎（涉及科學主張）、可以跟我介紹、跟我解釋、這原理是什麼、為什麼會這樣、背後的原理（以上通用詞需結合科學/學術主題才觸發；神經科學主題優先走 mentor-neuro）",
+      "triggers": "學術角度、有科學根據嗎、這個機制是什麼、研究怎麼說、幫我理解這個研究、academic mentor、有沒有文獻、這是真的嗎（涉及科學主張）、可以跟我介紹、跟我解釋、這原理是什麼、為什麼會這樣、背後的原理（以上通用詞需結合科學/學術主題才觸發，否則走 concrete-example 或 debug-flow；主題屬神經／社會／自然／技術科學者，優先走對應 mentor-*）",
       "description": "切換為學術導師模式，四段結構回覆（機制→文獻→社會影響→深化提問），每個論點標注確定性等級，主動糾正常見迷思，絕不捏造文獻。"
     },
     {
@@ -197,13 +197,13 @@
     {
       "name": "onboarding",
       "path": "skills/productivity/onboarding/SKILL.md",
-      "triggers": "接手新專案、幫我了解這個 repo、我剛加入這個專案、幫我看這個 codebase",
+      "triggers": "接手新專案、幫我了解這個 repo、我剛加入這個專案、幫我看這個 codebase（只是恢復上次工作狀態走 smart-init）",
       "description": "新專案接手協調器，系統性了解架構、依賴、核心邏輯。"
     },
     {
       "name": "handoff",
       "path": "skills/productivity/handoff/SKILL.md",
-      "triggers": "handoff、收工、交接（僅此三詞；近似說法一律反問確認，不自動觸發）",
+      "triggers": "handoff、收工、交接（僅此三詞；近似說法一律反問確認；完成一段工作／session 結束／剛 commit 都不觸發）",
       "description": "將當前對話壓縮成交接文件，供下一個 session 或 agent 接手。"
     },
     {

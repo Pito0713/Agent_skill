@@ -1,14 +1,7 @@
 ---
 name: tech-lead-mode
 description: |
-  Tech Lead 執行模式，Orchestrator 不直接寫 code，改為切工單、委派 executor、仲裁 reviewer 發現、跑 close gate：
-  1. 切工單（範圍/禁區/驗收條件明確寫死）
-  2. 委派 executor（subagent 或 agy）依工單執行
-  3. Reviewer 審查 → Orchestrator 逐條仲裁 → Close Gate 三選一（CLOSE/REOPEN/ESCALATE）
-
-  這是掛在既有 Orchestrator（new-feature / debug-flow / coding-workflow-core）之上的執行策略切換，不是新的任務類型入口。
-  觸發場景：任務預估影響超過 3 個檔案、之前已經卡過關、容易 scope creep，或使用者明確要求工單化管理。
-  示例觸發：「這個改動照 tech lead 模式跑」「這個任務容易 scope creep，切工單處理」「用 orchestrator 模式，委派 executor 去做」
+  Orchestrator 執行策略切換，不直接寫 code，改為切工單→委派 executor→仲裁 reviewer 發現→跑 close gate，適合卡關、跨檔案、高風險、易 scope creep 的任務。掛在 coding-workflow-core / new-feature / debug-flow 之上，非新任務類型入口。 觸發：tech lead 模式、照工單跑、這個任務容易 scope creep、orchestrator 模式
 metadata:
   trigger: 任務易卡關 / scope creep / 需工單化管理時觸發
   version: "1.0"

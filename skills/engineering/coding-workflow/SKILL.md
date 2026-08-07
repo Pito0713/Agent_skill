@@ -1,12 +1,7 @@
 ---
 name: coding-workflow
 description: |
-  Coding Workflow 完整版參考文件（不直接觸發），涵蓋四階段流程與常見實作模式：
-  1. Phase 1-4：理解 → 計畫 → 實作 → 驗證（完整版，含測試點預估與友善錯誤訊息確認）
-  2. 常見模式速查：API Endpoint / React 元件 / Bug Fix
-
-  觸發場景：日常實作走常駐的 coding-workflow-core.md，模式速查走 coding-workflow-ref.md；本檔僅在需要對照兩者拆分是否遺漏內容、或想一次看完整流程時查閱。
-  示例觸發：「coding-workflow-core 跟 ref 拆分後是不是漏了什麼」「幫我看一下拆分前的完整流程長怎樣」「這份跟 core.md 內容對得上嗎」
+  coding-workflow-core + coding-workflow-ref 拆分前的完整版，僅供對照參考。 觸發：（不直接觸發，完整版參考文件）
 metadata:
   trigger: 對照 core/ref 拆分是否遺漏內容時查閱（不直接觸發）
   version: "1.0"

@@ -445,3 +445,43 @@ commit 動作必須跟在使用者說「收工」之後，不能由 git 生命�
 清除、`latest.md` 完好、工作區乾淨（`dda6f19` → `b843f60` → `be1ac45`），即
 「覆蓋可還原」的行為證據。`hook.log` 確認未被追蹤。
 
+
+---
+
+## ADR-018：skill frontmatter description 對齊 index.json 路由文案（2026-08-04）
+
+**背景**：使用者問「開一個 session / 呼叫一個 skill 消耗多少 token」。實測 38 個
+skill 的 `name + description` 佔 **~7,350 tok**，是每 session 固定成本中唯一可觀
+且可控的大宗（常駐 CLAUDE.md + rules + coding-workflow-core 合計才 ~4,846 tok）。
+
+**決策**：frontmatter `description` 統一改為單行 `<一句話功能>。觸發：<關鍵詞>`，
+內容直接取自 `skills/index.json` 的 `description` + `triggers` 欄。實測
+**7,350 → 3,218 tok，每 session 省 ~4,132**。
+
+**砍掉什麼、為什麼**：舊格式的編號步驟清單（「1. 讀取… 2. 確認…」）佔 ~2,400 tok，
+**路由價值為零**——`description` 唯一用途是讓模型判斷「要不要載入這個 skill」，
+步驟細節在選中後讀 body 就有。已逐檔確認 38 個 body 都完整涵蓋（4 個 body 偏薄的
+檔案用 `[ ] Step N` 而非 `##` 標題，實際內容俱在，無需搬移）。
+
+**為什麼複用 index.json 而不重寫**：`index.json` / `llms.txt` 本來就是策劃過的精簡
+路由正本，且消歧義規則已在 `triggers` 欄（handoff 的「僅此三詞」、smart-init 的
+「完整接手走 onboarding」、academic-mentor 的「神經科學優先 mentor-neuro」）。複用
+順帶消除 frontmatter 與索引正本的雙寫漂移——同一份路由文案從此只有一個來源。
+
+**保留什麼**：觸發關鍵詞一個不刪。`description` 是模型選 skill 的**唯一依據**，
+砍關鍵詞會直接造成誤路由；砍步驟不會。使用者在三個力道選項中選了保守案（另兩案為
+「再砍 triggers 到 3-5 詞」多省 1.3k、「只砍步驟」少省 1.7k）。
+
+**補回的 3 條**：diff 掃描發現 4 條消歧義規則被壓縮掉，`coding-workflow` 的
+「不直接觸發」已在 triggers 內，其餘 3 條補回 index.json / llms.txt（+23 tok）：
+- `handoff`：補「完成一段工作／session 結束／剛 commit 都不觸發」（ADR-015 最易誤觸的情境）
+- `onboarding`：補「只是恢復上次工作狀態走 smart-init」（原有的反向指標）
+- `academic-mentor`：補「否則走 concrete-example 或 debug-flow」
+
+**未動**：`metadata:` block（`trigger` / `version` / `last_updated`）原樣保留——
+它**不進 context**（成本為零），但 `bin/validate-skill-index.py` 要求其存在。
+連帶修正一個先前的估算錯誤：曾把 metadata 算進 context 成本，實際不計。
+
+**驗證**：`bin/validate-skill-index.py` PASS（38 packages）；pyyaml 逐檔 parse
+38/38 通過；harness 重新載入後的 skill 清單直接顯示新描述（含補回的 3 條），即
+「已生效」的行為證據。變更前 repo 乾淨，舊內容以 git 為備份。

@@ -1,13 +1,7 @@
 ---
 name: security-review
 description: |
-  安全審查協調器，依情境判斷委派哪個安全 agent，本身不直接執行審查：
-  1. 快速掃描（PR/commit 前）→ security-auditor
-  2. 前端漏洞（XSS/CSRF/token 儲存）→ frontend-security-auditor
-  3. 完整合規報告（上線前 / security sprint）→ owasp-reviewer
-
-  觸發場景：需要安全審查、懷疑有 OWASP 相關漏洞、想確認前端安全機制或 token 儲存方式是否安全。
-  示例觸發：「幫我做一次安全審查」「這支 API 有沒有 OWASP 漏洞」「這個前端 token 怎麼存比較安全」
+  安全審查協調器，依前後端情境委派對應 security agent，輸出統一報告。 觸發：安全審查、OWASP、後端有漏洞嗎、前端安全、XSS、CORS 問題、token 怎麼存
 metadata:
   trigger: 安全審查 / OWASP 疑慮 / 前端安全機制詢問時觸發
   version: "1.0"

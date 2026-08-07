@@ -1,16 +1,7 @@
 ---
 name: deploy-prep
 description: |
-  上線前檢查協調器，執行完整的安全、測試、效能、設定檢查以確保上線品質：
-  1. 確認上線範圍、目標環境、是否有 DB migration / breaking change
-  2. Phase 0 偵測專案類型與必要上線條件
-  3. Phase 1 Code Review、Phase 2 安全合規審查（CRITICAL 問題設 gate）
-  4. Phase 3 測試驗證（含 migration 正向/回滾確認）
-  5. Phase 4 設定與環境確認、Phase 5 Git / Release 確認
-  6. Phase 6 agy 最終交叉驗證，輸出上線前確認清單
-
-  觸發場景：使用者準備將變更推上 staging 或 production，需要系統性上線前確認。
-  示例觸發：「這個功能要上線了，幫我做上線前檢查」「準備 deploy 到 production」「release 前確認一下有沒有遺漏」
+  上線前安全檢查協調器，涵蓋 build / 環境變數 / migration / rollback 確認。 觸發：要上線了、deploy 前、release 前、上線檢查、準備 deploy、要 release 了
 metadata:
   trigger: 上線 / deploy / release 前系統性檢查
   version: "1.0"

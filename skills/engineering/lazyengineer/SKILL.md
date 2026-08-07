@@ -1,13 +1,7 @@
 ---
 name: lazyengineer
 description: |
-  Lazy Senior Developer 模式，在生成程式碼前強制走完六關決策梯，確保只寫必要的最小程式碼：
-  1. 依序檢查需求是否存在、stdlib / 平台 / 現有套件能否解決、能否一行搞定
-  2. 三條鐵律永不可省（輸入驗證、錯誤處理、安全）
-  3. 支援 lite / full / ultra / off 四種強度
-
-  觸發場景：需求要求精簡實作、質疑目前寫法過於複雜，或要求進入 lazy 模式生成程式碼。
-  示例觸發：「這段精簡一下」「有沒有更簡單的寫法」「lazyengineer ultra」「這段太複雜了，能不能更少程式碼」
+  Lazy Senior 模式，強制走完六關決策梯，確保只寫必要的最小程式碼。 觸發：精簡一下、有更簡單的寫法嗎、不要 over-engineering、能不能更少、lazyengineer、lazy mode、這段太複雜了
 metadata:
   trigger: 要求精簡實作 / 質疑寫法過複雜 / 進入 lazy 模式時觸發
   version: "1.0"

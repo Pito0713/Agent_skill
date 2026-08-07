@@ -1,18 +1,7 @@
 ---
 name: code-review
 description: |
-  Code Review 協調器，自動偵測專案類型，依序執行各審查階段並輸出統一報告：
-  1. 確認審查範圍（git diff / 特定檔案 / 貼上片段）
-  2. Phase 0 偵測專案類型
-  3. Phase 1 邏輯與可讀性審查
-  4. Phase 1.5 Over-Engineering 掃描（可選）
-  5. Phase 2 安全審查（CRITICAL 問題設 gate）
-  6. Phase 3 測試覆蓋審查
-  7. Phase 4 Git / PR 格式審查
-  8. Phase 5 agy 冷啟動交叉驗證，輸出統一報告
-
-  觸發場景：使用者要求審查程式碼品質、PR 合併前確認、或懷疑程式碼有問題但不確定哪裡。
-  示例觸發：「幫我 code review 一下這個 PR」「這段 code 有沒有問題」「merge 前幫我看一下」
+  Code Review 協調器，自動偵測專案類型，依序執行邏輯→安全→測試→PR 格式審查。 觸發：code review、PR review、審查這段 code、有沒有問題、幫我看一下、merge 前
 metadata:
   trigger: PR review / 程式碼品質審查 / merge 前確認
   version: "1.0"

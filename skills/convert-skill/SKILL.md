@@ -1,15 +1,7 @@
 ---
 name: convert-skill
 description: |
-  將 GitHub 上收集的原始 workflow/prompt 文件轉換為本專案標準 skill 格式：
-  1. 讀取 skills/_inbox/ 中的原始文件，識別類型與核心用途
-  2. 決定分類（engineering / marketing / productivity）與命名
-  3. 轉換為標準 frontmatter + 內容格式
-  4. 品質確認（frontmatter 完整、觸發關鍵字、步驟清單）
-  5. 歸檔並同步更新 skills/index.json、skills/llms.txt
-
-  觸發場景：內部維護動作——有新的原始 workflow/prompt 文件放入 skills/_inbox/，需要轉換為本專案標準 skill 格式時。
-  示例觸發：「把剛丟進 _inbox 的這份 prompt 轉成 skill」「新增這個 GitHub skill 進來」「幫我把這份收集到的 workflow 轉成標準格式」
+  將 GitHub 原始 workflow/prompt 文件轉換為本專案標準 skill 格式。 觸發：新增 GitHub Skill、收集這個 skill、把這個加進來
 metadata:
   trigger: skills/_inbox/ 有新原始文件待轉換為標準 skill 格式時觸發
   version: "1.0"

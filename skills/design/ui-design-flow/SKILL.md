@@ -1,16 +1,7 @@
 ---
 name: ui-design-flow
 description: |
-  UI 設計規劃協調器，從資訊架構 → 版面骨架 → 視覺風格 → 實作交接，完整走完設計流程：
-  1. 釐清設計範圍（頁面類型、目標使用者、現有規範、最終產出）
-  2. Phase 1 資訊架構（委派 information-architecture）
-  3. Phase 2 版面骨架（委派 wireframing）
-  4. Phase 3 視覺風格（委派 ui-visual-design）
-  5. Phase 4 實作交接（委派 frontend-engineer / api-architect）
-  6. Phase 5 agy 設計驗證（可選）
-
-  觸發場景：需要完整規劃一個頁面或功能的 UI，從架構到實作交接一次走完。
-  示例觸發：「幫我規劃這個頁面」「設計這個功能的 UI」「這個畫面要怎麼做」「幫我想一下這個新功能的 UI 架構」
+  UI 設計規劃協調器，從 IA → wireframe → 視覺風格 → 實作交接的完整流程。 觸發：規劃 UI、設計這個頁面、這個畫面要怎麼做、UI 架構、幫我規劃這個頁面、設計這個功能的 UI
 metadata:
   trigger: 規劃頁面 / 功能 UI，需完整走完 IA→wireframe→視覺→實作交接流程時觸發
   version: "1.0"

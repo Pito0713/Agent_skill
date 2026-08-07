@@ -1,13 +1,7 @@
 ---
 name: coding-workflow-ref
 description: |
-  常見實作模式速查手冊（按需版），配合 coding-workflow-core 使用，收錄三種模式：
-  1. 新增 API Endpoint：types → service → repository → route → validation → auth → test
-  2. 新增 React 元件：props → story → 實作 → loading/error/empty states → test
-  3. Bug Fix：先寫重現測試 → 找根因 → 修復 → 確認測試通過 → 排查類似問題
-
-  觸發場景：實作前需要查閱標準模式，避免遺漏步驟（如忘記 auth check 或 loading state）。
-  示例觸發：「幫我加一個新的 API endpoint」「這個 React 元件怎麼寫比較標準」「修這個 bug 前該注意什麼順序」
+  常見實作模式速查手冊（API endpoint / React 元件 / bug 修復）。 觸發：查實作模式、怎麼寫 API、component 怎麼做、有沒有範本
 metadata:
   trigger: 新增 API endpoint / React 元件 / bug fix 時查閱標準步驟
   version: "1.0"

@@ -1,17 +1,7 @@
 ---
 name: handoff
 description: |
-  將當前對話壓縮成一份讓任何人（或新 session）能在 5 分鐘內接手的交接文件：
-  1. 掃描對話歷史，補充 memory/project-context.md 背景，套入標準交接文件模板
-  2. 確認後存檔到 memory/handoff-<YYYYMMDD>.md
-  3. 寫入跨專案進度快照到 ~/.agent-sessions/<專案>/latest.md（三 harness 共用交接正本），寫完立刻 git commit 存檔
-  4. 收工前自檢：踩坑教訓與架構決策是否已落地到 lessons.md / project-context.md
-
-  觸發場景：**只由使用者明確下指令觸發**（ADR-015）。觸發詞限「handoff」「收工」「交接」三個。
-  「完成一段工作」「session 即將結束」「告一段落」**都不是觸發條件**，一律不自動觸發。
-  示例觸發：「handoff」「收工」「幫我交接一下」
-  近似說法一律**反問確認、不自動執行**：「今天到這」「先這樣」「明天繼續」「總結一下目前進度」
-  「這個 session 先做到這」→ 反問「要一併寫 handoff 嗎？」，等使用者回答才執行。
+  將當前對話壓縮成交接文件，供下一個 session 或 agent 接手。 觸發：handoff、收工、交接（僅此三詞；近似說法一律反問確認；完成一段工作／session 結束／剛 commit 都不觸發）
 metadata:
   trigger: 使用者明確說出 handoff / 收工 / 交接 時觸發；近似說法反問確認
   version: "2.1"
