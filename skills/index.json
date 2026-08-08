@@ -6,7 +6,8 @@
       "name": "coding-workflow-core",
       "path": "skills/engineering/coding-workflow-core/SKILL.md",
       "triggers": "每次 session 自動生效（常駐）",
-      "description": "實作任何功能的強制四階段流程（理解→計畫→實作→驗證）與 commit 前 checklist。"
+      "description": "實作任何功能的強制四階段流程（理解→計畫→實作→驗證）與 commit 前 checklist。",
+      "lifecycle": "resident"
     },
     {
       "name": "tech-lead-mode",
@@ -30,7 +31,8 @@
       "name": "coding-workflow",
       "path": "skills/engineering/coding-workflow/SKILL.md",
       "triggers": "（不直接觸發，完整版參考文件）",
-      "description": "coding-workflow-core + coding-workflow-ref 拆分前的完整版，僅供對照參考。"
+      "description": "coding-workflow-core + coding-workflow-ref 拆分前的完整版，僅供對照參考。",
+      "lifecycle": "reference"
     },
     {
       "name": "debug-flow",
@@ -42,13 +44,15 @@
       "name": "deploy-prep",
       "path": "skills/engineering/deploy-prep/SKILL.md",
       "triggers": "要上線了、deploy 前、release 前、上線檢查、準備 deploy、要 release 了",
-      "description": "上線前安全檢查協調器，涵蓋 build / 環境變數 / migration / rollback 確認。"
+      "description": "上線前安全檢查協調器，涵蓋 build / 環境變數 / migration / rollback 確認。",
+      "lifecycle": "critical-on-demand"
     },
     {
       "name": "debug",
       "path": "skills/engineering/debug/SKILL.md",
       "triggers": "（一般不直接觸發，由 debug-flow 協調載入）",
-      "description": "系統性除錯工作流程：重現→收集→假設→驗證→修復。debug-flow 的 Phase 1 執行依據。"
+      "description": "系統性除錯工作流程：重現→收集→假設→驗證→修復。debug-flow 的 Phase 1 執行依據。",
+      "lifecycle": "reference"
     },
     {
       "name": "unknown-matrix-navigation",
@@ -66,7 +70,8 @@
       "name": "security-review",
       "path": "skills/engineering/security-review/SKILL.md",
       "triggers": "安全審查、OWASP、後端有漏洞嗎、前端安全、XSS、CORS 問題、token 怎麼存",
-      "description": "安全審查協調器，依前後端情境委派對應 security agent，輸出統一報告。"
+      "description": "安全審查協調器，依前後端情境委派對應 security agent，輸出統一報告。",
+      "lifecycle": "critical-on-demand"
     },
     {
       "name": "testing-strategy",
@@ -228,7 +233,8 @@
       "name": "convert-skill",
       "path": "skills/convert-skill/SKILL.md",
       "triggers": "新增 GitHub Skill、收集這個 skill、把這個加進來",
-      "description": "將 GitHub 原始 workflow/prompt 文件轉換為本專案標準 skill 格式。"
+      "description": "將 GitHub 原始 workflow/prompt 文件轉換為本專案標準 skill 格式。",
+      "lifecycle": "meta"
     }
   ]
 }

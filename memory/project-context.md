@@ -445,3 +445,41 @@ commit 動作必須跟在使用者說「收工」之後，不能由 git 生命�
 清除、`latest.md` 完好、工作區乾淨（`dda6f19` → `b843f60` → `be1ac45`），即
 「覆蓋可還原」的行為證據。`hook.log` 確認未被追蹤。
 
+
+---
+
+## ADR-018：skill 使用統計採事後挖掘、三指標永不合併（Phase 1，2026-08-08）
+
+**決策**：新增唯讀掃描器 `bin/skill-usage.py` + `bin/lib_skill_usage.py`，事後挖
+Claude transcript 與 Codex rollout 統計 skill 使用；`skills/index.json` 新增選填欄
+`lifecycle`（`resident` / `reference` / `meta` / `critical-on-demand`）；
+`bin/validate-skill-index.py` 改為只以 `ROUTING_FIELDS`（name/path/triggers/
+description）與 `llms.txt` 比對，讓 index 可攜帶非路由 metadata 而不觸發漂移告警。
+
+**為什麼不裝 hook**：hook 是新增一條自動寫入路徑，與 ADR-014／015 的方向相反；
+且 Codex 的 `~/.codex/hooks.json` 為空且不分發，hook 路線在兩個 harness 上不對等。
+事後挖掘零 runtime 成本、可回溯歷史，且掃描器保持 stdout-only 完全不寫檔。
+
+**為什麼三個指標不准合併**：`inv`（Claude `Skill` tool 明確調用）、`read`（SKILL.md
+被讀）、`edit`（SKILL.md 被改）代表三種不同強度的證據。「讀到」不等於「選用」——
+用 `code-review` 時會連帶讀 `coding-workflow-core` 與 rules，純讀取次數會系統性
+獎勵「篇幅長、交互引用多、要求反覆 read-back」的 skill。合成單一 usage 數就是把
+這個效度問題藏進一個看起來很客觀的數字裡。**退場決策禁止只憑 `read`。**
+
+**為什麼保留 `?`（不分類）欄**：實測 158 個含 SKILL.md 的 Codex call 中，21 個
+session cwd ≠ 呼叫的 workdir、20 個根本沒有 workdir；且 Codex 曾在 `~/Agent_skill`
+內真的使用 `code-review` 審查計畫書。任何用 cwd 硬分 usage/maintenance 的規則都會
+系統性誤判，因此 workdir 缺失或落在本 repo 內的讀取一律進 `?`，**不預設歸類**。
+
+**為什麼 `lifecycle` 是必要的**：38 個 skill 中有結構上不會被調用的類型——常駐載入
+的 `coding-workflow-core`、明示不直接觸發的 `coding-workflow` / `debug`、制度維護
+專用的 `convert-skill`，以及低頻但高風險的 `deploy-prep` / `security-review`。沒有
+這個標記，未來的分層每週都會提議把它們退場。
+
+**誠實界線**：**agy 完全不涵蓋**——其對話存成 sqlite blob，`grep` 命中 0，與
+`maintenance-protocol §6`「agy 二進位不可回寫」一致。任何引用本統計的文件都必須
+明示涵蓋範圍，不得講成全貌。
+
+**驗收**：20 項 fixture 斷言（含自我污染、apply_patch 內文、fork/replay 去重、
+缺 workdir、外部 skill、壞行、缺目錄不 traceback 等陰性案例）；3 個 skill 以獨立
+grep 交叉複算一致。計畫書與分階段 gate 見 `plans/skill-usage-and-self-correction.md`。
