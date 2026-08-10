@@ -11,12 +11,13 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from token_budget_spec import (  # noqa: E402
-    SpecError, extract_description, split_frontmatter,
+    SpecError, extract_description, split_frontmatter, waiver_error,
 )
 
 # Fields that must stay identical between index.json and llms.txt. Anything else
 # in index.json is non-routing metadata that llms.txt deliberately does not carry.
 ROUTING_FIELDS = ("name", "path", "triggers", "description")
+OPTIONAL_FIELDS = {"lifecycle", "description_waiver"}
 # Structural reasons a skill is not expected to show up in usage statistics.
 LIFECYCLE_VALUES = {"resident", "reference", "meta", "critical-on-demand"}
 SEPARATOR = " 觸發："
@@ -142,7 +143,11 @@ def validate_entries(repository: Path, skills: list[dict[str, str]]) -> list[str
         lifecycle = entry.get("lifecycle")
         if lifecycle is not None and lifecycle not in LIFECYCLE_VALUES:
             errors.append(f"{entry['name']}: unknown lifecycle {lifecycle!r}")
-        unexpected = set(entry) - set(ROUTING_FIELDS) - {"lifecycle"}
+        if "description_waiver" in entry:
+            error = waiver_error(entry["name"], entry["description_waiver"])
+            if error:
+                errors.append(error)
+        unexpected = set(entry) - set(ROUTING_FIELDS) - OPTIONAL_FIELDS
         if unexpected:
             errors.append(f"{entry['name']}: unexpected index fields {sorted(unexpected)}")
     for entry in skills:

@@ -28,7 +28,13 @@ def _render_costs(report: dict) -> None:
     print(f"    {'frontmatter description 總計':<46}{fixed['descriptions_bytes']:>9,}")
     print(f"    {'─' * 46}{'─' * 9}")
     subtotal = fixed["subtotal_bytes"]
-    print(f"    {'小計':<46}{subtotal:>9,} bytes  ≈ {approx_tokens(subtotal):,} tokens *")
+    budget = fixed["budget_bytes"]
+    usage = subtotal / budget * 100
+    print(f"    {'小計':<46}{subtotal:>9,} / {budget:,} bytes ({usage:.1f}%)"
+          f"  ≈ {approx_tokens(subtotal):,} tokens *")
+    if fixed["over_budget"]:
+        print("    ⚠️  固定開場成本超過預算；依 governance/maintenance-protocol.md §8"
+              " 須具名說明，並非禁止。")
 
     exact = report["exact_tokens"]
     if exact["value"] is not None:
@@ -84,6 +90,18 @@ def render(repo: str, report: dict, comparison: dict | None, baseline: str | Non
         print(f"    ⚠️  {row['name']:<44}{row['bytes']:>9,}")
     if threshold["over"]:
         print("    （超標須具名 waiver,見計劃書 §4 目標 C）")
+    else:
+        print("    無未核准超標")
+    if threshold["waived"]:
+        print("\n    【已核准 waiver】")
+        for row in threshold["waived"]:
+            print(f"    ✓   {row['name']:<44}{row['bytes']:>9,}")
+            print(f"        {row['waiver']}")
+    if threshold["stale_waivers"]:
+        print("\n    【waiver 已失效，應從 index.json 移除】")
+        for row in threshold["stale_waivers"]:
+            print(f"    ⚠️  {row['name']:<44}{row['bytes']:>9,}")
+            print(f"        {row['waiver']}")
     print()
 
     if comparison:

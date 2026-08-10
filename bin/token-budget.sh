@@ -53,6 +53,7 @@
 #   bin/token-budget.sh --save-baseline    寫入 plans/baselines/
 #   bin/token-budget.sh --compare <file>   與 baseline 比對（含 per-skill 明細）
 #   bin/token-budget.sh --exact            常駐 rules 走 count_tokens
+#   bin/token-budget.sh --strict           未核准超標或失效 waiver 時 exit 1
 #
 set -euo pipefail
 

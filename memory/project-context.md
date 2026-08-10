@@ -530,3 +530,48 @@ skill 的 `name + description` 佔 **~7,350 tok**，是每 session 固定成本�
 **驗證**：`bin/validate-skill-index.py` PASS（38 packages）；pyyaml 逐檔 parse
 38/38 通過；harness 重新載入後的 skill 清單直接顯示新描述（含補回的 3 條），即
 「已生效」的行為證據。變更前 repo 乾淨，舊內容以 git 為備份。
+
+---
+
+## ADR-020：制度層預算門檻與 waiver 機器可讀化（2026-08-10）
+
+**背景**：ADR-019 把 frontmatter description 對齊 index.json 後，`bin/token-budget.sh`
+每次都印出同樣 8 個超標警告——那 8 個在 2026-08-07 已被使用者裁決為永久 waiver，但
+waiver 只存在於計劃書的一段散文裡。**永遠有 8 筆警告等於沒有警告**：人會習慣性略過，
+下次真的出現新的超標項時看不出差別。同時，量測工具產出的數字沒有任何門檻可對照，
+「這次改動讓成本增加多少算太多」無人能答。
+
+**決策一：waiver 機器可讀**。`skills/index.json` 每筆新增選填欄位 `description_waiver`
+（非空字串，格式 `YYYY-MM-DD <核准者> 核准：<理由>`）。報表把超標項拆成三桶：
+`over`（未核准，才算違規）/ `waived`（已核准）/ `stale_waivers`（有 waiver 但已不超標）。
+第三桶是刻意加的——沒有它，waiver 只會單向累積，是同一種制度腐化的另一個面向。
+
+**決策二：兩個門檻**（使用者 2026-08-10 裁決）。單 skill description **400 bytes**
+維持不動；固定開場成本總計上限 **30,000 bytes**（現值 25,432，約 18% 餘裕）。
+400 的立論是實測分布——未 waiver 的 30 個中位數 191、最大 386，門檻與實際使用之間
+空隙明顯，沒有證據支持收緊。
+
+**決策三：預設寬鬆，`--strict` 才有牙**。`bin/token-budget.sh` 不加旗標**不因門檻違規而
+非零退出**；`--strict` 在「有未核准超標」或「有失效 waiver」時 exit 1，供 pre-commit / CI 使用。
+**「一律 exit 0」的說法不正確且不得沿用**——工具自身的錯誤（參數錯誤、檔案缺失、frontmatter
+不合規格、waiver 格式不合）在任何模式下都非零退出。完整的三情境契約表在
+`governance/maintenance-protocol.md` §8.6，那張表是唯一正本。
+**總預算超標刻意不影響 exit code**——制度上它是具名說明制而非硬牆（§8.4），擋住正常
+工作不是這條的目的。這個「兩種門檻兩種力度」的區分是本 ADR 最容易被日後誤改的地方。
+
+**決策四：`metadata.trigger` 定義為人類備註欄**。38 份 frontmatter 的該欄與 index.json
+的 `triggers` 38/38 全部不同。既不統一也不刪除，而是明文定義為不參與路由、不比對、
+validator 不檢查——**刻意的職責分離，不是待修的漂移**。三個選項中這個工作量為零，
+另兩個要動 38 份檔案換來一份沒人在用的資料保持同步。
+
+**規約落點**：`governance/maintenance-protocol.md` §8（8.1–8.7），並掛進 §5 制度健康檢查。
+修改前依 §2 備份至 `governance/backups/maintenance-protocol.md.2026-08-10.bak`。
+
+**驗證**：`bin/test-token-budget.sh` 15 條斷言全過，涵蓋三桶分類、golden waiver 字串
+逐字比對、`--strict` 在兩種違規下各自 exit 1、預設路徑仍 exit 0、超預算路徑 exit 0。
+三次獨立故障注入（改壞 renderer / 改壞 golden 字串 / baseline 指向不存在的檔）皆如預期
+紅掉，還原後 `cmp` 逐字一致。冷啟動 codex 對抗式審查提出 3 條，全部 CONFIRMED 且全部
+落在測試檔——實作零缺陷、測試三處假陽性，已修正後重驗。
+
+**成本影響**：零。`index.json` 不進 context，`description` 內容一個字未改；
+`--compare` 對 2026-08-10 baseline 四項 delta 全為 0。

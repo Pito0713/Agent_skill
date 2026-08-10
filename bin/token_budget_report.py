@@ -19,9 +19,11 @@ from token_budget_spec import (  # noqa: E402
 )
 
 DESC_THRESHOLD_BYTES = 400
+# 2026-08-10 使用者裁決：現值 25,432 bytes，保留約 18% 餘裕。
+FIXED_STARTUP_BUDGET_BYTES = 30000
 COUNT_TOKENS_MODEL = "claude-opus-5"
 BASELINE_DIR = "plans/baselines"
-KNOWN_FLAGS = {"--json", "--save-baseline", "--compare", "--exact", "--help"}
+KNOWN_FLAGS = {"--json", "--save-baseline", "--compare", "--exact", "--help", "--strict"}
 DELTA_ROWS = [
     ("常駐 rules", "fixed_startup_cost", "resident_rules_bytes"),
     ("descriptions", "fixed_startup_cost", "descriptions_bytes"),
@@ -76,6 +78,43 @@ def exact_tokens(text: str) -> tuple[int | None, str]:
         return None, f"count_tokens 失敗：{error}"
 
 
+def _description_threshold(skills: list[dict]) -> dict:
+    over_limit = [row for row in skills if row["description_bytes"] > DESC_THRESHOLD_BYTES]
+    over = [row for row in over_limit if not row["description_waiver"]]
+    waived = [row for row in over_limit if row["description_waiver"]]
+    stale = [
+        row for row in skills
+        if row["description_waiver"] and row["description_bytes"] <= DESC_THRESHOLD_BYTES
+    ]
+    def waiver_row(row: dict) -> dict:
+        return {
+            "name": row["name"],
+            "bytes": row["description_bytes"],
+            "waiver": row["description_waiver"],
+        }
+    return {
+        "limit_bytes": DESC_THRESHOLD_BYTES,
+        "total": len(skills),
+        "pass": len(skills) - len(over_limit),
+        "over": sorted(
+            ({"name": row["name"], "bytes": row["description_bytes"]} for row in over),
+            key=lambda row: -row["bytes"],
+        ),
+        "waived": sorted((waiver_row(row) for row in waived), key=lambda row: -row["bytes"]),
+        "stale_waivers": sorted((waiver_row(row) for row in stale), key=lambda row: row["name"]),
+    }
+
+
+def _exact_measurement(repo: str, resident: list[str], use_exact: bool) -> tuple:
+    if not use_exact:
+        return None, "未啟用"
+    joined = "\n".join(
+        open(os.path.join(repo, relative), encoding="utf-8").read()
+        for relative in resident
+    )
+    return exact_tokens(joined)
+
+
 def build_report(repo: str, use_exact: bool) -> dict:
     resident = resident_rules(repo)
     rules = {r: os.path.getsize(os.path.join(repo, r)) for r in resident}
@@ -83,14 +122,8 @@ def build_report(repo: str, use_exact: bool) -> dict:
     descriptions = sum(row["description_bytes"] for row in skills)
     body = sum(row["body_bytes"] for row in skills)
     rules_total = sum(rules.values())
-    over = [r for r in skills if r["description_bytes"] > DESC_THRESHOLD_BYTES]
-
-    value, status = (None, "未啟用")
-    if use_exact:
-        joined = "\n".join(
-            open(os.path.join(repo, r), encoding="utf-8").read() for r in resident
-        )
-        value, status = exact_tokens(joined)
+    value, status = _exact_measurement(repo, resident, use_exact)
+    fixed_startup_total = rules_total + descriptions
 
     return {
         "measured_at": datetime.now(timezone.utc).isoformat(timespec="microseconds"),
@@ -112,7 +145,9 @@ def build_report(repo: str, use_exact: bool) -> dict:
             "resident_rules_bytes": rules_total,
             "resident_rules_detail": rules,
             "descriptions_bytes": descriptions,
-            "subtotal_bytes": rules_total + descriptions,
+            "subtotal_bytes": fixed_startup_total,
+            "budget_bytes": FIXED_STARTUP_BUDGET_BYTES,
+            "over_budget": fixed_startup_total > FIXED_STARTUP_BUDGET_BYTES,
         },
         "on_demand_cost": {
             "measured": False,
@@ -123,15 +158,7 @@ def build_report(repo: str, use_exact: bool) -> dict:
             "skill_count": len(skills),
             "mean_body_bytes": round(body / len(skills)),
         },
-        "description_threshold": {
-            "limit_bytes": DESC_THRESHOLD_BYTES,
-            "pass": len(skills) - len(over),
-            "total": len(skills),
-            "over": sorted(
-                ({"name": r["name"], "bytes": r["description_bytes"]} for r in over),
-                key=lambda r: -r["bytes"],
-            ),
-        },
+        "description_threshold": _description_threshold(skills),
         "skills": sorted(skills, key=lambda r: -r["description_bytes"]),
     }
 
@@ -208,7 +235,20 @@ def parse_args(argv: list[str]) -> dict:
         "save": "--save-baseline" in argv,
         "compare": compare_path,
         "help": "--help" in argv,
+        "strict": "--strict" in argv,
     }
+
+
+def strict_failure(report: dict) -> str | None:
+    threshold = report["description_threshold"]
+    over_count = len(threshold["over"])
+    stale_count = len(threshold["stale_waivers"])
+    if not over_count and not stale_count:
+        return None
+    return (
+        "token-budget.sh: --strict 失敗——"
+        f"未核准超標 {over_count} 筆、失效 waiver {stale_count} 筆"
+    )
 
 
 def main() -> int:
@@ -234,6 +274,10 @@ def main() -> int:
         print(json.dumps(document, ensure_ascii=False, indent=2))
     else:
         render(repo, report, comparison, baseline)
+    failure = strict_failure(report) if args["strict"] else None
+    if failure:
+        print(failure, file=sys.stderr)
+        return 1
     return 0
 
 

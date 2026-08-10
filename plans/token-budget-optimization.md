@@ -5,7 +5,9 @@
 > **發起人**：使用者（wits）· **執行者**：harness 中立
 > **基準 commit**：`b4a0f40`
 > **審查歷程**：v1 → 提案 → Codex 0.146.0 對抗審查 → v2 → Codex 複審 + 冷啟動 subagent 審查 → v3
-> **狀態**：目標 A / D' / E 已完成（2026-08-07～08-10）；剩目標 B（門檻寫進 governance，🟡 需事前同意）
+> **狀態**：**全部目標完成**（2026-08-07～08-10）。A / C / D' / E 見 §9；目標 B 於 2026-08-10
+> 經使用者裁決後落地為 `governance/maintenance-protocol.md` §8 與 ADR-020。§10 四項未決事項亦
+> 全數結案。**本文件待使用者決定歸檔或刪除（§7，🟡）**
 
 ---
 
@@ -169,16 +171,22 @@ frontmatter.description == index.description + " 觸發：" + index.triggers    
 - baseline 存 **`plans/baselines/`**，非 `governance/`（後者全域屬 🟡，寫入需事前同意）
 - baseline 檔須記錄產出時的 **git revision**，避免跨 working tree 互相覆蓋
 
-### 目標 B：門檻與規約寫進 `governance/`（🟡，需事前同意）
+### 目標 B：門檻與規約寫進 `governance/` — **已完成（2026-08-10）**
 
-- 單 skill description **預設上限 400 bytes + 具名 waiver 規則**
+> 使用者 2026-08-10 裁決四項數字後落地為 `governance/maintenance-protocol.md` §8（8.1–8.7），
+> 並追加 ADR-020。修改前已依 §2 備份至 `governance/backups/maintenance-protocol.md.2026-08-10.bak`，
+> read-back 確認為純 append、原 140 行逐字未動。裁決結果：門檻維持 **400**、總預算上限 **30,000**、
+> `--strict` 旗標（預設仍 exit 0）、`metadata.trigger` 定義為人類備註欄。
+> 以下為原始需求清單，逐條對應到 §8 的落點：
+
+- 單 skill description **預設上限 400 bytes + 具名 waiver 規則** → §8.2 / §8.3
   > v2 同時寫「硬門檻」與「允許例外」，制度上矛盾。v3 定案為預設門檻 + 具名 waiver：
   > 超標者須具名列出並附理由，非默許
-- **門檻數字本身待檢討**：400 是在任何人量測路由準確度之前拍的。目標 A 產出分布後，
-  回頭決定 400 是否合理，或是否該為「承載跨 skill 分流條款」的 skill 另訂級距
-- 固定開場成本總預算上限（數字待目標 A 產出後決定）
-- `index.json` / `llms.txt` 成長策略
-- 新增／修改 skill 時必須跑 `bin/token-budget.sh` 與 validator
+- ~~門檻數字本身待檢討~~ → **維持 400**，立論與實測分布寫入 §8.2（未 waiver 的 30 個中位數 191、
+  最大 386）。未另訂級距——8 個超標項走 waiver 而非分級，避免多一套要維護的門檻
+- ~~固定開場成本總預算上限（數字待定）~~ → **30,000 bytes**，§8.2。刻意設計為**具名說明制而非硬牆**（§8.4）
+- `index.json` / `llms.txt` 成長策略 → §8.5（不設 bytes 硬牆，但附「若日後被 inline 注入則本條作廢」的失效條件）
+- 新增／修改 skill 時必須跑 `bin/token-budget.sh` 與 validator → §8.6，並掛進 §5 制度健康檢查
 
 ### 目標 C：description 精簡收尾 — **使用者已裁決：8 個全部列 waiver，不壓縮**
 
@@ -189,9 +197,14 @@ frontmatter.description == index.description + " 觸發：" + index.triggers    
 | `mentor-society` | 616 | | `mentor-science` | 509 |
 | `unknown-matrix-navigation` | 613 | | `mentor-tech` | 601 |
 
-**共同 waiver 理由**（2026-08-07 使用者裁決）：這 8 個承載**跨 skill 分流條款**。其中 6 個是
-`mentor-*`，加上 `academic-mentor` 構成七方互相競爭的路由；`tw-stock-tracker` 靠「操作層 vs
-概念層」與 `mentor-invest` 分家；`unknown-matrix-navigation` 是 v1 自己點名的合理例外。
+**共同 waiver 理由**（2026-08-07 使用者裁決）：這 8 個承載**跨 skill 分流條款**。其中 5 個是
+`mentor-*`（neuro / invest / tech / science / society），加上 `academic-mentor` 構成六方互相
+競爭的路由；`tw-stock-tracker` 靠「操作層 vs 概念層」與 `mentor-invest` 分家；
+`unknown-matrix-navigation` 是 v1 自己點名的合理例外。
+
+> 2026-08-10 訂正：原文寫「6 個是 `mentor-*`……七方」，實測 `index.json` 只有 5 個 `mentor-*`，
+> 連同 `academic-mentor` 是**六方**。裁決本身不受影響，僅數字訂正。落地的 `description_waiver`
+> 欄位用的是訂正後的「六個」。
 
 已有直接證據顯示此族群正處邊緣：2026-08-07 的 A/B 路由測試中，「社群媒體對青少年的影響，
 研究怎麼說」在新版從確定選擇退化為反問，原因正是 `academic-mentor` 與 `mentor-society` 的
@@ -336,8 +349,12 @@ frontmatter.description == index.description + " 觸發：" + index.triggers    
       （2026-08-10：五項測試——語法、路徑 lint 未破壞、未碰 skills/ 不觸發、
       碰 skills/ 且漂移則 exit 1、下游 repo 無 skills/index.json 完全不受影響）
 - [x] validator 能正確回報 pre-commit hook 的實際安裝狀態（PASS 時附帶輸出）
-- [ ] 8 個 waiver 具名落地並附共同理由（見 §4 目標 C）
-- [ ] 成本前後對比：以 **§1 的 2026-08-07 數字**為基準
+- [x] 8 個 waiver 具名落地並附共同理由（見 §4 目標 C）——`description_waiver`
+      欄位共 8 筆，由 `bin/test-token-budget.sh` 覆蓋現況與反向案例
+- [x] 成本前後對比：2026-08-10 於 `3fb8de4` 實測常駐 rules 14,671 / descriptions
+      10,761 / body 194,051 / 門檻通過 30-38，與 §1 的 2026-08-07 基準逐項相同，
+      即目標 A / D' / E 全程零成本變動。baseline：
+      `plans/baselines/20260810T071650511103+0000-3fb8de4.json`
 
 > v2 曾列「`maintenance-protocol` §7 索引防漂移四查全通過」。**已刪除**——該四查的對象
 > （CLAUDE.md / CLAUDE.global.md / AGENTS.md / GEMINI.md）全在 §5 禁區內，本計劃一個字都不會動，
@@ -347,12 +364,19 @@ frontmatter.description == index.description + " 觸發：" + index.triggers    
 
 ## 10. 已知未決事項
 
-1. **`metadata.trigger` 與 index triggers 38/38 全部不同**——既有狀態，不參與路由，但是第四份
-   可漂移的副本。本計劃明確不處理，記錄供日後決定：統一、刪除、或明文定義為人類備註欄
-2. **`llms.txt` 的 category 與歧義樹無 machine 來源**——範圍收斂的後果。若日後要全域正本化，
-   需替 `index.json` 加 `category` 並升 `schema_version`
-3. **按需載入成本未量測**——需 transcript 分布，列為獨立工單
-4. **400 bytes 門檻本身待檢討**——見 §4 目標 B
+四項於 2026-08-10 全數結案（使用者裁決），保留原文與處置供追溯：
+
+1. ~~**`metadata.trigger` 與 index triggers 38/38 全部不同**~~ → **已定案：明文定義為人類可讀
+   備註欄**，不參與路由、不與 index 比對、validator 不檢查。寫入 `maintenance-protocol` §8.7。
+   刻意的職責分離，不是待修的漂移
+2. ~~**`llms.txt` 的 category 與歧義樹無 machine 來源**~~ → **維持人工維護**（即 §0.1 的原決策，
+   此處只是重述）。不加 `category`、不升 `schema_version`——22% 無來源，成本與收益不成比例
+3. ~~**按需載入成本未量測**~~ → **不開工單**。需 per-session 觸發分布，該數字無 transcript 或
+   telemetry 支撐；在取得實測分布之前，開工單只會產出另一組沒有根據的數字。
+   立場寫入 `maintenance-protocol` §8.1
+4. ~~**400 bytes 門檻本身待檢討**~~ → **維持 400**。2026-08-10 實測分布：未 waiver 的 30 個
+   中位數 191、最大 386（`tech-lead-mode`）、第二名 234。門檻與實際使用有明顯空隙，
+   沒有證據支持收緊。立論寫入 `maintenance-protocol` §8.2
 
 ---
 

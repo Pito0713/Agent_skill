@@ -11,6 +11,7 @@ from __future__ import annotations  # 本機為 macOS 系統 Python 3.9
 import json
 import os
 import re
+from datetime import date
 
 # bytes ÷ 3.5，Anthropic 口徑估算。僅供參考顯示，制度門檻一律用 bytes。
 TOKEN_DIVISOR = 3.5
@@ -18,10 +19,33 @@ DELIMITER = b"---"
 INDENT = b"  "
 ENTRY_FILE = "CLAUDE.md"
 INDEX_FILE = "skills/index.json"
+WAIVER_PATTERN = re.compile(
+    r"^(?P<approval_date>[0-9]{4}-[0-9]{2}-[0-9]{2}) "
+    r"\S+ 核准：(?P<reason>[^\r\n]+)$"
+)
 
 
 class SpecError(Exception):
     """檔案不符合 §1.1 規格。報錯優於靜默算錯。"""
+
+
+def waiver_error(name: str, value: object) -> str | None:
+    """驗證 description waiver 的可稽核格式。"""
+    prefix = f"{name}: description_waiver"
+    if not isinstance(value, str):
+        return f"{prefix} 必須是字串，格式為 YYYY-MM-DD <核准者> 核准：<理由>"
+    if not value.strip():
+        return f"{prefix} 不得為空，格式為 YYYY-MM-DD <核准者> 核准：<理由>"
+    match = WAIVER_PATTERN.fullmatch(value)
+    if match is None:
+        return f"{prefix} 格式不符，預期 YYYY-MM-DD <核准者> 核准：<理由>"
+    try:
+        date.fromisoformat(match.group("approval_date"))
+    except ValueError:
+        return f"{prefix} 日期不存在：{match.group('approval_date')}"
+    if not match.group("reason").strip():
+        return f"{prefix} 理由不得為空白"
+    return None
 
 
 def resident_rules(repo: str) -> list[str]:
@@ -104,6 +128,12 @@ def read_index(repo: str) -> list[dict]:
         duplicates = sorted({v for v in values if values.count(v) > 1})
         if duplicates:
             raise SpecError(f"{INDEX_FILE}: {field} 重複 {duplicates}")
+    for entry in skills:
+        if "description_waiver" not in entry:
+            continue
+        error = waiver_error(entry.get("name", "?"), entry["description_waiver"])
+        if error:
+            raise SpecError(error)
     return skills
 
 
@@ -118,6 +148,7 @@ def collect_skills(repo: str) -> list[dict]:
         rows.append({
             "name": entry["name"],
             "path": entry["path"],
+            "description_waiver": entry.get("description_waiver"),
             "description_bytes": len(description.encode("utf-8")),
             "body_bytes": len(body),
         })

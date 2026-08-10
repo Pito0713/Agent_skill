@@ -1,0 +1,310 @@
+{
+  "measured_at": "2026-08-10T07:16:50.511103+00:00",
+  "git": {
+    "commit": "3fb8de4",
+    "branch": "main",
+    "dirty": false
+  },
+  "spec": "plans/token-budget-optimization.md §1.1 / bin/token-budget.sh 檔頭註解",
+  "token_estimate": {
+    "method": "bytes/3.5",
+    "provider": "Anthropic",
+    "caveat": "非 Codex / agy 的 token 數;僅供參考,制度門檻一律用 bytes"
+  },
+  "exact_tokens": {
+    "scope": "resident_rules_only",
+    "model": "claude-opus-5",
+    "value": null,
+    "status": "未啟用",
+    "note": "不涵蓋 descriptions,因此不是固定開場成本的精確值"
+  },
+  "fixed_startup_cost": {
+    "resident_rules_bytes": 14671,
+    "resident_rules_detail": {
+      "CLAUDE.md": 3643,
+      "rules/coding-standards.md": 2815,
+      "rules/security.md": 4449,
+      "skills/engineering/coding-workflow-core/SKILL.md": 3764
+    },
+    "descriptions_bytes": 10761,
+    "subtotal_bytes": 25432
+  },
+  "on_demand_cost": {
+    "measured": false,
+    "reason": "需 per-session 觸發分布,無 transcript / telemetry 支撐（計劃書 §2）"
+  },
+  "maintenance_inventory": {
+    "body_bytes": 194051,
+    "skill_count": 38,
+    "mean_body_bytes": 5107
+  },
+  "description_threshold": {
+    "limit_bytes": 400,
+    "pass": 30,
+    "total": 38,
+    "over": [
+      {
+        "name": "academic-mentor",
+        "bytes": 655
+      },
+      {
+        "name": "mentor-invest",
+        "bytes": 655
+      },
+      {
+        "name": "mentor-society",
+        "bytes": 616
+      },
+      {
+        "name": "unknown-matrix-navigation",
+        "bytes": 613
+      },
+      {
+        "name": "mentor-tech",
+        "bytes": 601
+      },
+      {
+        "name": "tw-stock-tracker",
+        "bytes": 586
+      },
+      {
+        "name": "mentor-neuro",
+        "bytes": 536
+      },
+      {
+        "name": "mentor-science",
+        "bytes": 509
+      }
+    ]
+  },
+  "skills": [
+    {
+      "name": "academic-mentor",
+      "path": "skills/learning/academic-mentor/SKILL.md",
+      "description_bytes": 655,
+      "body_bytes": 7737
+    },
+    {
+      "name": "mentor-invest",
+      "path": "skills/learning/mentor-invest/SKILL.md",
+      "description_bytes": 655,
+      "body_bytes": 11924
+    },
+    {
+      "name": "mentor-society",
+      "path": "skills/learning/mentor-society/SKILL.md",
+      "description_bytes": 616,
+      "body_bytes": 11203
+    },
+    {
+      "name": "unknown-matrix-navigation",
+      "path": "skills/unknown-matrix-navigation/SKILL.md",
+      "description_bytes": 613,
+      "body_bytes": 8680
+    },
+    {
+      "name": "mentor-tech",
+      "path": "skills/learning/mentor-tech/SKILL.md",
+      "description_bytes": 601,
+      "body_bytes": 10775
+    },
+    {
+      "name": "tw-stock-tracker",
+      "path": "skills/investing/tw-stock-tracker/SKILL.md",
+      "description_bytes": 586,
+      "body_bytes": 3858
+    },
+    {
+      "name": "mentor-neuro",
+      "path": "skills/learning/mentor-neuro/SKILL.md",
+      "description_bytes": 536,
+      "body_bytes": 9221
+    },
+    {
+      "name": "mentor-science",
+      "path": "skills/learning/mentor-science/SKILL.md",
+      "description_bytes": 509,
+      "body_bytes": 11805
+    },
+    {
+      "name": "tech-lead-mode",
+      "path": "skills/engineering/tech-lead-mode/SKILL.md",
+      "description_bytes": 386,
+      "body_bytes": 12281
+    },
+    {
+      "name": "lazyengineer-review",
+      "path": "skills/engineering/lazyengineer-review/SKILL.md",
+      "description_bytes": 234,
+      "body_bytes": 2384
+    },
+    {
+      "name": "obsidian-save",
+      "path": "skills/productivity/obsidian-save/SKILL.md",
+      "description_bytes": 234,
+      "body_bytes": 7489
+    },
+    {
+      "name": "ui-design-flow",
+      "path": "skills/design/ui-design-flow/SKILL.md",
+      "description_bytes": 232,
+      "body_bytes": 5085
+    },
+    {
+      "name": "cli-delegate",
+      "path": "skills/engineering/cli-delegate/SKILL.md",
+      "description_bytes": 232,
+      "body_bytes": 10787
+    },
+    {
+      "name": "new-feature",
+      "path": "skills/engineering/new-feature/SKILL.md",
+      "description_bytes": 231,
+      "body_bytes": 6777
+    },
+    {
+      "name": "lazyengineer",
+      "path": "skills/engineering/lazyengineer/SKILL.md",
+      "description_bytes": 231,
+      "body_bytes": 3016
+    },
+    {
+      "name": "onboarding",
+      "path": "skills/productivity/onboarding/SKILL.md",
+      "description_bytes": 230,
+      "body_bytes": 4666
+    },
+    {
+      "name": "handoff",
+      "path": "skills/productivity/handoff/SKILL.md",
+      "description_bytes": 229,
+      "body_bytes": 4681
+    },
+    {
+      "name": "project-dashboard",
+      "path": "skills/productivity/project-dashboard/SKILL.md",
+      "description_bytes": 226,
+      "body_bytes": 3914
+    },
+    {
+      "name": "rag-search",
+      "path": "skills/productivity/rag-search/SKILL.md",
+      "description_bytes": 225,
+      "body_bytes": 1097
+    },
+    {
+      "name": "obsidian-query",
+      "path": "skills/productivity/obsidian-query/SKILL.md",
+      "description_bytes": 223,
+      "body_bytes": 3690
+    },
+    {
+      "name": "debug-flow",
+      "path": "skills/engineering/debug-flow/SKILL.md",
+      "description_bytes": 221,
+      "body_bytes": 5995
+    },
+    {
+      "name": "code-review",
+      "path": "skills/engineering/code-review/SKILL.md",
+      "description_bytes": 209,
+      "body_bytes": 6672
+    },
+    {
+      "name": "security-review",
+      "path": "skills/engineering/security-review/SKILL.md",
+      "description_bytes": 197,
+      "body_bytes": 2025
+    },
+    {
+      "name": "deploy-prep",
+      "path": "skills/engineering/deploy-prep/SKILL.md",
+      "description_bytes": 191,
+      "body_bytes": 6176
+    },
+    {
+      "name": "smart-init",
+      "path": "skills/productivity/smart-init/SKILL.md",
+      "description_bytes": 191,
+      "body_bytes": 1111
+    },
+    {
+      "name": "concrete-example",
+      "path": "skills/learning/concrete-example/SKILL.md",
+      "description_bytes": 181,
+      "body_bytes": 3292
+    },
+    {
+      "name": "debug",
+      "path": "skills/engineering/debug/SKILL.md",
+      "description_bytes": 180,
+      "body_bytes": 3270
+    },
+    {
+      "name": "testing-strategy",
+      "path": "skills/engineering/testing-strategy/SKILL.md",
+      "description_bytes": 180,
+      "body_bytes": 1591
+    },
+    {
+      "name": "ui-visual-design",
+      "path": "skills/design/ui-visual-design/SKILL.md",
+      "description_bytes": 178,
+      "body_bytes": 1780
+    },
+    {
+      "name": "information-architecture",
+      "path": "skills/design/information-architecture/SKILL.md",
+      "description_bytes": 168,
+      "body_bytes": 1429
+    },
+    {
+      "name": "coding-workflow-ref",
+      "path": "skills/engineering/coding-workflow-ref/SKILL.md",
+      "description_bytes": 160,
+      "body_bytes": 819
+    },
+    {
+      "name": "documentation",
+      "path": "skills/engineering/documentation/SKILL.md",
+      "description_bytes": 158,
+      "body_bytes": 3415
+    },
+    {
+      "name": "coding-workflow-core",
+      "path": "skills/engineering/coding-workflow-core/SKILL.md",
+      "description_bytes": 157,
+      "body_bytes": 3423
+    },
+    {
+      "name": "convert-skill",
+      "path": "skills/convert-skill/SKILL.md",
+      "description_bytes": 151,
+      "body_bytes": 4681
+    },
+    {
+      "name": "coding-workflow",
+      "path": "skills/engineering/coding-workflow/SKILL.md",
+      "description_bytes": 143,
+      "body_bytes": 2208
+    },
+    {
+      "name": "version-log",
+      "path": "skills/productivity/version-log/SKILL.md",
+      "description_bytes": 142,
+      "body_bytes": 2084
+    },
+    {
+      "name": "feedback-loop",
+      "path": "skills/learning/feedback-loop/SKILL.md",
+      "description_bytes": 140,
+      "body_bytes": 1365
+    },
+    {
+      "name": "wireframing",
+      "path": "skills/design/wireframing/SKILL.md",
+      "description_bytes": 130,
+      "body_bytes": 1645
+    }
+  ]
+}
