@@ -60,10 +60,26 @@ llms.txt 總計        18,001 bytes
 
 ### 1.1 量測規格（v1/v2 皆未定義，不同 parser 會差數十 bytes）
 
-- **frontmatter 邊界**：第 1 行 `---` 之後的**第一個獨立 `---` 行**為結束。
-  **不得**用 `split('---')`——body 內有 **276 條**獨立 `---` 行
-- **description 值**：YAML block scalar `|` 解析後的內容，**strip 尾隨換行**，不含 2 空格縮排
-- **description bytes / body bytes**：上述值 / closing delimiter 之後全部內容的 UTF-8 byte 數
+> 2026-08-07 收緊：初版此節只寫了邊界與 strip 尾隨換行，對「多行如何接合」「CRLF」
+> 「哪些 scalar 形式合法」全部未定義。Codex 對抗測試證明這些留白會讓 parser 靜默算錯
+> （plain scalar 被當成 12 bytes、tab 縮排被當成 10 bytes、CRLF 讓 body 少算），
+> 因此改為下列逐項規定，並要求畸形輸入一律報錯而非猜測。
+
+- **一律 raw bytes 讀檔**，不做 newline normalization。含 CRLF 的檔案**直接報錯**
+  ——正規化會讓 body 少算，靜默算錯比報錯危險
+- **frontmatter 邊界**：第 1 行必須**逐字**等於 `---`；結束於其後第一個**逐字**等於
+  `---` 的行。縮排的 `---` 不算 delimiter。**不得**用 `split('---')`——body 內有
+  **276 條**獨立 `---` 行
+- **description 形式**：必須是 block scalar `|`。plain scalar、`>`、tab 縮排、
+  空值一律**報錯**，不得猜測
+- **description 值**：續行須以**恰好 2 個半形空格**開頭，移除該 2 bytes 後其餘內容
+  **原樣保留**（不 strip、不過濾空行）。多行以 `\n` 接合——`|` 是 literal block，
+  保留換行；折疊成空格是 `>` 的語意。最後只 **strip 尾隨換行**（`|` 非 `|-`，
+  解析值結尾帶 `\n`，不 strip 每份多算 1 byte）
+- **description bytes / body bytes**：上述值 / closing delimiter 之後全部**原始 bytes**
+- **`index.json` 的 `name` / `path` 必須唯一**——重複會靜默重複計費
+- **常駐 rules 清單不得硬編**：從 `CLAUDE.md` 的 `@` 載入行現算。硬編的後果是接線改了
+  工具照樣 exit 0，輸出看似精確的過期數字
 - 此規格須寫進 `bin/token-budget.sh` 註解，作為唯一權威定義
 
 ---
@@ -209,7 +225,9 @@ frontmatter.description == index.description + " 觸發：" + index.triggers    
 ## 5. 範圍與禁區
 
 **允許修改**：
-- 新增 `bin/token-budget.sh`、`bin/gen-skill-frontmatter.py`
+- 新增 `bin/token-budget.sh` 及其模組（`bin/token_budget_{spec,report,render}.py`
+  ——單檔會超過 `rules/coding-standards.md` 的 300 行上限，故拆為
+  入口＋規格＋彙總＋呈現四層）、`bin/gen-skill-frontmatter.py`
 - 擴充 `bin/validate-skill-index.py`、`hooks/pre-commit-audit.sh`
 - `skills/index.json`
 - 38 份 SKILL.md 的 frontmatter **`description` 欄（第 4 行）**
