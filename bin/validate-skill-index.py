@@ -5,7 +5,67 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import sys
 from pathlib import Path
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from token_budget_spec import (  # noqa: E402
+    SpecError, extract_description, split_frontmatter,
+)
+
+SEPARATOR = " 觸發："
+HOOK_CANONICAL = "hooks/pre-commit-audit.sh"
+
+
+def frontmatter_description_errors(
+    repository: Path, skills: list[dict[str, str]]
+) -> list[str]:
+    """index.json ↔ frontmatter description 三向同步的第三向。
+
+    既有檢查只涵蓋 index.json ↔ llms.txt；路由實際依據的 frontmatter
+    完全沒有防漂移保護，正是計劃書目標 D' 要補的那一處。
+    """
+    errors: list[str] = []
+    for entry in skills:
+        name = entry.get("name", "?")
+        for field in ("description", "triggers"):
+            if SEPARATOR.strip() in entry.get(field, ""):
+                errors.append(f"{name}: index.json 的 {field} 含分隔符「觸發：」")
+        expected = f"{entry.get('description', '')}{SEPARATOR}{entry.get('triggers', '')}"
+        try:
+            data = (repository / entry["path"]).read_bytes()
+            frontmatter, _ = split_frontmatter(data, entry["path"])
+            actual = extract_description(frontmatter, entry["path"])
+        except (SpecError, OSError) as error:
+            errors.append(f"{entry['path']}: {error}")
+            continue
+        if actual != expected:
+            errors.append(
+                f"{entry['path']}: frontmatter description 與 index.json 不符"
+                f"（跑 bin/gen-skill-frontmatter.py --write 重新生成）"
+            )
+    return errors
+
+
+def hook_status(repository: Path) -> str:
+    """回報 pre-commit hook 是否真的掛上。
+
+    讓「你手動跑的工具」自己告訴你「自動防線在不在」——2026-08-04 實測
+    文件宣稱裝了 6 份、實際 0 份，就是因為部署狀態只能靠人記得。
+    """
+    hook = repository / ".git/hooks/pre-commit"
+    if not hook.is_file():
+        return "pre-commit hook: 未安裝（bash bin/install-git-hooks.sh）"
+    if not os.access(hook, os.X_OK):
+        return "pre-commit hook: 存在但不可執行"
+    delegates = HOOK_CANONICAL in hook.read_text(encoding="utf-8")
+    canonical = (repository / HOOK_CANONICAL).is_file()
+    if not delegates:
+        return f"pre-commit hook: 已安裝，但未委派給 {HOOK_CANONICAL}"
+    if not canonical:
+        return f"pre-commit hook: 委派給 {HOOK_CANONICAL}，但正本不存在（fail-open 放行）"
+    return f"pre-commit hook: 已安裝並委派給 {HOOK_CANONICAL}"
 
 
 def load_index(repository: Path) -> list[dict[str, str]]:
@@ -77,6 +137,7 @@ def validate_entries(repository: Path, skills: list[dict[str, str]]) -> list[str
             continue
         if frontmatter_name(skill_path) != entry["name"]:
             errors.append(f"frontmatter name mismatch: {entry['path']}")
+    errors.extend(frontmatter_description_errors(repository, skills))
     canonical_paths = {
         path.relative_to(repository).as_posix()
         for path in (repository / "skills").rglob("SKILL.md")
@@ -149,6 +210,7 @@ def main() -> int:
             print(f"FAIL: {error}")
         return 1
     print(f"PASS: {len(skills)} indexed skill packages are valid")
+    print(f"      {hook_status(repository)}")
     return 0
 
 

@@ -330,9 +330,10 @@ frontmatter.description == index.description + " 觸發：" + index.triggers    
 - [ ] **反向測試**：分別在 `index.json`、frontmatter 各製造一處差異，validator **必須失敗**，
       貼出失敗訊息（陰性案例不可省）
 - [ ] §3.3 六個 edge case 各有對應測試且通過
-- [ ] 38 份 SKILL.md 生成後仍為合法 YAML
-      > ⚠️ 本機無 YAML parser。驗法須在執行前指定：自寫最小 parser、建 venv 裝 pyyaml
-      > **僅供驗證**（不得用於寫入），或明確接受 `validate-skill-index.py` 的行前綴檢查為上限
+- [x] 38 份 SKILL.md 生成後仍為合法 YAML —— **驗法定案：建 venv 裝 pyyaml 僅供驗證**
+      （`scratchpad/yamlvenv`，不進 repo、不用於寫入）。2026-08-10 實測：38/38 合法，
+      38/38 與本專案 parser 解析一致；多行路徑亦通過，且 `metadata.version` 仍是字串
+      `"1.0"` 而非 float——這是「生成器沒做 YAML round-trip」的直接證據
 - [ ] validator 接進 `hooks/pre-commit-audit.sh` 後，**實測**製造一處差異會擋下 commit
 - [ ] validator 能正確回報 pre-commit hook 的實際安裝狀態
 - [ ] 8 個 waiver 具名落地並附共同理由（見 §4 目標 C）
