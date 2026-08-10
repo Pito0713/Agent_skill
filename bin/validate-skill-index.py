@@ -14,6 +14,11 @@ from token_budget_spec import (  # noqa: E402
     SpecError, extract_description, split_frontmatter,
 )
 
+# Fields that must stay identical between index.json and llms.txt. Anything else
+# in index.json is non-routing metadata that llms.txt deliberately does not carry.
+ROUTING_FIELDS = ("name", "path", "triggers", "description")
+# Structural reasons a skill is not expected to show up in usage statistics.
+LIFECYCLE_VALUES = {"resident", "reference", "meta", "critical-on-demand"}
 SEPARATOR = " 觸發："
 HOOK_CANONICAL = "hooks/pre-commit-audit.sh"
 
@@ -127,9 +132,19 @@ def validate_entries(repository: Path, skills: list[dict[str, str]]) -> list[str
     if len(paths) != len(set(paths)):
         errors.append("duplicate skill path")
     human_entries = llms_entries(repository)
-    indexed_entries = {entry["name"]: entry for entry in skills}
+    indexed_entries = {
+        entry["name"]: {field: entry.get(field, "") for field in ROUTING_FIELDS}
+        for entry in skills
+    }
     if indexed_entries != human_entries:
         errors.append("skills/index.json and skills/llms.txt routing metadata differ")
+    for entry in skills:
+        lifecycle = entry.get("lifecycle")
+        if lifecycle is not None and lifecycle not in LIFECYCLE_VALUES:
+            errors.append(f"{entry['name']}: unknown lifecycle {lifecycle!r}")
+        unexpected = set(entry) - set(ROUTING_FIELDS) - {"lifecycle"}
+        if unexpected:
+            errors.append(f"{entry['name']}: unexpected index fields {sorted(unexpected)}")
     for entry in skills:
         skill_path = repository / entry["path"]
         if skill_path.name != "SKILL.md" or not skill_path.is_file():
