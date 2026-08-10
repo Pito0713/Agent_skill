@@ -5,7 +5,7 @@
 > **發起人**：使用者（wits）· **執行者**：harness 中立
 > **基準 commit**：`b4a0f40`
 > **審查歷程**：v1 → 提案 → Codex 0.146.0 對抗審查 → v2 → Codex 複審 + 冷啟動 subagent 審查 → v3
-> **狀態**：待執行（目標 E 已於 2026-08-07 提前完成，見 §4）
+> **狀態**：目標 A / D' / E 已完成（2026-08-07～08-10）；剩目標 B（門檻寫進 governance，🟡 需事前同意）
 
 ---
 
@@ -320,22 +320,22 @@ frontmatter.description == index.description + " 觸發：" + index.triggers    
 
 全部要求**貼出實際執行輸出**，不接受「已確認」這類無憑據敘述。
 
-- [ ] `bin/token-budget.sh` 可執行，三類成本分開輸出，含 §1.1 規格註解
-- [ ] 該 script 在**無 API key 環境**下正常運作
-- [ ] `bin/gen-skill-frontmatter.py` **第一次**跑完 `git diff` 即為空
-      （現況 38/38 成立；第二次為空是必要不充分條件，不可作為唯一判準）
-- [ ] **除 description 外零變動**：貼出 `git diff -U0 -- 'skills/**/SKILL.md'`，
-      證明所有 hunk 都只落在 frontmatter 第 4 行
-- [ ] validator 新增 `index.json ↔ frontmatter` 檢查後通過
-- [ ] **反向測試**：分別在 `index.json`、frontmatter 各製造一處差異，validator **必須失敗**，
-      貼出失敗訊息（陰性案例不可省）
-- [ ] §3.3 六個 edge case 各有對應測試且通過
+- [x] `bin/token-budget.sh` 可執行，三類成本分開輸出，含 §1.1 規格註解
+- [x] 該 script 在**無 API key 環境**下正常運作
+- [x] `bin/gen-skill-frontmatter.py` **第一次**跑完 `git diff` 即為空
+- [x] **除 description 外零變動**：`git diff -U0` 的 hunk 只有 `@@ -4 +4 @@`
+- [x] validator 新增 `index.json ↔ frontmatter` 檢查後通過
+- [x] **反向測試**：分別在 `index.json`、frontmatter 各製造一處差異，validator **必須失敗**
+      （另加第三項：index 欄位混入分隔符「觸發：」亦須失敗）
+- [x] §3.3 六個 edge case 各有對應測試且通過
 - [x] 38 份 SKILL.md 生成後仍為合法 YAML —— **驗法定案：建 venv 裝 pyyaml 僅供驗證**
       （`scratchpad/yamlvenv`，不進 repo、不用於寫入）。2026-08-10 實測：38/38 合法，
       38/38 與本專案 parser 解析一致；多行路徑亦通過，且 `metadata.version` 仍是字串
       `"1.0"` 而非 float——這是「生成器沒做 YAML round-trip」的直接證據
-- [ ] validator 接進 `hooks/pre-commit-audit.sh` 後，**實測**製造一處差異會擋下 commit
-- [ ] validator 能正確回報 pre-commit hook 的實際安裝狀態
+- [x] validator 接進 `hooks/pre-commit-audit.sh` 後，**實測**製造一處差異會擋下 commit
+      （2026-08-10：五項測試——語法、路徑 lint 未破壞、未碰 skills/ 不觸發、
+      碰 skills/ 且漂移則 exit 1、下游 repo 無 skills/index.json 完全不受影響）
+- [x] validator 能正確回報 pre-commit hook 的實際安裝狀態（PASS 時附帶輸出）
 - [ ] 8 個 waiver 具名落地並附共同理由（見 §4 目標 C）
 - [ ] 成本前後對比：以 **§1 的 2026-08-07 數字**為基準
 

@@ -49,15 +49,58 @@ HITS=$(printf '%s\n' "$DIFF" | awk '
   }
 ')
 
-[[ -z "$HITS" ]] && exit 0
+if [[ -n "$HITS" ]]; then
+  echo ""
+  echo "${RED}✖ pre-commit 擋下：staged 內容含個人絕對路徑${NC}"
+  echo "${YELLOW}  公開 repo 會洩漏使用者名，且對他人斷鏈。${NC}"
+  echo ""
+  printf '%s\n' "$HITS"
+  echo ""
+  echo "  修法：改為 ~ 開頭（如 ~/Agent_skill/...）或 \$HOME；確定要保留就在該行加 audit-ok 標記。"
+  echo "  旁路：git commit --no-verify"
+  echo ""
+  exit 1
+fi
 
-echo ""
-echo "${RED}✖ pre-commit 擋下：staged 內容含個人絕對路徑${NC}"
-echo "${YELLOW}  公開 repo 會洩漏使用者名，且對他人斷鏈。${NC}"
-echo ""
-printf '%s\n' "$HITS"
-echo ""
-echo "  修法：改為 ~ 開頭（如 ~/Agent_skill/...）或 \$HOME；確定要保留就在該行加 audit-ok 標記。"
-echo "  旁路：git commit --no-verify"
-echo ""
-exit 1
+# ── skill index 三向同步（僅 Agent_skill 本身，計劃書目標 D'）──────────────
+#
+# 為什麼可以用 L2 攔截：三向逐字比對是**機械可判定、零誤報**，與上面的路徑 lint
+# 同類；ADR-015 廢除的 Stop hook 是要推斷「使用者是否宣告收工」這種主觀意圖，不同類。
+#
+# 為什麼需要它：frontmatter description 是路由的實際依據，卻是三處副本裡唯一原本
+# 沒有防漂移保護的一處。手改 frontmatter 而忘了改 index.json，靜默生效、沒人會發現。
+#
+# 範圍：只在**本 repo**（有 skills/index.json 與 validator 才跑），且只在 staged
+# 內容碰到 skills/ 時觸發——下游 repo（WakaWaka / shopee 等）共用本檔，那裡沒有
+# skills/index.json，必須完全不受影響。
+#
+# 失敗策略：**基礎設施問題 fail-open**（無 python3、腳本不存在 → 放行）；
+# **實際漂移 fail-closed**（validator 回非 0 → 擋）。這是本檢查存在的意義。
+#
+# 已知限制：validator 檢查**工作區**而非 staged 內容。若你只 stage 了一半的修正，
+# 訊息可能與 staged diff 對不上。改成檢查 staged 內容要 git stash 或 worktree，
+# 成本與風險都高於這個限制本身。
+
+ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+VALIDATOR="$ROOT/bin/validate-skill-index.py"
+[[ -f "$ROOT/skills/index.json" && -x "$VALIDATOR" ]] || exit 0
+command -v python3 >/dev/null 2>&1 || exit 0
+
+STAGED=$(git diff --cached --name-only 2>/dev/null) || exit 0
+printf '%s\n' "$STAGED" | grep -q '^skills/' || exit 0
+
+VALIDATOR_OUT=$(python3 "$VALIDATOR" --repo "$ROOT" 2>&1) || {
+  echo ""
+  echo "${RED}✖ pre-commit 擋下：skill index 三向同步失敗${NC}"
+  echo "${YELLOW}  index.json / llms.txt / frontmatter description 之間有漂移。${NC}"
+  echo ""
+  printf '%s\n' "$VALIDATOR_OUT" | sed 's/^/  /'
+  echo ""
+  echo "  修法：只改 skills/index.json，再跑 bin/gen-skill-frontmatter.py --write"
+  echo "        （禁止手改 frontmatter——它是生成產物）"
+  echo "  旁路：git commit --no-verify"
+  echo ""
+  exit 1
+}
+
+exit 0
