@@ -198,3 +198,15 @@
 - 錯誤/風險：連續兩輪失敗且都以 exit 0 結束，看起來像成功。軌跡顯示 codex 開場宣告「我會依 code-review 與常駐 coding-workflow-core 流程進行」，接著去讀 `~/.codex/skills/code-review/SKILL.md`、`coding-workflow-core`、`cli-delegate`、`rules/python.md`、`~/.agent-sessions/Agent_skill/latest.md`——**回合全花在開工儀式上，審查一個字沒寫**。根因是 `setup-codex.sh` 把 AGENTS.md symlink 到 `~/.codex/AGENTS.md`、skill farm 掛到 `~/.codex/skills/`，被委派的 session 於是把自己當成一個新的工作 session。`--ignore-rules` 沒用（它只管 execpolicy `.rules`）。
 - 修正：加 `-c project_doc_max_bytes=0` 讓 codex 不載入 AGENTS.md，實測同一任務正常產出 11 條發現。已寫進 `cli-delegate` Step 2 並補進全部七個內嵌 codex 指令的 skill。
 - 規則：**委派出去的是單一唯讀任務，不是一個新的工作 session**——派工前先確認被委派方不會繼承你的制度/開工流程。另：exit 0 不代表任務完成，驗收一律看有沒有拿到預期產物（本例是 `-o` 指定的檔案根本沒生成）。
+
+## 2026-08-17 Codex 的 hook trust hash：改了 `.codex/hooks.json` 的 command，六個 hook 全部靜默失效
+- 情境：WakaWaka 的 active-agents 面板從來沒顯示過 Codex session。為了讓共用的 lifecycle hook 知道自己是被誰觸發的，在 `.codex/hooks.json` 六個 command 前面加了 `WAKAWAKA_AGENT=codex`。
+- 錯誤/風險：加完之後跑 codex，registry 一個檔都沒寫。裝臨時探針（在 hook 最前面 append payload 到檔案）才確定**探針零輸出——hook 根本沒被執行**。Codex 在 `~/.codex/config.toml` 的 `[hooks.state]` 對每個 registration 存 `trusted_hash`，command 一改就當成未授信任並跳過，非互動模式（`codex exec`）不會提示、不報錯、exit 0。等於為了讓 hook 標記自己是誰，把整套 hook 關掉了。
+- 修正：放棄環境變數標記，改用 payload 裡本來就有的 `transcript_path` 判別（Codex 寫 `~/.codex/`，Claude Code 寫 `~/.claude/`），設定檔一個字都不用動，使用者也不需要重新授信任。
+- 規則：**改動 agent 的 hook 註冊檔（command 字串本身）等同讓該 hook 重新進入未授信任狀態**，而失效是靜默的。判別「是誰在跑」優先找 payload 裡既有的、agent 自身性質的欄位（transcript 路徑、家目錄），不要為此去改註冊；真的要改，先確認該 harness 的信任機制與重新授信任的流程。
+
+## 2026-08-17 從防禦性程式碼反推外部 payload 形狀，推出來的是作者的不確定性不是事實
+- 情境：同上。判斷 Codex 的 hook payload 長什麼樣，依據是同 repo 的 `permissionrequest-codex.mjs` 寫著 `input?.session_id ?? input?.sessionId`。
+- 錯誤/風險：我據此斷定「Codex 送 camelCase `sessionId`」，寫了修法、寫了測試、還把這個「原因」寫進交接與說明。真實 payload 抓下來是 snake_case `session_id`——那個 `??` 只是原作者的防禦性寫法。更關鍵的是真相完全不同：Codex payload **沒有任何欄位表明自己是 Codex**，所以舊邏輯不是「認不出欄位」而是「把 Codex 歸成 claude-code」。錯的診斷會導出錯的修法（見上一條，那個修法還會把 hook 全關掉）。
+- 修正：在 hook 最前面裝 5 行臨時探針把 payload 原封不動 append 到 scratchpad，跑一次真實 `codex exec`，拿到 ground truth 後重寫判別邏輯與測試，並把測試 fixture 換成抓到的真實 payload。探針用完立刻移除並 grep 確認無殘留。
+- 規則：**外部程式送進來的資料形狀，只有攔截到的真實樣本算數**。`a ?? b` 這種相容寫法是作者不確定，不是規格；從它反推等於把別人的猜測當事實。抓一份真的比推論便宜——本例是 5 行探針 + 一次 30 秒的執行。
