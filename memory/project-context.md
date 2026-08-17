@@ -575,3 +575,96 @@ validator 不檢查——**刻意的職責分離，不是待修的漂移**。三
 
 **成本影響**：零。`index.json` 不進 context，`description` 內容一個字未改；
 `--compare` 對 2026-08-10 baseline 四項 delta 全為 0。
+## ADR-021：新增 lifestyle 分類與 cooking-flow；cli-delegate 委派層由 agy 換成 codex（2026-08-16／17）
+
+**背景**：使用者要一個廚藝食譜 skill。提了六種架構走向（食譜產生 / 冰箱反查 / 料理科學
+導師 / 個人食譜庫迭代 / 週餐規劃 / 廚房時序），使用者選 A+B+E 三模式並要求接 Obsidian
+vault、允許網搜補充、委派 codex 查資料。隔日追加三項修訂（見決策五、六）。
+
+**決策一：開 `skills/lifestyle/` 新分類**。現有 5 類（engineering / design / learning /
+investing / productivity）都不含非技術的生活類 skill。llms.txt 同步新增「Lifestyle — 生活」
+段落，排在 Investing 與 Productivity 之間。
+
+**決策二：協調器 + 三模式，不拆三個 skill**。三模式共用同一組 references（替代表、味型）
+與同一組 script，拆開會讓知識層複製三份。單一入口 `cooking-flow`，模式判斷表在 SKILL.md 內。
+**模式 D（個人食譜庫迭代）沒做，但留了 vault 寫入鉤子**——之後要擴只需補讀取邏輯，不必重構。
+
+**決策三：數字全部 script 算，複用 tw-stock-tracker 的職責切分**。份量縮放、單位換算、
+烤溫烤模、採購加總走 `scripts/`；LLM 只寫敘述與挑菜，不心算。
+
+**決策四：換算數字的正本放 `scripts/units_table.py`，不放 references**。`references/units.md`
+只寫「什麼時候該用哪種單位」與已知歧義（台斤 600g vs 市斤 500g、美制 cup 236.6 vs 台灣
+量杯 240 vs 米杯 180、澳洲大匙 20ml），**一個換算係數都不重抄**。兩處各抄一份正是靜默
+漂移的來源，同 ADR-019 的「同一份資料只有一個來源」。
+
+**決策五（2026-08-17，推翻本 ADR 初版）：cli-delegate 的委派目標由 agy 全面換成 codex。**
+初版寫的是「codex 委派寫在 cooking-flow 內，不擴充 cli-delegate」，理由是 cli-delegate 的
+前置安全設定（`~/.agents/settings.json` 的 excludeTools）是 agy 專屬機制。使用者指示直接把
+**委派層本身**換成 codex，該理由隨之消滅——cli-delegate 改寫後：
+
+- 安全邊界從「設定檔」變成「逐次旗標」：`-s read-only` 每條指令自帶，Step 2 的
+  settings.json bootstrap 整段刪除（-38 行），比原本更難誤用（設定檔會被別的 session 改掉）
+- 網路搜尋走 `-c tools.web_search=true`。**`codex exec` 不吃 `--search`**（該旗標只在互動式
+  `codex` 上，exec 傳入 exit 2），2026-08-17 實跑驗證搜尋確實觸發並回傳附網址的答案
+- cooking-flow 不再自帶 codex 片段，改指向 cli-delegate 模式 A，重複消失
+- 交叉驗證的異質性反而提升：codex 是 OpenAI 模型，與 Claude 跨供應商
+
+**範圍是「委派層」不是「全 repo 取代」**：agy 仍是第三個 harness（GEMINI.md、setup-agy.sh、
+model-orchestration 的 agy 能力欄全部保留）。判準是**唯讀委派（搜尋／掃描／審查）→ codex；
+agy 當完整 harness 執行實作 → 不動**（tech-lead-mode Path B 因此保留 agy）。歷史檔
+（handoff-*.md、lessons.md、README 版本紀錄表、plans/baselines）一律不改寫。
+
+**規約落點**：`skills/engineering/cli-delegate/SKILL.md`（v2.0 全面改寫）；六個內嵌委派指令的
+skill（debug-flow / code-review / deploy-prep / new-feature / onboarding / ui-design-flow）與
+tech-lead-mode Phase 3 的 reviewer 指令；`CLAUDE.md` 鐵律 1 與路由表；`governance/`
+model-orchestration（§1 委派表、§7 驗證表、§8 分工表、幻覺率條）、delegation-templates（T1/T5）、
+harness-diagnosis §驗證不自驗；README 安裝章節與 orchestrator 對照表。四份 🟡 級檔案依
+maintenance-protocol §2 備份至 `governance/backups/*.2026-08-17.bak`。
+
+**決策六（2026-08-17）：移除 cooking-flow 的食安層**。使用者判斷不需要，刪除
+`references/food-safety.md` 與 SKILL.md / output-format.md 內所有溫度、保存時限、
+高風險族群提醒與相關禁止事項。這是使用者對自己工具的取捨；`rules/security.md` 的安全底線
+與此無關，未被放寬。
+
+**description 預算**：cooking-flow 初版 frontmatter description 640 bytes，超 400 門檻且高於
+所有既有 waiver。**選擇壓到 388、移除食安後再降到 317，而非申請 waiver**——砍掉的是行為說明
+（路由價值為零，屬 body 的內容），觸發詞只砍掉隨食安層一起失效的兩個。順帶修掉
+`bin/gen-skill-frontmatter.py` 的 PASS 訊息硬寫「38 份」，改為讀 index 現算。
+
+**驗證**：`bin/validate-skill-index.py` PASS（39 packages）；`bin/gen-skill-frontmatter.py`
+PASS（39/39 一致）；`bin/token-budget.sh` description 門檻通過 31/39、無未核准超標；
+`hooks/pre-commit-audit.sh` exit 0。兩支 script 實跑：單位換算（2 cup 麵粉 → 251 g、
+1 斤 → 600 g、350°F → 177°C、20→23cm 圓模 factor 1.3225）、食譜 2→5 人份縮放
+（`to_taste` 的鹽正確不放大）、三道菜採購合併（青蔥 3 根 + 1 根 = 4 根、高麗菜 0.5 斤 = 300 g）、
+四條錯誤路徑（缺食材的跨維度換算 / 未知密度 / 檔案不存在 / 缺 item 欄位）皆 exit 1 並回可讀訊息。
+codex 委派實跑一次網搜（`-c tools.web_search=true`）確認機制可用——**但回傳的模型清單內容有誤**，
+已寫進 cli-delegate 當實測提醒：搜尋結果是線索不是結論。
+
+**決策七（2026-08-17）：委派 codex 一律帶 `-c project_doc_max_bytes=0`。** 對本批 change 做
+對抗式審查時連續兩輪失敗、且都 exit 0 看似成功——被委派的 codex session 繼承了
+`~/.codex/AGENTS.md` 與 `~/.codex/skills/` 的整套制度，把回合全用在讀交接檔與載入 skill 的
+開工儀式上。這是 cli-delegate 換成 codex 後才出現的**新失敗模式**（agy 只吃薄索引、沒有
+skill farm，不會這樣），已寫進 skill 的 Step 2 與全部七處內嵌指令，並記入 lessons。
+`--ignore-rules` 不是解方，它只管 execpolicy `.rules`。
+
+**對抗式審查結果（第三輪，帶旗標後）**：codex 回 11 條，**逐條實測後 11 條全部成立**
+（4 HIGH / 5 MEDIUM / 2 LOW），全部修正：
+
+- 輸入驗證缺口（4 條）：`--servings nan` 繞過 `<= 0` 檢查並產出 **不合法 JSON 的 `NaN`**；
+  負數 amount 靜默通過；`ingredients` 非陣列時吐 raw AttributeError；菜單缺 `ingredients`
+  鍵時**整道菜的食材被靜默跳過**、清單仍宣稱 N 道菜且 exit 0
+- 合併語意錯誤（3 條）：`適量` bucket 被後續數字覆蓋成「鹽 1 適量」這種假精確值；
+  `少許`／`適量` 各自成列產生兩筆外觀相同的項目；食材別名（麵粉／中筋麵粉）不合併
+- 未知單位靜默降級（1 條）：打錯的 `gg` 被當成計數單位，永遠不與 g 合併
+- 分類錯置（1 條）：子字串比對採表格順序，`番茄醬`→蔬果、`米酒`→乾貨、`奶油`→調味料。
+  改為**最長關鍵字優先**
+- 文件與實作不符（2 條）：SKILL.md 宣告的必填欄位與 script 的容錯行為不一致；
+  units.md 稱「加總也走 scale.py」實際由 shopping_list.py 執行
+
+另有兩條是 codex 第一輪失敗前的工具軌跡意外揭露、經查證成立並已修：`市斤` 誤用台斤
+係數 600 g（與 units.md 自己寫的 500 g 矛盾）、`to_taste` 在**縮小**份量時不縮減
+（8 人份的鹽留給 1 人份是 8 倍鹹）。**這批 bug 的共同性質是「靜默給出看似合理的錯數字」**
+——正是 tw-stock-tracker 那條「script 算數字、LLM 不心算」想防的失效模式，
+但職責切分只保證數字來自 script，不保證 script 的輸入驗證是對的。
+
+---

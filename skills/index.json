@@ -38,7 +38,7 @@
       "name": "debug-flow",
       "path": "skills/engineering/debug-flow/SKILL.md",
       "triggers": "bug、壞掉了、為什麼錯、不如預期、找不到原因、一直出錯、error、為什麼會這樣",
-      "description": "除錯協調器，系統性縮小問題範圍，必要時切換具體舉例或委派 agy 交叉驗證。"
+      "description": "除錯協調器，系統性縮小問題範圍，必要時切換具體舉例或委派 codex 交叉驗證。"
     },
     {
       "name": "deploy-prep",
@@ -190,6 +190,12 @@
       "description_waiver": "2026-08-07 wits 核准：description 承載與 mentor-invest 的「操作層 vs 概念層」分流條款（計劃書 §4 目標 C）"
     },
     {
+      "name": "cooking-flow",
+      "path": "skills/lifestyle/cooking-flow/SKILL.md",
+      "triggers": "今天煮什麼、給我食譜、冰箱有什麼可以煮、幫我排一週菜單、採購清單、份量換算、什麼可以代替",
+      "description": "廚藝協調器，三模式：食譜產生、冰箱反查（食材→菜色）、週餐規劃（菜單→採購清單）。份量換算與加總一律走 script，不心算。"
+    },
+    {
       "name": "project-dashboard",
       "path": "skills/productivity/project-dashboard/SKILL.md",
       "triggers": "project dashboard、看一下所有專案、跨專案狀態、專案總覽",
@@ -235,7 +241,7 @@
       "name": "cli-delegate",
       "path": "skills/engineering/cli-delegate/SKILL.md",
       "triggers": "幫我搜尋、查一下最新、給我第二個意見、交叉驗證、這個檔案太大、掃一下整個專案",
-      "description": "將網路搜尋、大檔案掃描、對抗式審查委派給 agy CLI，節省 token 並提供交叉驗證。"
+      "description": "將網路搜尋、大檔案掃描、對抗式審查委派給 codex CLI，節省 token 並提供異模型交叉驗證。"
     },
     {
       "name": "convert-skill",

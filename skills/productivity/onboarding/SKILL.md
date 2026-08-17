@@ -43,13 +43,13 @@ wc -l $(find . -name "*.ts" -o -name "*.py" -o -name "*.go" 2>/dev/null) | tail 
 若專案規模小（< 5000 行）→ Claude 直接讀取
 
 若專案規模大，詢問：
-> 「是否啟用 agy 掃描整個 codebase？(y/n)」
+> 「是否啟用 codex 掃描整個 codebase？(y/n)」
 
-**y：**（$CLI_CMD 依 `cli-delegate.md` 前置確認偵測）
+**y：**（codex 依 `cli-delegate.md` 前置確認偵測）
 ```bash
-# Bash tool timeout: 570s（agy --print-timeout 9m + 30s 緩衝，模式 B）
+# Bash tool timeout 建議 570000 ms（cli-delegate 模式 B）
 find ./src -name "*.ts" -o -name "*.py" -o -name "*.go" | \
-  xargs cat | $CLI_CMD --print-timeout 9m -p "
+  xargs cat | codex exec -s read-only -c project_doc_max_bytes=0 "
 分析這個專案的整體架構，條列以下內容，每項不超過 5 行：
 1. 專案用途（一句話）
 2. 主要模組與職責（條列）
@@ -80,11 +80,11 @@ grep -s '"react"\|"vue"\|"next"\|"express"\|"fastapi"' package.json 2>/dev/null
 ## Phase 3：關鍵模組深度閱讀
 
 > ⏭ **跳過本 Phase**：滿足以下任一條件即跳過，直接進入 Phase 4
-> - Phase 1 agy 已輸出詳細摘要，**且**使用者目標為「了解架構概覽」（非立即開發）
+> - Phase 1 codex 已輸出詳細摘要，**且**使用者目標為「了解架構概覽」（非立即開發）
 > - 專案 README 已有完整模組說明，且已涵蓋當前任務所需細節（使用者確認）
 > - 使用者明確說「只需要架構概覽，不需要深入每個模組」
 >
-> ⚠️ **注意**：若接下來要立即進行開發任務，不建議跳過——agy 摘要可能缺少實作細節
+> ⚠️ **注意**：若接下來要立即進行開發任務，不建議跳過——codex 摘要可能缺少實作細節
 
 依 Phase 1 找出的核心模組，Claude 逐一讀取：
 

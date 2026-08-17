@@ -109,14 +109,14 @@ metadata:
 
 ---
 
-## Phase 5：agy 設計驗證（可選）
+## Phase 5：codex 設計驗證（可選）
 
-詢問使用者：「是否啟用 agy 驗證設計合理性？(y/n)」
+詢問使用者：「是否啟用 codex 驗證設計合理性？(y/n)」
 
-**y：**（$CLI_CMD 依 `cli-delegate.md` 前置確認；agy 不可用時走模式 C 的 Claude Subagent Fallback）
+**y：**（codex 依 `cli-delegate.md` 前置確認；codex 不可用時走模式 C 的 Claude Subagent Fallback）
 ```bash
-# Bash tool timeout: 570s（agy --print-timeout 9m + 30s 緩衝，模式 C）
-$CLI_CMD --print-timeout 9m -p "
+# Bash tool timeout 建議 570000 ms（cli-delegate 模式 C）
+codex exec -s read-only -c project_doc_max_bytes=0 "
 以下是一個 UI 設計規劃，請從使用者體驗角度審查：
 
 [貼入 Phase 1 IA 結構 + Phase 2 wireframe]
@@ -155,7 +155,7 @@ $CLI_CMD --print-timeout 9m -p "
 - [ ] API endpoint 清單
 - [ ] 互動行為說明
 
-agy 驗證：[通過 / 發現 N 個 UX 問題已調整 / 未啟用]
+codex 驗證：[通過 / 發現 N 個 UX 問題已調整 / 未啟用]
 ```
 
 ---

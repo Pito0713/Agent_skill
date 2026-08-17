@@ -1,7 +1,7 @@
 ---
 name: debug-flow
 description: |
-  除錯協調器，系統性縮小問題範圍，必要時切換具體舉例或委派 agy 交叉驗證。 觸發：bug、壞掉了、為什麼錯、不如預期、找不到原因、一直出錯、error、為什麼會這樣
+  除錯協調器，系統性縮小問題範圍，必要時切換具體舉例或委派 codex 交叉驗證。 觸發：bug、壞掉了、為什麼錯、不如預期、找不到原因、一直出錯、error、為什麼會這樣
 metadata:
   trigger: bug / 錯誤訊息 / 行為不如預期時觸發
   version: "1.0"
@@ -50,12 +50,12 @@ metadata:
 ```
 
 若問題涉及大型檔案或整個 codebase，詢問：
-> 「是否啟用 agy 掃描協助定位？(y/n)」
+> 「是否啟用 codex 掃描協助定位？(y/n)」
 
-**y：**（$CLI_CMD 依 `cli-delegate.md` 前置確認偵測；副檔名依專案語言調整）
+**y：**（codex 依 `cli-delegate.md` 前置確認偵測；副檔名依專案語言調整）
 ```bash
-# Bash tool timeout: 570s（agy --print-timeout 9m + 30s 緩衝，模式 B）
-find ./src -name "*.ts" -o -name "*.tsx" -o -name "*.py" | xargs cat | $CLI_CMD --print-timeout 9m -p "
+# Bash tool timeout 建議 570000 ms（cli-delegate 模式 B）
+find ./src -name "*.ts" -o -name "*.tsx" -o -name "*.py" | xargs cat | codex exec -s read-only -c project_doc_max_bytes=0 "
 定位以下問題的可能來源，條列相關模組與程式碼位置，不超過 15 行。
 問題描述：[貼入症狀與 error message]
 繁體中文。"
@@ -105,14 +105,14 @@ find ./src -name "*.ts" -o -name "*.tsx" -o -name "*.py" | xargs cat | $CLI_CMD 
 
 ---
 
-## Phase 4：agy 交叉驗證（可選）
+## Phase 4：codex 交叉驗證（可選）
 
-詢問使用者：「是否啟用 agy 交叉驗證修正是否完整？(y/n)」
+詢問使用者：「是否啟用 codex 交叉驗證修正是否完整？(y/n)」
 
-**y：**（$CLI_CMD 依 `cli-delegate.md` 前置確認；agy 不可用時走模式 C 的 Claude Subagent Fallback）
+**y：**（codex 依 `cli-delegate.md` 前置確認；codex 不可用時走模式 C 的 Claude Subagent Fallback）
 ```bash
-# Bash tool timeout: 570s（agy --print-timeout 9m + 30s 緩衝，模式 C）
-git diff HEAD | $CLI_CMD --print-timeout 9m -p "
+# Bash tool timeout 建議 570000 ms（cli-delegate 模式 C）
+git diff HEAD | codex exec -s read-only -c project_doc_max_bytes=0 "
 以下是一個 bug 修正的 diff。
 已知問題根因：[貼入根因描述]
 
@@ -153,7 +153,7 @@ Claude 收到後裁決，有疑慮項目回到 Phase 3 修正。
 修正位置：[檔案:行號]
 修正方式：[摘要]
 
-agy 驗證：[通過 / 發現 N 個疑慮已處理 / 未啟用]
+codex 驗證：[通過 / 發現 N 個疑慮已處理 / 未啟用]
 
 防止復發：
 - [ ] regression test 已補

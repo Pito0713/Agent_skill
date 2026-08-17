@@ -113,16 +113,16 @@ metadata:
 
 ## Phase 5：交叉驗證（冷啟動）
 
-依 `cli-delegate.md` 模式 C 執行。**鐵律：reviewer 不得看到 Phase 1–4 的初步報告**（避免錨定偏誤），只收原始碼與審查維度；agy 不可用時強制走模式 C 的 Claude Subagent Fallback，不得跳過。
+依 `cli-delegate.md` 模式 C 執行。**鐵律：reviewer 不得看到 Phase 1–4 的初步報告**（避免錨定偏誤），只收原始碼與審查維度；codex 不可用時強制走模式 C 的 Claude Subagent Fallback，不得跳過。
 
-### Step 1：agy 冷啟動獨立審查
+### Step 1：codex 冷啟動獨立審查
 
 ```bash
-# $CLI_CMD 依 cli-delegate.md 前置確認偵測
-# Bash tool timeout: 570s（agy --print-timeout 9m + 30s 緩衝）
+# codex 依 cli-delegate.md 前置確認偵測
+# Bash tool timeout 建議 570000 ms
 
 # 範圍為 git diff
-git diff HEAD | $CLI_CMD --print-timeout 9m -p "審查這個 diff，僅回報問題，不提供修改方案。
+git diff HEAD | codex exec -s read-only -c project_doc_max_bytes=0 "審查這個 diff，僅回報問題，不提供修改方案。
 
 審查維度：邏輯漏洞、邊界條件缺失、安全風險、測試缺口
 每個問題格式：
@@ -132,7 +132,7 @@ git diff HEAD | $CLI_CMD --print-timeout 9m -p "審查這個 diff，僅回報問
 無問題時輸出：「未發現問題」
 繁體中文。"
 
-# 範圍為特定檔案：改用 cat [filepath] | $CLI_CMD ...（prompt 同上）
+# 範圍為特定檔案：改用 cat [filepath] | codex ...（prompt 同上）
 ```
 
 ### Step 2：Claude 比對兩份獨立發現
@@ -140,7 +140,7 @@ git diff HEAD | $CLI_CMD --print-timeout 9m -p "審查這個 diff，僅回報問
 收到結果後，與 Phase 1–4 的初步報告逐條比對：
 
 - **雙方一致** → 信心提升，直接納入最終報告
-- **agy 獨有** → 讀實際程式碼逐條查證（流程照 `tech-lead-mode.md` Phase 4），CONFIRMED 才納入，REJECTED 記一句原因
+- **codex 獨有** → 讀實際程式碼逐條查證（流程照 `tech-lead-mode.md` Phase 4），CONFIRMED 才納入，REJECTED 記一句原因
 - **Claude 獨有** → 保留並在報告中標注「來源：Claude 單方發現」
 - **結論相左** → 列入最終報告的 ⚖️ 爭議項目區塊，說明最終採用誰的判斷與原因
 
@@ -152,19 +152,19 @@ git diff HEAD | $CLI_CMD --print-timeout 9m -p "審查這個 diff，僅回報問
 ## Code Review 報告
 專案類型：[TypeScript / React / Python / ...]
 審查範圍：[git diff / 檔案名稱]
-交叉驗證：Claude 初審 + agy 冷啟動複審 ✅（agy 不可用時：Claude Subagent Fallback ⚠️）
+交叉驗證：Claude 初審 + codex 冷啟動複審 ✅（codex 不可用時：Claude Subagent Fallback ⚠️）
 
 ### 🔴 CRITICAL
 - [位置] 問題描述 → 潛在影響
-  來源：[Claude / agy / 雙方確認]
+  來源：[Claude / codex / 雙方確認]
 
 ### 🟠 HIGH
 - [位置] 問題描述 → 潛在影響
-  來源：[Claude / agy / 雙方確認]
+  來源：[Claude / codex / 雙方確認]
 
 ### 🟡 MEDIUM
 - [位置] 問題描述 → 建議
-  來源：[Claude / agy / 雙方確認]
+  來源：[Claude / codex / 雙方確認]
 
 ### 🟢 LOW / 建議
 - [位置] 可選改善項目
@@ -172,8 +172,8 @@ git diff HEAD | $CLI_CMD --print-timeout 9m -p "審查這個 diff，僅回報問
 ### ✅ 通過項目
 - 無發現問題的審查面向
 
-### ⚖️ 爭議項目（Claude 與 agy 意見不同）
-- [問題] Claude：[觀點] vs agy：[觀點]
+### ⚖️ 爭議項目（Claude 與 codex 意見不同）
+- [問題] Claude：[觀點] vs codex：[觀點]
   → 最終採用：[誰的判斷，原因]
 
 ---

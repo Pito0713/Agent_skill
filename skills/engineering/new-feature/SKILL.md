@@ -155,14 +155,14 @@ Python → agents/02-language-specialists/python-expert.md（Python 專案）
 [ ] 確認 commit message 符合 rules/git.md
 ```
 
-### Step 2：agy 交叉驗證（可選）
+### Step 2：codex 交叉驗證（可選）
 
-詢問使用者：「是否啟用 agy 交叉驗證？(y/n)」
+詢問使用者：「是否啟用 codex 交叉驗證？(y/n)」
 
-**y：**（$CLI_CMD 與安全設定依 `cli-delegate.md` 前置確認；agy 不可用時走模式 C 的 Claude Subagent Fallback）
+**y：**（codex 與安全設定依 `cli-delegate.md` 前置確認；codex 不可用時走模式 C 的 Claude Subagent Fallback）
 ```bash
-# Bash tool timeout: 570s（agy --print-timeout 9m + 30s 緩衝）
-git diff HEAD | $CLI_CMD --print-timeout 9m -p "
+# Bash tool timeout 建議 570000 ms
+git diff HEAD | codex exec -s read-only -c project_doc_max_bytes=0 "
 這是一個新功能的實作 diff，請審查：
 1. 邏輯是否正確，有無邊界條件遺漏
 2. 安全風險（注入、權限、資料洩漏）
@@ -193,7 +193,7 @@ git diff HEAD | $CLI_CMD --print-timeout 9m -p "
 測試覆蓋：
 - [測試清單]
 
-agy 驗證：[通過 / 發現 N 個問題已修正 / 未啟用]
+codex 驗證：[通過 / 發現 N 個問題已修正 / 未啟用]
 
 下一步建議：
 - [ ] deploy-prep（上線前檢查）

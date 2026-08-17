@@ -233,26 +233,23 @@ Symlink 指向原始檔，`git pull` 後**立即生效**，不需重新執行 se
 
 ---
 
-### 4. 安裝 Antigravity CLI（agy）
+### 4. 安裝 codex CLI
 
-本專案使用 `agy` 進行 AI 分工協作（網路搜尋 / 大檔掃描 / 交叉驗證）：
+本專案使用 `codex` 進行 AI 分工協作（網路搜尋 / 大檔掃描 / 交叉驗證），
+委派協定見 `skills/engineering/cli-delegate/SKILL.md`：
 
 ```bash
-# 安裝
-curl -fsSL https://antigravity.google/cli/install.sh | bash
-
-# 加入 PATH
-echo 'export PATH="$PATH:/Users/$USER/.local/bin"' >> ~/.zshrc
-source ~/.zshrc
+# 安裝（擇一）
+npm i -g @openai/codex
+brew install codex
 
 # 驗證
-agy --version
-
-# 初次認證
-agy
+codex --version
 ```
 
-> **注意**：Gemini CLI 已於 2026-06-18 停止服務，請務必遷移至 `agy`。
+> **委派一律唯讀**：`codex exec -s read-only`，網路搜尋另加 `-c tools.web_search=true`。
+> 2026-08-17 起委派層由 agy 換成 codex（ADR-021）；agy 仍是第三個 harness，
+> 只是不再作為 cli-delegate 的委派目標。
 
 ---
 
@@ -273,7 +270,7 @@ Orchestrator Skill（入口）
       ↓
 Phase 0 → Phase 1 ──→ Phase N
    ↓          ↓     ↑       ↓
-rules      agents  ⏭       agy 交叉驗證
+rules      agents  ⏭      codex 交叉驗證
 載入       委派   跳過條件   最終輸出
               ↓
            🚫 CRITICAL GATE
@@ -286,13 +283,13 @@ rules      agents  ⏭       agy 交叉驗證
 
 | Orchestrator | 觸發詞 | 協調資源 |
 |------|------|------|
-| `new-feature.md` | 「新增功能」、「實作 X」 | api-architect、backend/frontend-engineer、testing-strategy、documentation、agy |
-| `code-review.md` | 「code review」、「PR review」 | security-auditor、frontend-security-auditor、lazyengineer-review（Phase 1.5）、testing、git、agy |
-| `debug-flow.md` | 「bug」、「為什麼錯」、「找不到原因」 | debug、concrete-example、agy 模式B/C |
-| `deploy-prep.md` | 「要上線了」、「deploy 前」 | code-review、security-auditor、e2e-tester、version-log、agy |
+| `new-feature.md` | 「新增功能」、「實作 X」 | api-architect、backend/frontend-engineer、testing-strategy、documentation、codex |
+| `code-review.md` | 「code review」、「PR review」 | security-auditor、frontend-security-auditor、lazyengineer-review（Phase 1.5）、testing、git、codex |
+| `debug-flow.md` | 「bug」、「為什麼錯」、「找不到原因」 | debug、concrete-example、codex 模式B/C |
+| `deploy-prep.md` | 「要上線了」、「deploy 前」 | code-review、security-auditor、e2e-tester、version-log、codex |
 | `security-review.md` | 「安全審查」、「OWASP」、「XSS」、「前端安全」 | security-auditor、frontend-security-auditor、owasp-reviewer |
-| `ui-design-flow.md` | 「規劃 UI」、「設計這個頁面」 | information-architecture、wireframing、ui-visual-design、frontend-engineer、agy |
-| `onboarding.md` | 「接手專案」、「幫我了解這個 repo」 | agy 模式B、information-architecture、handoff |
+| `ui-design-flow.md` | 「規劃 UI」、「設計這個頁面」 | information-architecture、wireframing、ui-visual-design、frontend-engineer、codex |
+| `onboarding.md` | 「接手專案」、「幫我了解這個 repo」 | codex 模式B、information-architecture、handoff |
 
 ---
 

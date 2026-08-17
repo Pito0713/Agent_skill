@@ -50,7 +50,7 @@
 - 規則中的抽象判準（「高品質」「嚴重度 CRITICAL/HIGH/MEDIUM/LOW」）超出弱模型判斷力，結果是編造假問題、或對真問題視而不見。
 
 **修法**
-1. 驗證不自驗：檔案落地用 fresh-context read-back；程式碼用測試或實跑（貼輸出）；高風險判斷加第二意見（codex 或冷啟動 subagent）。細則見 `governance/model-orchestration.md` 第 7 節。
+1. 驗證不自驗：檔案落地用 fresh-context read-back；程式碼用測試或實跑（貼輸出）；高風險判斷加第二意見（agy 或冷啟動 subagent）。細則見 `governance/model-orchestration.md` 第 7 節。
 2. 抽象判準拆成二元 checklist：不問「品質好嗎」，問「tsc --noEmit 過了嗎（是/否）」。完整 rubric 見 `governance/judgment-rubrics.md` R5。
 3. 完成與否由 close gate 判定（讀 diff + 證據），不由 executor 宣告。
 

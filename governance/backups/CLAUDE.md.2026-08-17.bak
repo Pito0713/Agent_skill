@@ -16,7 +16,7 @@
 
 ## 核心鐵律（每個 session 都適用）
 
-1. **重活派出去**：大量讀檔、掃 repo、網路搜尋、批次修改一律委派 subagent 或 codex，主對話只進結論。做法見 `governance/model-orchestration.md`。
+1. **重活派出去**：大量讀檔、掃 repo、網路搜尋、批次修改一律委派 subagent 或 agy，主對話只進結論。做法見 `governance/model-orchestration.md`。
 2. **驗證不自驗**：自己產出的東西不能自己驗收。檔案用 read-back、程式碼用實跑測試（貼輸出）、高風險加第二意見。
 3. **不猜意圖**：訊息命中多個 skill 觸發詞、或出現模糊詞（「優化」「完善」「讓它更好」「改進」）→ 列出選項問使用者。判斷樹在 `skills/llms.txt` 末段「歧義處理提示」。
 4. **卡住就停**：同一件事重試兩輪仍失敗 → 停下，帶完整失敗軌跡升級模型或問使用者。判準見 `governance/judgment-rubrics.md`。
@@ -36,7 +36,7 @@
 | 要委派 subagent / 選 model | `governance/model-orchestration.md` |
 | 判斷完成了沒 / 該不該升級 / 方向對不對 / 該不該問人 | `governance/judgment-rubrics.md` |
 | 要寫派工 prompt | `governance/delegation-templates.md` |
-| 網路搜尋 / 掃大檔 / 交叉驗證（codex）| `skills/engineering/cli-delegate/SKILL.md` |
+| 網路搜尋 / 掃大檔 / 交叉驗證（agy）| `skills/engineering/cli-delegate/SKILL.md` |
 | 卡關 / 跨檔案 / 高風險 / 易 scope creep 的實作 | `skills/engineering/tech-lead-mode/SKILL.md` |
 | 要修改 CLAUDE.md 或 governance/ 制度檔 | `governance/maintenance-protocol.md` |
 | 想了解制度設計的原因 | `governance/harness-diagnosis.md` |

@@ -13,10 +13,10 @@
 |------|------|------|
 | 掃整個 repo / 找檔案 / 找符號定義 | 唯讀搜尋型 subagent（§2 查對應參數） | 讀取量大，塞爆主對話 context |
 | 需要讀 >3 個檔案的研究 / 理解 | 全工具 subagent | 同上 |
-| 網路搜尋 | codex 模式 A（`cli-delegate.md`）或本 harness 的搜尋 subagent | 異質模型 + 不佔主對話 |
+| 網路搜尋 | agy 模式 A（`cli-delegate.md`）或本 harness 的搜尋 subagent | 異質模型 + 不佔主對話 |
 | 批次改檔（>3 檔或重複套用同一 pattern）| 全工具 subagent + 隔離（§2） | 隔離、可整批驗收 |
-| 長 log / 大檔分析 | codex 模式 B 或全工具 subagent | 讀取量大 |
-| 對抗式審查 | codex 模式 C，不可用時冷啟動 subagent | 異質性、獨立性 |
+| 長 log / 大檔分析 | agy 模式 B 或全工具 subagent | 讀取量大 |
+| 對抗式審查 | agy 模式 C，不可用時冷啟動 subagent | 異質性、獨立性 |
 
 主對話**保留**：需求理解、切工單、仲裁 review 發現、close gate、與使用者的所有溝通。
 
@@ -113,7 +113,7 @@
 |---------|---------|--------|
 | 寫入的檔案 | read-back：重新讀取確認存在且內容完整 | fresh-context subagent 或主對話（若非自己寫的）|
 | 程式碼 | 測試實跑 / 實際執行，貼輸出 | 編譯器與測試（客觀）、不是 executor 的口頭保證 |
-| 高風險判斷（金流、安全、上線）| 第二意見：codex 模式 C 或冷啟動 subagent | 異質來源 |
+| 高風險判斷（金流、安全、上線）| 第二意見：agy 模式 C 或冷啟動 subagent | 異質來源 |
 | 高價值生成（重要文件、關鍵設計）| 多答案評審：產 2-3 版，冷啟動 reviewer 選優 | 冷啟動 subagent |
 
 鐵律：**寫的人不驗收自己寫的東西**。主對話寫的 → subagent 驗；subagent 寫的 → 主對話讀 diff 驗（不讀完工報告）。
@@ -128,7 +128,7 @@
 |---------|------|------|
 | Claude Code | 主指揮、制度維護、跨檔複雜實作、需要細粒度委派的任務 | subagent 生態最全（型別 + 逐次指定 model + worktree 隔離）；制度正本的 symlink 分發在此維運 |
 | Codex | 平行批次實作、大量機械性改檔、可丟進雲端 sandbox 跑的長任務 | 最多 8 平行 worker + 雲端 sandbox 隔離；`xhigh` 適合非交互式深推理 |
-| Antigravity / agy | 一般實作；模型池異質時的第二意見來源 | 模型池異質（Gemini + Claude + GPT-OSS），額度與另兩家分開計。**2026-08-17 起不再是 cli-delegate 的委派目標**（ADR-021），唯讀委派一律走 codex |
+| Antigravity / agy | 網路搜尋、大檔掃描、對抗式審查 / 第二意見；一般實作亦可 | 模型池異質（Gemini + Claude + GPT-OSS），天然的獨立意見來源；額度與另兩家分開計 |
 
 規則：
 - **同一件事不要兩個 harness 同時做**（衝突覆寫風險，見 lessons 2026-07-03）。動手前 `git status`，交接走 `~/.agent-sessions/<專案>/latest.md`。
@@ -140,5 +140,5 @@
 ## 9. 誠實標註
 
 - 拆解、驗證、多樣本評審補得了執行品質；**品味與模糊題補不了**（產品方向、命名美感、寫作風格）→ 升級模型、外部第二意見、或明說做不到，見 `judgment-rubrics.md`。
-- 外部 CLI 的 review 幻覺率不低（agy 與 codex 皆然，見 cli-delegate.md），發現一律逐條查證後才採信，查證流程見 `tech-lead-mode.md` Phase 4。
+- agy 的 review 幻覺率不低（見 cli-delegate.md），發現一律逐條查證後才採信，查證流程見 `tech-lead-mode.md` Phase 4。
 - **未確認事項**（2026-07-07，查不到就標，不編造）：Codex 對話中逐次指定 model 是否可行；agy 的 `TypeName` / `Workspace` 參數名（來自 agy session 回報，本端無法驗證）；agy 付費 credit 換算比例；Claude「被導向 Opus 4.8 的請求是否消耗原方案額度」→ 到對應平台 usage 頁實測後回填本檔。

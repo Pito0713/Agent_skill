@@ -1,89 +1,64 @@
 ---
 name: cli-delegate
 description: |
-  將網路搜尋、大檔案掃描、對抗式審查委派給 agy CLI，節省 token 並提供交叉驗證。 觸發：幫我搜尋、查一下最新、給我第二個意見、交叉驗證、這個檔案太大、掃一下整個專案
+  將網路搜尋、大檔案掃描、對抗式審查委派給 codex CLI，節省 token 並提供異模型交叉驗證。 觸發：幫我搜尋、查一下最新、給我第二個意見、交叉驗證、這個檔案太大、掃一下整個專案
 metadata:
   trigger: 網路搜尋 / 大檔案掃描 / 對抗式審查交叉驗證時觸發
-  version: "1.0"
-  last_updated: "2026-07-24"
+  version: "2.0"
+  last_updated: "2026-08-17"
 ---
 
 # CLI Delegate（AI 分工協作）
 
-將三類任務委派給 Antigravity CLI（agy）：網路搜尋、大檔案掃描、對抗式審查。
-Claude 負責決策與整合，agy 負責資料密集工作。
+將三類任務委派給 **codex CLI**：網路搜尋、大檔案掃描、對抗式審查。
+Claude 負責決策與整合，codex 負責資料密集工作。
+
+> **為什麼是 codex**：它是 OpenAI 模型，與 Claude 異模型異訓練資料，
+> 模式 C 的交叉驗證才有獨立性；Claude subagent fallback 是同模型，獨立性較低。
 
 ---
 
 ## 前置確認（每次執行前必須通過）
 
-### Step 1：偵測可用的 CLI 工具
-
-依優先順序偵測，找到第一個可用的即設為 `$CLI_CMD`：
+### Step 1：偵測 codex
 
 ```bash
-# 優先順序：agy（PATH） → ~/.local/bin/agy（常見安裝路徑）
-# 注意：gemini CLI 已於 2026-06 停服，不再作為 fallback（model-orchestration §2）
-if command -v agy &>/dev/null; then
-  CLI_CMD="agy"
-  echo "✅ 使用 agy (Antigravity CLI)"
-elif [ -x "$HOME/.local/bin/agy" ]; then
-  CLI_CMD="$HOME/.local/bin/agy"
-  echo "✅ 使用 ~/.local/bin/agy（建議加入 PATH）"
+if command -v codex &>/dev/null; then
+  echo "✅ 使用 codex $(codex --version)"
 else
-  CLI_CMD=""
+  echo "❌ 找不到 codex"
 fi
 ```
 
-**若 `$CLI_CMD` 為空（兩者均未找到）：**
-> 詢問使用者：「找不到 agy，是否現在安裝 Antigravity CLI？(y/n)」
-> - **y**：執行以下指令：
->   ```bash
->   curl -fsSL https://antigravity.google/cli/install.sh | bash
->   echo 'export PATH="$PATH:$HOME/.local/bin"' >> ~/.zshrc && source ~/.zshrc
->   agy  # OAuth 認證
->   ```
-> - **n**：
->   - 模式 A（網路搜尋）/ 模式 B（大檔掃描）→ 終止，改由 Claude 以現有知識處理
->   - 模式 C（對抗式審查）→ **不得直接跳過**，自動改用 Claude Subagent Fallback（見下方）
+**找不到 codex 時：**
+- 模式 A（網路搜尋）/ 模式 B（大檔掃描）→ 告知使用者並終止，改由 Claude 以現有知識處理
+- 模式 C（對抗式審查）→ **不得直接跳過**，自動改用 Claude Subagent Fallback（見下方）
 
-> 💡 **PATH 修正提示**（若使用 `~/.local/bin/agy`）：
-> 執行 `echo 'export PATH="$PATH:$HOME/.local/bin"' >> ~/.zshrc && source ~/.zshrc`
-> 可讓後續 session 直接用 `agy` 指令。
+安裝方式問使用者是否要裝，不自行安裝：`npm i -g @openai/codex` 或 `brew install codex`。
 
-**後續所有指令模板中的 `agy` 請替換為 `$CLI_CMD` 的實際值。**
+### Step 2：安全預設（每次呼叫都要帶）
 
-### Step 2：確認安全設定
+codex 的安全邊界是**逐次旗標**，不是設定檔，所以每條指令都必須自帶：
 
-```bash
-# 檔案不存在 → 自動建立
-if [ ! -f ~/.agents/settings.json ]; then
-  mkdir -p ~/.agents
-  cat > ~/.agents/settings.json <<'EOF'
-{
-  "excludeTools": [
-    "write_file",
-    "edit_file",
-    "delete_file",
-    "run_shell_command"
-  ]
-}
-EOF
-  echo "✅ 已建立 ~/.agents/settings.json 並設定安全限制"
-else
-  # 檔案已存在，確認 excludeTools 是否設定
-  python3 -c "
-import json, sys
-with open('$HOME/.agents/settings.json') as f:
-    cfg = json.load(f)
-if 'excludeTools' not in cfg:
-    print('⚠️  缺少 excludeTools，請手動加入安全限制')
-    sys.exit(1)
-else:
-    print('✅ 安全設定已確認')
-"
-fi
-```
+| 旗標 | 作用 |
+|------|------|
+| `-s read-only` | sandbox 唯讀，codex 不能寫檔、不能改 repo |
+| `-c project_doc_max_bytes=0` | **不載入 AGENTS.md**——見下方警告，在本 repo 內是必要旗標 |
+| `--skip-git-repo-check` | 允許在非 git 目錄執行（在 repo 內可省略）|
+| `-c tools.web_search=true` | **只有模式 A 才加**，開啟網路搜尋 |
+
+⚠️ **在 `~/Agent_skill` 內委派一定要帶 `-c project_doc_max_bytes=0`。**
+`setup-codex.sh` 把 `AGENTS.md` symlink 到 `~/.codex/AGENTS.md`、skill farm 掛到
+`~/.codex/skills/`，所以被委派的 codex session **會繼承整套制度**：它會先讀交接檔、
+載入 code-review／coding-workflow-core、跑 Phase 0，然後回合就結束了，任務一個字沒做。
+2026-08-17 實測連續兩次委派都這樣死掉（見 `governance/lessons.md`）。
+帶上該旗標後同一個任務正常完成。委派的是**單一唯讀任務，不是一個新的工作 session**。
+
+⚠️ **絕不使用** `--dangerously-bypass-approvals-and-sandbox` 或 `-s danger-full-access`。
+委派出去的是唯讀分析任務，任何寫入都該回到 Claude 這邊決定。
+
+⚠️ **不要用 `timeout` 包裝**：macOS 沒有 `timeout` 指令（2026-08-17 實測 `command not found`）。
+節流靠 Bash tool 自己的 timeout 參數，上限 600000 ms。
 
 **兩步驟均通過後，才進入模式選擇。**
 
@@ -95,73 +70,66 @@ fi
 「幫我搜尋」、「查一下最新」、「有沒有相關資料」
 
 **觸發後先詢問：**
-> 「這個任務可以透過 外部 AI CLI進行網路搜尋，是否啟用協作？(y/n)」
+> 「這個任務可以委派 codex 進行網路搜尋，是否啟用協作？(y/n)」
 > - **y**：繼續執行以下流程
-> - **n**：改由 Claude 以現有知識回答，不呼叫外部 CLI
+> - **n**：改由 Claude 以現有知識回答，並明說是憑訓練資料、可能過時
 
-### 分工原則（搜尋與格式化分離）
+### 分工原則
 
-> **根本原則：agy 只負責取得原始資料，Claude 負責翻譯與格式化。**
-> 兩件事同時交給 agy 會使工作量超過 timeout 上限。
+> **codex 只負責取得原始資料，Claude 負責判斷與整合。**
 
 ```
-agy  → 英文關鍵字搜尋 → 回傳原始英文結果（title + URL + 1句摘要）
-Claude → 取得原始結果後 → 翻譯、整理、補充分析、整合輸出
+codex  → 搜尋 → 回傳 title + URL + 一句摘要（原文即可，不要求翻譯）
+Claude → 收到後 → 判斷可信度、翻譯整理、補充背景、標注來源
 ```
 
 ### Prompt 規範
 
 ```
 必須包含：
-  ✅ 英文搜尋關鍵字（中文關鍵字效果較差且增加 agy 工作量）
+  ✅ 具體問題或英文關鍵字（英文關鍵字命中率較高）
   ✅ 限定回傳筆數（3-5 筆）
-  ✅ 要求只回傳 title + URL + 1句英文摘要（不要求翻譯、不要求格式化）
+  ✅ 要求附上來源網址
   ✅ 找不到時說 "NOT FOUND"
 
 禁止：
-  ❌ 要求 agy 翻譯成繁體中文（翻譯由 Claude 負責）
   ❌ 要求複雜結構輸出（多欄位、Markdown 表格）
-  ❌ 讓外部 CLI 自行決定搜尋關鍵字
+  ❌ 讓 codex 自行下結論
   ❌ 找不到時自行補充知識庫內容
 ```
 
-### 指令模板（兩步驟）
-
-**Step 1：agy 搜尋，只取原始英文資料**
+### 指令模板
 
 ```bash
-# $CLI_CMD = Step 1 偵測並選定的 CLI
-# Bash tool timeout: 360s（agy --print-timeout 5m + 60s 緩衝）
-$CLI_CMD --print-timeout 5m -p "Use google_web_search to search: '<English keywords>'.
-Return ONLY: title, URL, one-line English summary for each result.
-Do NOT translate. Do NOT add markdown formatting. Do NOT add commentary.
-Limit: 3-5 results. If not found, output: NOT FOUND."
+# Bash tool timeout 建議 360000 ms
+codex exec -s read-only -c project_doc_max_bytes=0 -c tools.web_search=true \
+  "搜尋：<具體問題或 English keywords>。
+只回 3-5 筆，每筆格式：標題 / 來源網址 / 一句摘要。
+不要下結論、不要建議。找不到就輸出 NOT FOUND。"
 ```
 
-**Step 2：Claude 接收原始結果後執行**
+只要最後一則訊息、不要 session 前導資訊時，加 `-o <檔案>`：
 
-```
-1. 翻譯摘要為繁體中文
-2. 補充相關背景知識（來自 Claude 訓練資料）
-3. 整合輸出最終回答
-4. 標注哪些來自 agy 搜尋、哪些來自 Claude 分析
+```bash
+codex exec -s read-only -c project_doc_max_bytes=0 -c tools.web_search=true -o /tmp/result.md "<prompt>"
 ```
 
 **輸出格式（Claude 整理後）**：
 
 ```
-📡 agy 搜尋結果（原始 → 翻譯整理）：
+📡 codex 搜尋結果（外部來源，未經驗證）：
 
 1. <標題>
    URL：<url>
-   摘要：<翻譯後的摘要>
-   
-2. ...
+   摘要：<整理後的摘要>
 
 ---
 Claude 分析整合：
-<基於搜尋結果 + 現有知識的綜合回答>
+<基於搜尋結果 + 現有知識的綜合回答，並指出哪些點與我的既有認知衝突>
 ```
+
+> **實測提醒**：codex 搜尋回來的內容仍可能有錯（2026-08-17 實測一則模型清單答案就與官方資料有出入）。
+> 搜尋結果是**線索不是結論**，關鍵事實要看它附的來源網址。
 
 ---
 
@@ -171,7 +139,7 @@ Claude 分析整合：
 「這個檔案太大」、「掃一下整個專案」、「幫我理解這個 codebase」
 
 **觸發後先詢問：**
-> 「這個任務可以透過 外部 AI CLI的大上下文視窗進行掃描，是否啟用協作？(y/n)」
+> 「這個任務可以委派 codex 掃描，避免佔用主對話 context，是否啟用協作？(y/n)」
 > - **y**：繼續執行以下流程
 > - **n**：由 Claude 直接讀取，token 消耗較高
 
@@ -184,24 +152,26 @@ Claude 分析整合：
   ✅ 指定輸出語言
 
 禁止：
-  ❌ 讓外部 CLI 建議修改方向（那是 Claude 的工作）
+  ❌ 讓 codex 建議修改方向（那是 Claude 的工作）
   ❌ 同時要求多個提取目標（一次只問一件事）
 ```
 
 ### 指令模板
 
 ```bash
-# $CLI_CMD = Step 1 偵測並選定的 CLI
-# Bash tool timeout: 570s（agy --print-timeout 9m + 30s 緩衝）
+# Bash tool timeout 建議 570000 ms
 
-# 單一大檔案
-$CLI_CMD --print-timeout 9m -p "閱讀這份檔案，提取：<架構概覽 / 核心邏輯 / 外部依賴>
+# 單一大檔案：stdin 會被當成 <stdin> 區塊附在 prompt 後面
+codex exec -s read-only -c project_doc_max_bytes=0 "閱讀 <stdin> 的檔案內容，提取：<架構概覽 / 核心邏輯 / 外部依賴>
 條列式輸出，不超過 20 行。不要建議修改。繁體中文。" < 檔案路徑
 
-# 多檔案 / 整個目錄
-find ./src -name "*.ts" | xargs cat | $CLI_CMD --print-timeout 9m -p "分析整體架構，
-條列主要模組與職責，不超過 20 行。不要建議修改。繁體中文。"
+# 讓 codex 自己在唯讀 sandbox 內讀檔（多檔案 / 整個目錄時用這個）
+codex exec -s read-only -c project_doc_max_bytes=0 "掃描 ./src 下的 TypeScript 檔案，條列主要模組與職責，
+不超過 20 行。不要建議修改。繁體中文。"
 ```
+
+第二種寫法比 `cat |` 省事也省 token——唯讀 sandbox 讓 codex 自己去讀檔，
+主對話完全不需要載入檔案內容。
 
 ---
 
@@ -211,9 +181,9 @@ find ./src -name "*.ts" | xargs cat | $CLI_CMD --print-timeout 9m -p "分析整�
 「幫我 review」、「給我第二個意見」、「交叉驗證」、「有沒有漏洞」
 
 **觸發後先詢問：**
-> 「這個任務可以透過 外部 AI CLI進行獨立的對抗式審查，是否啟用協作？(y/n)」
+> 「這個任務可以委派 codex 進行獨立的對抗式審查，是否啟用協作？(y/n)」
 > - **y**：繼續執行以下流程
-> - **n** 或 agy 不可用：**不得直接跳過**，改用 Claude Subagent Fallback（見下方）
+> - **n** 或 codex 不可用：**不得直接跳過**，改用 Claude Subagent Fallback（見下方）
 
 ### Prompt 規範
 
@@ -224,18 +194,17 @@ find ./src -name "*.ts" | xargs cat | $CLI_CMD --print-timeout 9m -p "分析整�
   ✅ 無問題時明確說「未發現問題」
 
 禁止：
-  ❌ 讓外部 CLI 直接提供修改方案（只回報問題，修改由 Claude 決定）
+  ❌ 讓 codex 直接提供修改方案（只回報問題，修改由 Claude 決定）
   ❌ 問題描述模糊（要求：「第 X 行，原因是 Y，潛在影響是 Z」）
 ```
 
 ### 指令模板
 
 ```bash
-# $CLI_CMD = Step 1 偵測並選定的 CLI
-# Bash tool timeout: 570s（agy --print-timeout 9m + 30s 緩衝）
+# Bash tool timeout 建議 570000 ms
 
 # 審查 git diff
-git diff HEAD | $CLI_CMD --print-timeout 9m -p "審查這個 diff，僅回報問題，不提供修改方案。
+git diff HEAD | codex exec -s read-only -c project_doc_max_bytes=0 "審查 <stdin> 的 diff，僅回報問題，不提供修改方案。
 
 審查維度：邏輯漏洞、邊界條件缺失、安全風險
 每個問題格式：
@@ -246,15 +215,18 @@ git diff HEAD | $CLI_CMD --print-timeout 9m -p "審查這個 diff，僅回報問
 繁體中文。"
 
 # 審查單一檔案
-$CLI_CMD --print-timeout 9m -p "審查以下程式碼，僅回報問題，不提供修改方案。
+codex exec -s read-only -c project_doc_max_bytes=0 "審查 <stdin> 的程式碼，僅回報問題，不提供修改方案。
 [同上格式]" < 檔案路徑
 ```
+
+**收到結果後 Claude 必須仲裁**，不得照單全收：逐條驗證是否成立（既有實測經驗是
+codex 對測試檔的假陽性明顯多於實作檔），確認成立才納入，不成立要說明為什麼不採納。
 
 ---
 
 ## 模式 C Fallback：Claude Subagent 冷啟動審查
 
-> 當 agy 不可用、或使用者選擇不啟用 agy 時強制執行。
+> 當 codex 不可用、或使用者選擇不啟用時強制執行。
 > **交叉驗證不得直接跳過**，至少要有一次獨立第二意見。
 
 ### 原理
@@ -300,45 +272,36 @@ Step 4：收到 subagent 輸出後，主 agent 裁決
 [貼入 diff 或檔案內容]
 ```
 
-### 與 agy 的差異標示
+### 與 codex 的差異標示
 
 輸出報告中標記來源，讓使用者知道用了哪種模式：
 
 ```
-交叉驗證：Claude Subagent（agy 不可用）⚠️ 同模型，獨立性低於異模型交叉驗證
+交叉驗證：Claude Subagent（codex 不可用）⚠️ 同模型，獨立性低於異模型交叉驗證
 ```
 
 ---
-
-## CLI 優先順序
-
-| 優先 | CLI | 說明 |
-|------|-----|------|
-| 1 | `agy`（PATH） | Antigravity CLI，推薦版本 |
-| 2 | `~/.local/bin/agy` | agy 安裝但未加入 PATH |
-| — | 均不可用 | 模式 A/B：提示安裝 agy；模式 C：強制改用 Claude Subagent Fallback。（gemini CLI 已停服，勿再嘗試） |
 
 ## 執行限制
 
 | 限制 | 說明 |
 |------|------|
-| 每分鐘上限 60 次 | 同時不超過 2 個 CLI 任務 |
-| 模式 B 無工具權限 | 使用 `< 路徑` 傳入，不依賴 CLI 讀檔工具 |
-| 結果整合 | CLI 輸出作為參考，最終判斷由 Claude 負責 |
-| **Timeout 規範** | 模式 A：agy 5m / Bash 360s；模式 B：agy 9m / Bash 570s；模式 C：agy 9m / Bash 570s |
-| Timeout 原則 | Bash tool 上限 600s；agy `--print-timeout` 必須 < Bash timeout，讓 agy 先超時，避免被 Bash 強制 kill |
-| 模式 A 分工 | agy 只負責搜尋（英文原始輸出），Claude 負責翻譯與格式化；兩者合併給 agy 會超時 |
+| 同時任務數 | 不超過 2 個 codex 任務並行 |
+| Timeout | Bash tool 上限 600000 ms；模式 A 建議 360000、模式 B/C 建議 570000 |
+| 不用 `timeout` 包裝 | macOS 無此指令，包了只會拿到 `command not found` |
+| sandbox | 一律 `-s read-only`；要寫檔就回到 Claude 這邊做，不放寬 codex 權限 |
+| 結果定位 | codex 輸出是**參考與線索**，最終判斷與仲裁一律由 Claude 負責 |
 
 ---
 
 ## 分工原則
 
 ```
-Claude               → 決策、規劃、整合、最終輸出
-外部 CLI（agy / codex） → 資料收集、大量讀取、第二意見（異模型，獨立性高）
-Claude Subagent      → 模式 C 的 fallback，冷啟動審查（同模型，獨立性較低但不可省略）
+Claude          → 決策、規劃、整合、最終輸出
+codex           → 資料收集、大量讀取、第二意見（異模型，獨立性高）
+Claude Subagent → 模式 C 的 fallback，冷啟動審查（同模型，獨立性較低但不可省略）
 ```
 
 無論使用哪種模式，第二意見的輸出都不直接採用，Claude 主 agent 必須裁決後再整合。
 
-**模式 C 鐵律：交叉驗證不得跳過，agy 不可用時強制走 Subagent Fallback。**
+**模式 C 鐵律：交叉驗證不得跳過，codex 不可用時強制走 Subagent Fallback。**

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""從 skills/index.json 生成 38 份 SKILL.md 的 frontmatter description。
+"""從 skills/index.json 生成各份 SKILL.md 的 frontmatter description。
 
 計劃書目標 D'。`index.json` 是 frontmatter description 的 canonical source；
 生成規則（2026-08-07 實測 38/38 成立）：
@@ -135,7 +135,8 @@ def main() -> int:
         return 1
 
     if not differing:
-        print("PASS: 38 份 frontmatter description 已與 index.json 一致，無需寫入")
+        total = len(read_index(arguments.repo))
+        print(f"PASS: {total} 份 frontmatter description 已與 index.json 一致，無需寫入")
         return 0
     mode = "已寫入" if arguments.write else "需更新（--dry-run，未寫入）"
     print(f"{mode}：{len(written or differing)} 份")

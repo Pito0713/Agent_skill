@@ -115,7 +115,7 @@ Antigravity 等價參數：`TypeName: "self"` + `Workspace: "branch"`（隔離�
 沿用 `cli-delegate.md` Mode C：
 
 ```
-git diff HEAD | agy --print-timeout 9m -p "審查這個 diff，僅回報問題，不提供修改方案。
+git diff HEAD | codex exec -s read-only -c project_doc_max_bytes=0 "審查 <stdin> 的 diff，僅回報問題，不提供修改方案。
 [維度：邏輯漏洞、邊界條件缺失、安全風險、是否偏離下方驗收條件]
 
 驗收條件：<貼入 ticket 的驗收條件>

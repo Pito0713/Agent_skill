@@ -142,18 +142,18 @@ git status            # 確認無未提交的變更
 
 ---
 
-## Phase 6：agy 交叉驗證
+## Phase 6：codex 交叉驗證
 
-詢問使用者：「是否啟用 agy 最終交叉驗證？(y/n)」
+詢問使用者：「是否啟用 codex 最終交叉驗證？(y/n)」
 
-**y：**（$CLI_CMD 依 `cli-delegate.md` 前置確認；agy 不可用時走模式 C 的 Claude Subagent Fallback）
+**y：**（codex 依 `cli-delegate.md` 前置確認；codex 不可用時走模式 C 的 Claude Subagent Fallback）
 ```bash
 # 審查範圍：上次 release 到現在的全部變更，不是只有最後一個 commit
 # 無 tag 時改用使用者指定的範圍（例：main..release-branch）
 RANGE="$(git describe --tags --abbrev=0 2>/dev/null || echo HEAD~1)..HEAD"
 
-# Bash tool timeout: 570s（agy --print-timeout 9m + 30s 緩衝，模式 C）
-git diff "$RANGE" | $CLI_CMD --print-timeout 9m -p "
+# Bash tool timeout 建議 570000 ms（cli-delegate 模式 C）
+git diff "$RANGE" | codex exec -s read-only -c project_doc_max_bytes=0 "
 這是準備上線的最終 diff。請從上線風險角度審查：
 1. 是否有可能導致 production 中斷的問題
 2. 是否有資料遺失風險（DB / 狀態）
@@ -193,7 +193,7 @@ git diff "$RANGE" | $CLI_CMD --print-timeout 9m -p "
 ### 🚫 阻擋項目（BLOCKER）
 - [若有，必須修正後重新確認]
 
-agy 驗證：[通過 / 發現 N 個風險，已處理 N 個 / 未啟用]
+codex 驗證：[通過 / 發現 N 個風險，已處理 N 個 / 未啟用]
 
 ---
 結論：[✅ 可以上線 / ⚠️ 建議處理後上線 / 🚫 不建議上線]

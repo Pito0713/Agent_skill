@@ -186,3 +186,15 @@
 - 錯誤/風險：**exit 0 在這裡是假訊號**。若當時只看 exit code 與完工報告（報告內容是計畫，讀起來像做完了），會直接把「沒做」當成「做完」往下游送。這個模式對所有「照制度走四階段流程」的 repo 都成立，而且愈是制度完整的 repo 愈容易觸發——常駐規則要求停下確認，非互動模式必然停
 - 修正：`codex exec resume --last` 補一句「這是非互動 session，沒有人可以再回覆你，不要停下等確認」後一次做完。（另注意 flag 順序：`-s` / `-C` / `-o` 必須放在 `resume` **之前**，放後面會 `unexpected argument`）
 - 規則：**非互動委派（`codex exec`、任何 CLI one-shot）的 prompt 必須明寫「非互動、不要等待確認、一路做到完成」**；驗收一律以 `git diff --stat` 為準，不看 exit code、不看完工報告。報告寫的是「計畫」而不是「證據」時，預設它沒做。
+
+## 2026-08-17 codex 委派的兩個環境陷阱：`--search` 不在 exec、macOS 沒有 `timeout`
+- 情境：把 cli-delegate 的委派目標從 agy 換成 codex，要驗證網路搜尋與超時控制怎麼寫。
+- 錯誤/風險：`codex --help` 列出 `--search`，但 `codex exec --search` 直接 exit 2——旗標只存在於互動式指令；照 help 抄會讓模式 A 在真的要搜尋時整條指令失敗。另外第一次實跑用 `timeout 180 codex exec ...` 包裝，macOS 回 `command not found: timeout`（那是 GNU coreutils 的指令，內建只有 `gtimeout` 且需另裝）。
+- 修正：搜尋改用 config 旗標 `-c tools.web_search=true` 並實跑確認真的觸發 web search；超時一律交給 Bash tool 的 timeout 參數，不在指令裡包 `timeout`。兩點都寫進 `skills/engineering/cli-delegate/SKILL.md`。
+- 規則：CLI 旗標要看**該子指令**的 `--help`，不是頂層的；跨平台的超時控制交給呼叫端，不要假設 GNU 工具存在。
+
+## 2026-08-17 委派給 codex 會繼承本 repo 的整套制度，任務一個字都沒做
+- 情境：把當前 change 派給 codex 做對抗式審查（cli-delegate 模式 C）。
+- 錯誤/風險：連續兩輪失敗且都以 exit 0 結束，看起來像成功。軌跡顯示 codex 開場宣告「我會依 code-review 與常駐 coding-workflow-core 流程進行」，接著去讀 `~/.codex/skills/code-review/SKILL.md`、`coding-workflow-core`、`cli-delegate`、`rules/python.md`、`~/.agent-sessions/Agent_skill/latest.md`——**回合全花在開工儀式上，審查一個字沒寫**。根因是 `setup-codex.sh` 把 AGENTS.md symlink 到 `~/.codex/AGENTS.md`、skill farm 掛到 `~/.codex/skills/`，被委派的 session 於是把自己當成一個新的工作 session。`--ignore-rules` 沒用（它只管 execpolicy `.rules`）。
+- 修正：加 `-c project_doc_max_bytes=0` 讓 codex 不載入 AGENTS.md，實測同一任務正常產出 11 條發現。已寫進 `cli-delegate` Step 2 並補進全部七個內嵌 codex 指令的 skill。
+- 規則：**委派出去的是單一唯讀任務，不是一個新的工作 session**——派工前先確認被委派方不會繼承你的制度/開工流程。另：exit 0 不代表任務完成，驗收一律看有沒有拿到預期產物（本例是 `-o` 指定的檔案根本沒生成）。
