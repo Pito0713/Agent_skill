@@ -42,7 +42,19 @@ preflight，全數通過才進 install，任一失敗即零寫入中止（ADR-01
 │   ├── inject-claude.sh               # 下游 .claude/skills + CLAUDE.md managed block（含 @ 常駐）
 │   ├── inject-codex.sh                # 下游 .codex/skills + AGENTS.md managed block
 │   ├── validate-skill-index.py        # index / llms.txt / package / adapter 四方一致性
+│   ├── gen-skill-frontmatter.py       # 由 index.json 生成各 SKILL.md 的 frontmatter description
+│   ├── install-git-hooks.sh           # 在下游安裝指向 hooks/ 正本的 git hook wrapper
+│   ├── scan-downstream.sh             # 唯讀掃描下游 skill farm 的 dangling symlink
+│   ├── skill-usage.py                 # Skill 使用統計掃描器（唯讀，ADR-018）
+│   ├── lib_skill_usage.py             # skill-usage.py 的 transcript 抽取與彙總核心
+│   ├── token-budget.sh                # 制度層 token 成本量測入口（計劃書目標 A）
+│   ├── token_budget_spec.py           # 量測規格唯一實作（§1.1）
+│   ├── token_budget_report.py         # 三類成本報表 / baseline / delta 比對
+│   ├── token_budget_render.py         # 報表呈現層
+│   ├── test-*.sh                      # 上述工具的自我測試
 │   └── migrate-downstream-paths.sh    # 舊下游 @ 路徑一次性遷移（預設 dry-run）
+├── hooks/                             # git hook 正本（下游以 exec wrapper 指向這裡）
+│   └── pre-commit-audit.sh            # 個人絕對路徑洩漏 lint（security.md 條文下沉，L2）
 ├── .claudeignore                      # Claude 工具掃描排除清單
 │
 ├── governance/                        # 制度層（v4.5）：調度守則、判斷 rubrics、派工模板、維護協議
@@ -68,13 +80,17 @@ preflight，全數通過才進 install，任一失敗即零寫入中止（ADR-01
 ├── skills/                            # 工作流程 skills
 │   ├── index.json                     # Machine-readable coverage 正本
 │   ├── llms.txt                       # 自然語言 triggers / description
-│   ├── convert-skill/SKILL.md         # GitHub → 標準格式轉換 SOP
-│   ├── _inbox/                        # 待處理的原始收集素材
+│   ├── convert-skill/SKILL.md         # GitHub → 標準格式轉換 SOP（無分類，top-level package）
+│   ├── unknown-matrix-navigation/SKILL.md  # 未知矩陣判斷程序（無分類，top-level package）
+│   ├── governance -> ../governance    # symlink：讓 farm 能把制度層掛成 skill entry
+│   ├── rules -> ../rules              # symlink：同上
+│   ├── _inbox/                        # convert-skill 的收件匣（平時為空，git 不追蹤空目錄）
 │   ├── engineering/<name>/SKILL.md    # 工程與品質 workflow packages
 │   ├── design/<name>/SKILL.md         # UI/UX 規劃 packages
 │   ├── productivity/<name>/SKILL.md   # 交接與知識工作 packages
 │   ├── learning/<name>/SKILL.md       # 學習與 mentor packages
-│   └── investing/<name>/SKILL.md      # 投資分析 packages
+│   ├── investing/<name>/SKILL.md      # 投資分析 packages
+│   └── lifestyle/<name>/SKILL.md      # 生活與廚藝 packages（cooking-flow）
 │
 ├── agents/                            # 專責 subagents（被 Orchestrator 協調）
 │   ├── 01-core-development/
@@ -95,8 +111,18 @@ preflight，全數通過才進 install，任一失敗即零寫入中止（ADR-01
 ├── sources/
 │   └── registry.md                    # GitHub skill 來源登記清單
 │
+├── knowledge/                         # RAG 知識庫（rag-search skill 的搜尋來源）
+│   ├── README.md                      # 新增知識檔案的格式規範
+│   └── engineering/ security/ workflow/
+│
+├── plans/                             # 制度改造計劃書與量測基準
+│   ├── token-budget-optimization.md   # token 成本優化計劃書（目標 A–D'）
+│   ├── skill-usage-and-self-correction.md
+│   └── baselines/                     # token-budget 量測 baseline 快照（JSON）
+│
 └── memory/
-    └── project-context.md             # 架構決策歷史
+    ├── project-context.md             # 架構決策歷史（ADR）
+    └── handoff-*.md                   # 歷次收工交接文件
 ```
 
 ---

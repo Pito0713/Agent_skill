@@ -208,6 +208,7 @@ mkdir -p "$DOMAIN_DIR"  # 若子目錄不存在則自動建立
 # 分類規則
 # knowledge/tech/     → 技術、工具、指令、程式碼
 # knowledge/business/ → 商業、規劃、流程、決策
+# knowledge/cooking/  → 食譜、烹調技法、食材筆記（cooking-flow 的 vault 落點）
 # knowledge/personal/ → 個人想法、學習心得、目標
 # inbox/              → 不確定分類時的暫存區
 
