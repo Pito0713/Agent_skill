@@ -668,3 +668,48 @@ skill farm，不會這樣），已寫進 skill 的 Step 2 與全部七處內嵌�
 但職責切分只保證數字來自 script，不保證 script 的輸入驗證是對的。
 
 ---
+
+---
+
+## ADR-022：mentor 共用骨架抽取採「內聯摘要」而非「執行時讀共用檔」（2026-08-18）
+
+**背景**：分析 skill 呼叫的 token 成本時發現五個 `mentor-*`（neuro / tech / science /
+society / invest）結構高度相似，各 2,900–3,700 tok。逐份比對確認七個段落在五份之間逐字
+或近逐字重複：Phase 0 vault 讀取 bash、【0. 你已有的節點】、確定性四級表頭、迷思雷達的
+處理格式、知識圖譜節點區塊、末行固定輸出、Checklist 的頭尾項。
+
+**決策一：抽出的共用協定放 `skills/learning/_shared/mentor-protocol.md`，但執行時不載入。**
+兩種抽法的 token 帳完全不同：
+
+- **引用式**（SKILL.md 指向共用檔、執行時必讀）：SKILL.md 省下的體積等額付回在讀共用檔上，
+  **單次呼叫幾乎不省**，要同 session 第二次 mentor 呼叫才開始賺。
+- **內聯壓縮**（採用）：共用段壓成 12 行摘要留在各 SKILL.md，共用檔只當正本與模板。
+
+選內聯的關鍵理由是**被抽的段落絕大多數是「一行描述就能正確執行的格式」**（末行輸出長相、
+迷思開場格式、知識圖譜四個箭頭），不是需要逐字複製的規格。唯一需要逐字精確的 vault 路徑，
+摘要裡直接寫死完整路徑。
+
+**決策二：`_shared/` 不是 skill package。** 無 frontmatter、無 SKILL.md，不進
+`index.json`，不進任何 harness 路由表。三處確認安全：`validate-skill-index.py` 用
+`rglob("SKILL.md")` 掃描、link farm 由 `index.json` 驅動而非檔案系統 glob、
+`token-budget.sh` 只統計 SKILL.md。**副作用**：共用檔的 bytes 不會出現在維護 inventory 裡，
+看報表時要記得它存在。
+
+**成果與預估落差（誠實記錄）**：實測 17,127 → 16,158 tok（−969，每份 −123～−228），
+**低於規劃時預估的 −350～−400／份**。差距原因是**摘要本身要價約 300 tok**——要保住五個
+domain 各異的關係詞、箭頭標籤、迷思符號、文獻來源，摘要壓不下去。
+
+因此本次的**主要價值是消除五份重複與建立第六個 mentor 的模板，不是省 token**。這條要記住：
+「結構重複」與「token 可省」不是同一件事，重複的內容若各自帶著不可合併的參數，抽取的淨值
+會被參數化成本吃掉大半。下次做類似判斷要先估摘要成本，不要只算刪掉多少。
+
+**未處理項（使用者 2026-08-18 裁決「先不動」）**：兩段純冗餘——各 SKILL.md 的「觸發條件 →
+直接觸發」關鍵詞列表（已在常駐 frontmatter description 裡，載入後才讀到，對路由零影響）
+與五張互不一致的「與其他 mentor 差異表」，合計估 −1,600 且**無條件節省**（不需要摘要換回去），
+槓桿比本次的骨架抽取更大。分析結果記於 `_shared/mentor-protocol.md` §10，不隨對話消失。
+
+**維護風險**：五份摘要之間可能各自漂移，**沒有任何自動檢查會偵測**。同步清單見該檔 §9。
+
+**驗證**：`python3 bin/validate-skill-index.py` 與 `bash bin/token-budget.sh --strict`
+改動前後皆 exit 0；frontmatter description 未動，固定開場成本不變；`obsidian-save` 依賴的
+專科 mentor 區塊標題（【定位聲明】【機制鏈】【知識層級定位】）確認仍存在，未斷鏈。
