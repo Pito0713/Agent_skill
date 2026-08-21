@@ -1,2 +1,7 @@
 .env
 .claude/settings.local.json
+
+# lessons.md 的備份不進版控：條目內文本身在講個人絕對路徑的兩種形式  (audit-ok)
+# （2026-07-07 那兩條教訓），整份備份會被 pre-commit-audit 判為洩漏。
+# 完整歷史用 `git log -p governance/lessons.md` 取回，備份只保留在本機。
+governance/backups/lessons.md.*.bak

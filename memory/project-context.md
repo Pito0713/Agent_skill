@@ -760,3 +760,55 @@ bytes ÷ 3.5 Anthropic 口徑約 −1,367 tok），與 ADR-022 §10 估的 −1,
 **驗證**：`python3 bin/validate-skill-index.py`（PASS 39）與 `bash bin/token-budget.sh
 --strict` 皆 exit 0；frontmatter 未動，固定開場成本維持 25,766 bytes；`obsidian-save`
 依賴的區塊標題（【定位聲明】【機制鏈】【知識層級定位】）確認未受影響。
+
+---
+
+## ADR-024：lessons.md 首次走 §4 精簡流程，13 條升級為可勾選判準（2026-08-21）
+
+**背景**：`governance/lessons.md` 累積到 32 條 / 227 行，跨過 maintenance-protocol §4
+的「30 條或 300 行」門檻。§4 要求：提議歸納 → 先問使用者 → 同意後才移除，且
+**「歸納是升級不是刪除：資訊只能變得更可執行，不能消失」**。
+
+**決策：按「反覆踩同一件事」分群，各群歸到不同目的地，而不是全塞進一條 rubric。**
+
+| 群 | 條數 | 共同失敗模式 | 目的地 |
+|----|-----:|------------|--------|
+| 靜默失效 / 宣稱 ≠ 實際 | 8 | 沒有錯誤訊息——`@` 路徑靜默略過、dangling symlink、未授信任 hook 跳過 | **新增 R6**「部署 / 接線類改動的完成判準」 |
+| 驗收假訊號 | 4 | exit 0 / 全綠 / 完工報告都不是完成證據 | **擴充 R2**（+4 個 checkbox） |
+| codex 委派環境 | 1 | 規則早已落地 `cli-delegate`，lessons 只剩歷史 | `delegation-templates.md` §通用檢查 |
+
+**執行時發現的關鍵前置：歸納前必須先查規則有沒有落地處。** 原本要移除的 codex 兩條，
+其可執行規則（「非互動要明寫不要停下等確認」「驗收看 `git diff --stat` 不看 exit code」）
+grep 後確認 **`cli-delegate/SKILL.md` 與 `delegation-templates.md` 兩處都沒有**——
+只活在 lessons 裡。直接移除會讓可執行性倒退，違反 §4。因此順序改為
+**先補進派工模板的通用自檢，再移除條目**。
+
+**一條刻意不移的例外**：`2026-07-31 bash 變數後接全形標點`。它的後半（斷言 exit code
+≠ 斷言行為）已進 R2，但前半（中文訊息裡 shell 變數一律寫 `${VAR}`）在 `rules/` 下
+**沒有任何落地處**（無 shell/bash rules 檔），移除會讓規則消失。與其為一條窄規則去動
+常駐載入的 `coding-standards.md`（每 session 都付費），不如整條留在 lessons。
+原提案的 14 條因此降為 13 條。
+
+**可追溯性**：lessons.md 檔頭新增「已歸納移除的條目」索引表，列出每群的日期與現在的
+位置，並指向 `git log -p governance/lessons.md`。rubric 內每條 checkbox 後標注來源
+日期（§4 明文要求）。
+
+**副作用：lessons 的備份不能進版控。** 照 §2 備份三個檔案時，`lessons.md.*.bak` 被
+`pre-commit-audit.sh` 擋下——2026-07-07 那兩條教訓的**內文**在講個人絕對路徑的兩種
+形式，整份備份對 hook 而言全是新增行，判為洩漏。live 檔不觸發是因為那些行早已在歷史裡。已加 `.gitignore` 規則排除，取回途徑改以 `git log -p` 為唯一正式管道。
+**這條對日後任何「把含歷史敘述的檔案整份複製成新檔」的操作都成立**（備份、快照、
+匯出報告），不是 lessons 專屬。
+
+**成果**：lessons 32 → 19 條（227 → 157 行，含 18 行索引段）；
+judgment-rubrics 102 → 152 行（R1–R5 → R1–R6）；delegation-templates +7 行。
+
+**未來風險**：① rubric 是 checklist，**沒有案例敘事**——R6 的「不安裝 ≠ 移除既有的」
+之所以有說服力，是因為 ADR-014 那個 hook 續活 4 天的故事，抽成一行後說服力會衰減，
+需要時要回 git 歷史看全文；② 門檻只會再次到來，下次精簡時 lessons 剩下的 19 條多是
+單一事件，**不會再有這麼乾淨的分群**，屆時應該考慮的是「哪些條目已過時可退場」而非
+繼續歸納。
+
+**驗證**：三個被改的檔案改動前已備份至 `governance/backups/*.2026-08-21.bak`；
+`validate-skill-index.py` 與 `token-budget.sh --strict` 皆 exit 0（governance/ 不計入
+固定開場成本，數值未變）；README 目錄結構的 `R1-R5` 已更新為 `R1-R6`，
+v4.5 版本列與 ADR-011 的歷史敘述保留不改史。

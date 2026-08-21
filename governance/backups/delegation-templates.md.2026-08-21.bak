@@ -133,9 +133,3 @@
 - [ ] 改 code 的委派有加 `isolation: "worktree"`
 - [ ] model 選擇對照過 `model-orchestration.md` 第 5 節
 - [ ] 範圍與禁區寫死（實作 / 重構類）
-- [ ] 非互動委派（`codex exec`、任何 CLI one-shot）：prompt 明寫「這是非互動 session，
-      沒有人可以再回覆你，不要停下等確認，一路做到完成」——制度完整的 repo 會讓 executor
-      照 Phase 1/2 輸出計畫等使用者確認，非互動模式沒人能回覆，於是正常結束
-      （來源：lessons 2026-08-10）
-- [ ] 驗收以 `git diff --stat` 或指定產物是否生成為準，**不看 exit code、不看完工報告**
-      （來源：lessons 2026-08-17；判準見 `judgment-rubrics.md` R2）

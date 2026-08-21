@@ -5,6 +5,25 @@
 
 ---
 
+## 已歸納移除的條目（2026-08-21，走 §4 精簡流程，使用者同意）
+
+13 條反覆踩同一件事的教訓已升級為可勾選判準，**規則沒有消失，換了地方**。
+完整案例全文用 **`git log -p governance/lessons.md`** 取回（本檔的備份不進版控——
+條目內文本身在講個人絕對路徑，整份備份會被 pre-commit-audit 判為洩漏，
+見 `.gitignore`；`governance/backups/lessons.md.2026-08-21.bak` 只存在於當時那台機器）：
+
+| 群 | 移除的條目日期 | 現在在哪 |
+|----|--------------|---------|
+| 靜默失效 / 宣稱 ≠ 實際 | 07-04、07-06、07-07、07-23、07-24、07-31（下游反注入）、08-04、08-17（hook trust hash） | `judgment-rubrics.md` **R6** |
+| 驗收假訊號 | 07-22、07-31（攔截器假通過）、08-10、08-17（codex 繼承制度） | `judgment-rubrics.md` **R2**（後 4 條 checkbox） |
+| codex 委派環境 | 08-17（`--search` / `timeout`） | `skills/engineering/cli-delegate/SKILL.md`（規則早已落地）＋ `delegation-templates.md` §通用檢查 |
+
+**未移除的近似條目**：`2026-07-31 bash 變數後接全形標點` 的後半（斷言 exit code
+≠ 斷言行為）雖已進 R2，但前半（中文訊息裡 shell 變數一律寫 `${VAR}`）在 `rules/`
+沒有任何落地處——移除會讓規則消失，故整條保留。
+
+---
+
 ## 2026-07-03 多 session 同時改同一 repo 會互相覆蓋
 
 - 情境：本 repo 被兩個 session 同時修改，CLAUDE.md 整份被另一來源覆寫，且以「系統訊息」形式出現、附帶「不要告訴使用者」的指示
@@ -19,33 +38,12 @@
 - 修正：CLAUDE.md 重寫為只放指標；路由的單一事實來源定為 llms.txt
 - 規則：同一份資訊只維護一處，其他地方放指標（maintenance-protocol 第 1 節已固化）
 
-## 2026-07-04 宣告的載入路徑從未實測，rules/ 斷鏈近一個月無人發現
-
-- 情境：setup.sh 只 symlink `skills/`，但 inject.sh 常駐注入 `@~/.claude/skills/rules/...`（rules/ 是 skills/ 的同層目錄）——下游專案的 coding-standards / security / git 三個常駐 rules 從 v1.9 起實際上從未載入成功
-- 錯誤/風險：規範看似生效實則靜默失效，且因為「沒有報錯」所以長期無人發現
-- 修正：新增 `skills/rules → ../rules` 相對 symlink（git 追蹤），並以 `head ~/.claude/skills/rules/coding-standards.md` read-back 驗證
-- 規則：任何檔案宣告的載入/引用路徑，寫下當下就要用 `ls` 實測一次；審查制度檔時把「路徑可達性」列為必查項（maintenance-protocol 第 5 節健康檢查已含此項，執行時不可跳過）
-
 ## 2026-07-04 制度檔把單一 harness 的工具參數寫成通用規則，跨 harness 執行即撞牆
 
 - 情境：Antigravity session 依 tech-lead-mode / model-orchestration 委派 subagent，照抄 `subagent_type: "general-purpose"` / `isolation: "worktree"`，該環境只認 `TypeName` / `Workspace`，工具層直接報錯；Phase 0 的 shell 偵測在逐次核准 shell 的 harness 把開局卡成人工點擊
 - 錯誤/風險：模型越忠實遵守制度檔，撞牆越硬；且「整批替換成新環境參數」的直覺修法只會反向弄壞主環境
 - 修正：model-orchestration §2 改 harness 雙欄適配表；tech-lead-mode Phase 2 標註語法歸屬；coding-workflow-core Phase 0 原生工具優先（ADR-008）
 - 規則：制度檔寫工具參數時必須標註適用 harness；通用原則與 harness 語法分離，執行前以當前工具 schema 為準，不照抄他 harness 參數名
-
-## 2026-07-06 多步驟改系統狀態的腳本，中途 exit 會留下斷鏈中間態
-
-- 情境：setup.sh 順序為「刪舊 skills symlink → 檢查 governance 目標 → 建兩條新鏈」，governance 位置若被實體目錄佔住，腳本在中途 exit 1，skills 舊鏈已刪、新鏈未建，全機下游常駐 @load 靜默斷鏈
-- 錯誤/風險：與 v4.6 rules/ 斷鏈同類——無報錯的靜默失效，且觸發條件罕見，很難在事後追因
-- 修正：存在性檢查全部前置，通過後才開始 rm/ln；隔離假 HOME 實測四組情境（首跑/冪等/兩種實體目錄邊界）
-- 規則：腳本要動多個系統狀態時，先驗證所有前置條件再開始變更；每個 exit 路徑都要問「此刻系統停在什麼狀態」
-
-## 2026-07-07 制度寫給三個 harness 看，卻只接線了一家
-
-- 情境：AGENTS.md / GEMINI.md 在 repo 裡維護了多個版本，但 Codex 讀的 `~/.codex/AGENTS.md` 與 agy 讀的 `~/.gemini/GEMINI.md` 從未建立——制度自認覆蓋三 harness，實際只有 Claude 載入，其他兩家在所有非本 repo 專案裡零制度
-- 錯誤/風險：與 v4.6 rules/ 斷鏈同族的靜默失效，但範圍大一級：不是一條路徑斷，是整個 harness 沒接上；且寫檔的人永遠不會發現（檔案在 repo 裡好好的）
-- 修正：setup.sh 增建兩條全域檔案 symlink；索引檔路徑改絕對路徑；maintenance-protocol §7 把「全域接線健在」列入必查
-- 規則：制度檔宣稱服務某個 harness 時，必須實際驗證**那個 harness 的載入點**讀得到它（`ls -l` 它真正讀的路徑），不能只驗證檔案存在於 repo
 
 ## 2026-07-07 下游公開 repo 長出制度副本與個人絕對路徑
 
@@ -75,33 +73,12 @@
 - 修正：先 `grep -rn` 全 repo 盤點所有引用，切成「活引用（路由指標 / 委派表 / skill 名標籤 → 改）」與「dated 歷史敘述（README changelog / memory ADR / handoff / 診斷快照 → 保留）」兩類分別處理；改完跑 §7 索引防漂移四查確認路由 resolve
 - 規則：改 skill / 工具名是**原子操作**——`name` 欄、檔名、`llms.txt`(name+path)、所有活引用必須同一次全改；動手前先 `grep -rn` 全 repo 盤點，並區分活引用（改）vs 歷史紀錄（不改史，保留）
 
-## 2026-07-22 全綠測試與 code review 都漏掉「這個函式沒人呼叫」
-
-- 情境：tabetemiru（Swift app）修完 11 個 code review bugs、28 個單元測試全綠、冒煙啟動不 crash，使用者一開 app 卻發現首頁顯示「今日任務完成」——真因是 `SeedDataLoader.loadIfNeeded` 全專案沒有任何呼叫端，題庫從未寫進 store，所有查詢回傳 0
-- 錯誤/風險：驗證方式與缺陷類型不匹配——單元測試都自建 fixture（不走真實初始化路徑）、code review 逐檔看實作（不追呼叫圖）、冒煙測試只看有沒有 crash（空資料不會 crash）。三種驗證同時盲，功能完全不可用卻一路綠燈
-- 修正：補上呼叫端；驗證改為真實啟動後直接查資料層（`sqlite3 <store> "SELECT COUNT(*)..."`），確認初始化真的產生了資料
-- 規則：宣告「修好了」之前，至少一項驗證必須走**真實初始化路徑並檢查副作用是否真的發生**（資料寫進去了嗎、檔案產生了嗎），不能全部依賴自建 fixture 的測試；新增或修改 service 時順手 `grep -rn "<funcName>"` 確認它有呼叫端
-
-## 2026-07-23 同一條「rules 斷鏈」在三個月內踩第二次
-
-- 情境：v4.6 曾修過一次 rules 斷鏈（新增 `skills/rules → ../rules` symlink，讓下游 `@~/.claude/skills/rules/...` 有效）。ADR-012 把 `~/.claude/skills` 從「整目錄 symlink」改成「per-skill link farm」後，那條相容 symlink 不再出現在 farm 下，同一批路徑再次全部失效——而且 Claude Code 對不存在的 `@` 路徑**靜默略過**，7 個下游專案會安靜失去全部常駐規範，沒有任何錯誤訊號
-- 錯誤/風險：驗證只覆蓋「新架構自己的 38 個 package」，沒有一項檢查「舊架構承諾過的路徑是否仍然有效」。相容層（compatibility shim）是最容易在重構中被無聲刪掉的東西，因為它不屬於新設計的任何一部分，測試矩陣裡也沒有它的位置
-- 修正：`setup-claude.sh` 把 `rules`、`governance` 掛回 farm；分類層路徑（`engineering/x.md`）因 link farm 是扁平的救不回，另寫 `bin/migrate-downstream-paths.sh` 改寫下游
-- 規則：改動「對外承諾過的路徑」的產生方式時（symlink 佈局、目錄結構、URL routing），驗證清單必須包含**舊路徑仍可 resolve**，而不只是新路徑正確；靜默失敗的介面（`@` 引用、動態 import、環境變數）要特別列一條，因為它不會自己報錯
-
 ## 2026-07-23 遷移腳本只覆蓋「當下看得到的」路徑，漏掉註解與舊名
 
 - 情境：寫 `bin/migrate-downstream-paths.sh` 時，改寫規則是照我自己驗證案例裡的常駐 6 條逐條列舉。實際跑第一個真實專案（WakaWaka）才發現：還有 14 條被 `#` 註解掉的按需載入路徑、以及一條 ADR-011 改名前的舊名 `gemini-assist`（且未被註解、是啟用中的）。真實專案共 21 條需改寫，我只處理 5 條
 - 錯誤/風險：① 用「逐條列舉」而非「通用規則」處理結構性改名，覆蓋率取決於樣本而非規則 ② 把註解掉的引用當成不存在——使用者取消註解那天才會發現斷鏈，且一樣是靜默失敗 ③ 只拿自己造的 fixture 測，沒先掃真實資料的全部變體
 - 修正：改成通用 regex（`<category>/<name>.md` → `<name>/SKILL.md`，rules/governance 白名單排除）＋ 舊名映射；並加「改寫後逐條驗證新路徑真的存在，否則不寫入」的防呆
 - 規則：寫批次改寫腳本前，先 `grep -oE ... | sort -u` 掃出真實資料的**所有變體**再設計規則；改寫結果一律用「目標是否真的存在」驗證，不能只看 diff 好不好看。註解掉的引用要照改——它是待啟用狀態，不是不存在
-
-## 2026-07-24 改名跑完 §7 四查全綠，skill farm 卻已經斷鏈
-
-- 情境：`agy-assist` → `cli-delegate` 改名，照 2026-07-22 那條規則做了全 repo 盤點、活引用 vs 歷史紀錄分流、改完跑 §7 索引防漂移四查——四查全過。但 `~/.claude/skills/agy-assist` 與 `~/.codex/skills/agy-assist` 是指向舊目錄的 symlink，`git mv` 當下就變成 dangling，兩個 harness 的該 skill 實際已不可用
-- 錯誤/風險：§7 四查的覆蓋範圍是「三份索引檔 + AGENTS/GEMINI 路由指標」，**不含 skill farm**。farm 由 `skills/index.json` 生成，改 index.json 只更新了正本、沒有重新 install，正本與已部署的接線之間存在一段沒有任何檢查覆蓋的落差。又是靜默失敗——harness 只是找不到該 skill，不報錯
-- 修正：跑 `bin/setup-claude.sh --all` 與 `bin/setup-codex.sh --all`（`install_farm` 內建 `prune_orphan_entries`，自動清孤兒 entry 並建新連結）；agy 無 farm 機制、只吃 GEMINI.md，不受影響
-- 規則：改動 `skills/index.json` 的 `name` 或 `path` 欄後，**必須重跑各 harness 的 setup 腳本**並掃一次 dangling（`for l in ~/.claude/skills/*; do [ -e "$l" ] || echo "$l"; done`），§7 四查不能替代這一步。凡是「正本改了但部署物是另一份實體」的結構（link farm、快取、複製出去的副本），驗證清單都要含一條「部署物已重新生成」
 
 ## 2026-07-27 「收工必寫」定義太鬆，latest.md 在 session 中途被過度觸發
 
@@ -117,33 +94,12 @@
 - 修正：FIX-1 的 `.codex` 半邊改由 orchestrator（Claude）直接跑 inject.sh 補完。探針策略生效——先派最低風險的 FIX-1 試水，撞牆立刻換手，沒有三份盲派
 - 規則：委派前先確認 executor 對「它要寫入的路徑」有無寫權；sandbox/自我保護目錄（`.codex/`、可能還有各 harness 的 config 目錄）是比「能力」更硬的結構性邊界。凡任務會寫到某 harness 的自我保護目錄，該 harness 一律標「不可當此類 executor」，farm/接線類任務只能派 Claude 或由 orchestrator 收口
 
-## 2026-07-31 停用決策沒含「下游反注入」就不算完成——ADR-014 的 hook 續活 4 天
-
-- 情境：ADR-014（2026-07-27）決定停用 `hooks/stop-handoff-check.sh`，`enforcement-layers.md` 寫明「從 `.claude/settings.json` 移除掛載，hook 檔保留 dormant」。但**「移除掛載」這個動作從沒執行**——只改了正本文件就結案。7 個下游掛載原封不動，`hook.log` 顯示停用後仍有 6 次 BLOCK 橫跨 3 個專案（07-29 WakaWaka ×2、07-29 shopee、07-30～07-31 AG_knowledge ×3），直到 07-31 在 AG_knowledge 實地撞到才被發現
-- 錯誤/風險：形成「制度文件說 A、執行層強制 B」的對撞——模型依鐵律拒寫 latest.md，hook 依舊擋收工，使用者被無限重複騷擾。根因是 `inject.sh` 只有「安裝」沒有「移除」：**不安裝 ≠ 移除既有的**。政策改變後沒有任何機制會回頭清理下游殘留，這類漂移會反覆發生。次要風險是殘留掛載被下游 repo 納入版控（AG_knowledge commit `96e9342`），寫進歷史
-- 修正：ADR-015 改為永久移除。順序上先在正本腳本頂端加 kill-switch（`exit 0`）——因為下游全部「指向正本、不複製」，一行改動即同時停掉 7 個掛載，把清理從緊急止血降級成清潔工作；再逐一移除掛載；最後才刪檔（先刪檔會讓掛載變成 exit 127）
-- 規則：**停用 / 廢止決策的完成判準包含「下游反注入」，不是改完正本文件就結案**。寫 ADR 時把「已生效的執行層在哪些下游還活著」列成 checklist 逐項打勾；若該執行層是「下游指向正本」的設計，先在正本加 kill-switch 取得即時止血，再慢慢清。另：驗收要看**行為證據**（`hook.log` 有沒有新 BLOCK），不能只看文件寫了什麼
-
-## 2026-07-31 攔截器的測試會「假通過」——只測該擋的案例等於沒測
-
-- 情境：寫 `hooks/pre-commit-audit.sh`（個人絕對路徑 lint），下游以 exec wrapper 指向正本。跑 7 項測試，其中「該擋的」全過、「該放行的」全掛。根因是正本忘了 `chmod +x`——`exec` 一個沒有執行權限的檔案回 126，git 收到非 0 就擋掉**所有** commit
-- 錯誤/風險：**「該被擋的案例通過了」完全不能證明攔截器是對的**——一個壞掉成「擋一切」的 hook，在只測負面案例的測試裡是滿分。若當時只寫 T2/T3（該擋的），會得到 100% 通過然後把一個擋掉所有 commit 的 hook 裝到 6 個 repo。是「乾淨內容應通過」那條把它揪出來
-- 修正：`chmod +x` 正本；測試補齊四象限——該擋的擋（T2/T3/T8）、該放的放（T1/T4/T5）、旁路有效（T6）、內部錯誤 fail-open（T7）。9/9 通過後才安裝，並在真實 repo 用探針檔實測一次
-- 規則：**任何攔截型機制（hook、gate、validator、權限檢查）的測試必須包含「陰性案例」**——不只測「壞輸入被擋」，更要測「好輸入放行」。前者能被「擋一切」的壞實作滿足，後者不能。同理，攔截器上線後要在真實環境跑一次正常流程，確認沒有把日常工作擋死
-
 ## 2026-07-31 bash 變數後接全形標點會被吃進變數名，配 set -u 直接崩
 
 - 情境：`bin/install-git-hooks.sh` 寫 `echo "...core.hooksPath=$hp，.git/hooks 不會被執行..."`。`$hp` 後面緊接全形逗號「，」，bash 把多位元組字元一起當成變數名的一部分，`set -u` 判定 unbound variable，腳本當場非零退出——警告沒印出來，而且整個 preflight 失敗
 - 錯誤/風險：**這條路徑平常跑不到**（只有 repo 設了 `core.hooksPath` 才進），所以不寫測試就永遠不會發現。更陰險的是它會讓測試「假通過」：另一處同類寫法（`$CANON_ABS（需 chmod +x）`）在「preflight 應該失敗」的測試裡回傳 exit 1，剛好符合預期——**測試綠燈，但失敗原因是崩潰而非預期的檢查邏輯**
 - 修正：改用 `${hp}` / `${CANON_ABS}` 大括號。並用 `grep -rnP '\$[A-Za-z_][A-Za-z0-9_]*(?=[^\x00-\x7F])'` 掃全 repo 找同類寫法（另兩處在註解、一處是跳脫的字面 `\$HOME`，無害）。測試補上「訊息內容正確」的斷言，不只斷言 exit code
 - 規則：**中文訊息裡的 shell 變數一律寫 `${VAR}`**，不要裸 `$VAR`——中文標點緊跟變數是這個 codebase 的常態。另：**斷言 exit code 不等於斷言行為**，預期失敗的測試要一併斷言錯誤訊息內容，否則崩潰與正常失敗無法區分
-
-## 2026-08-04 文件裡的「已安裝 N 份」是手抄快照，會靜默漂移成謊報
-
-- 情境：`enforcement-layers.md` 記載 pre-commit-audit「已安裝 6 份 wrapper、md5 一致」，ADR-016 同樣寫「已裝 6 個 repo」。2026-08-04 現算實際安裝數是 **0**——五個現存 repo 的 `.git/hooks/pre-commit` 全部不存在。同一批還發現 ADR-016 宣稱「已刪 5 份下游 post-commit 副本」，`shopee` 那份仍在跑，而且它正是 ADR-014／015 禁止的 latest.md 自動寫入路徑
-- 錯誤/風險：**文件宣稱有防護而實際沒有，比明擺著沒有更危險**——沒人會去查一個「已完成」的項目。根因不是誰偷懶，是「部署狀態」被寫成散文而非現算：手抄的當下也許是真的，之後任何一次 `.git/hooks` 重建、repo 重 clone、或收尾漏做都會讓它變謊報，且沒有任何機制會報錯。這與 2026-07-23「正本改了但部署物是另一份實體」同源，只是這次連「部署物存不存在」都是猜的
-- 修正：補裝四份並刪除殘留 post-commit；把 `enforcement-layers.md` 的清單段改寫成**附一段現跑指令**，並明講「本清單是手抄快照、會漂移」；`ADR-016` 補記誠實標註兩項成果都沒落地過；防復發（`bin/check-hook-install.sh` 現算比對）進 TODO
-- 規則：**凡是宣稱「已安裝 / 已部署 / 已刪除 N 份」的文件段落，一律附上現算指令，或直接改成腳本輸出**。散文只准描述設計意圖，不准描述部署狀態——部署狀態的唯一可信來源是現在跑一次。驗收同理：看行為證據（跑得出來），不看完工報告（寫得出來）
 
 ## 2026-08-08 對抗式評估「大部分是對的」正是最危險的時候——證據要自己重跑
 
@@ -179,31 +135,6 @@
 - 錯誤/風險：寬鬆比對的誤判**永遠是把東西塞進某個具名分類**，不會塞進「未分類」，所以它的偏誤方向固定是「看起來分類得很好」。少了守恆檢查（各桶總和是否等於全體），這個偏誤沒有任何自動訊號會揭露。結果是拿一組討喜的假數字去支撐架構決策，而且那些數字已經進了要交給下一個 agent 執行的規格文件
 - 修正：v2 把「五桶總和 == segment total、excluded 不計入任何桶」列為必須有測試的 invariant，並把完成判準寫成「未分類率須降到 25% 以下，否則停下來重新檢視分類法」。真實數字（other 41.6%）誠實寫進計劃書，連帶揭露分類法本身需要 shell chain 解析與 MCP mapping 才可用——那是 v1 沒認清的範圍
 - 規則：**任何分類/歸因原型，第一件事是加守恆檢查（各類總和 == 全體），第二件事是看「未分類」桶有多大**。未分類率是分類器品質的唯一誠實訊號；一個未分類率為 0 的分類器不是完美，是它在亂塞。另：原型用的比對規則若比正式實作寬鬆，它產出的數字不得當成可行性證據寫進規格——要嘛原型就用正式規則，要嘛在文件標明「此為寬鬆比對上界」
-
-## 2026-08-10 `codex exec` 會照 repo 的 workflow 停下等確認，然後空手 exit 0
-
-- 情境：委派 codex 補測試（waiver 機制的 F1–F4）。`codex exec` 回 exit 0、回報寫著完整計畫，但 `git diff --stat` 與派工前**逐字相同**——一個檔案都沒動。讀 log 才看到它停在「確認後我就開始實作」：它讀了本 repo 的 `AGENTS.md`／`coding-workflow-core`，照 Phase 1/2 的規定輸出計畫等使用者確認，而 `codex exec` 是非互動的，沒有人能回覆，於是正常結束
-- 錯誤/風險：**exit 0 在這裡是假訊號**。若當時只看 exit code 與完工報告（報告內容是計畫，讀起來像做完了），會直接把「沒做」當成「做完」往下游送。這個模式對所有「照制度走四階段流程」的 repo 都成立，而且愈是制度完整的 repo 愈容易觸發——常駐規則要求停下確認，非互動模式必然停
-- 修正：`codex exec resume --last` 補一句「這是非互動 session，沒有人可以再回覆你，不要停下等確認」後一次做完。（另注意 flag 順序：`-s` / `-C` / `-o` 必須放在 `resume` **之前**，放後面會 `unexpected argument`）
-- 規則：**非互動委派（`codex exec`、任何 CLI one-shot）的 prompt 必須明寫「非互動、不要等待確認、一路做到完成」**；驗收一律以 `git diff --stat` 為準，不看 exit code、不看完工報告。報告寫的是「計畫」而不是「證據」時，預設它沒做。
-
-## 2026-08-17 codex 委派的兩個環境陷阱：`--search` 不在 exec、macOS 沒有 `timeout`
-- 情境：把 cli-delegate 的委派目標從 agy 換成 codex，要驗證網路搜尋與超時控制怎麼寫。
-- 錯誤/風險：`codex --help` 列出 `--search`，但 `codex exec --search` 直接 exit 2——旗標只存在於互動式指令；照 help 抄會讓模式 A 在真的要搜尋時整條指令失敗。另外第一次實跑用 `timeout 180 codex exec ...` 包裝，macOS 回 `command not found: timeout`（那是 GNU coreutils 的指令，內建只有 `gtimeout` 且需另裝）。
-- 修正：搜尋改用 config 旗標 `-c tools.web_search=true` 並實跑確認真的觸發 web search；超時一律交給 Bash tool 的 timeout 參數，不在指令裡包 `timeout`。兩點都寫進 `skills/engineering/cli-delegate/SKILL.md`。
-- 規則：CLI 旗標要看**該子指令**的 `--help`，不是頂層的；跨平台的超時控制交給呼叫端，不要假設 GNU 工具存在。
-
-## 2026-08-17 委派給 codex 會繼承本 repo 的整套制度，任務一個字都沒做
-- 情境：把當前 change 派給 codex 做對抗式審查（cli-delegate 模式 C）。
-- 錯誤/風險：連續兩輪失敗且都以 exit 0 結束，看起來像成功。軌跡顯示 codex 開場宣告「我會依 code-review 與常駐 coding-workflow-core 流程進行」，接著去讀 `~/.codex/skills/code-review/SKILL.md`、`coding-workflow-core`、`cli-delegate`、`rules/python.md`、`~/.agent-sessions/Agent_skill/latest.md`——**回合全花在開工儀式上，審查一個字沒寫**。根因是 `setup-codex.sh` 把 AGENTS.md symlink 到 `~/.codex/AGENTS.md`、skill farm 掛到 `~/.codex/skills/`，被委派的 session 於是把自己當成一個新的工作 session。`--ignore-rules` 沒用（它只管 execpolicy `.rules`）。
-- 修正：加 `-c project_doc_max_bytes=0` 讓 codex 不載入 AGENTS.md，實測同一任務正常產出 11 條發現。已寫進 `cli-delegate` Step 2 並補進全部七個內嵌 codex 指令的 skill。
-- 規則：**委派出去的是單一唯讀任務，不是一個新的工作 session**——派工前先確認被委派方不會繼承你的制度/開工流程。另：exit 0 不代表任務完成，驗收一律看有沒有拿到預期產物（本例是 `-o` 指定的檔案根本沒生成）。
-
-## 2026-08-17 Codex 的 hook trust hash：改了 `.codex/hooks.json` 的 command，六個 hook 全部靜默失效
-- 情境：WakaWaka 的 active-agents 面板從來沒顯示過 Codex session。為了讓共用的 lifecycle hook 知道自己是被誰觸發的，在 `.codex/hooks.json` 六個 command 前面加了 `WAKAWAKA_AGENT=codex`。
-- 錯誤/風險：加完之後跑 codex，registry 一個檔都沒寫。裝臨時探針（在 hook 最前面 append payload 到檔案）才確定**探針零輸出——hook 根本沒被執行**。Codex 在 `~/.codex/config.toml` 的 `[hooks.state]` 對每個 registration 存 `trusted_hash`，command 一改就當成未授信任並跳過，非互動模式（`codex exec`）不會提示、不報錯、exit 0。等於為了讓 hook 標記自己是誰，把整套 hook 關掉了。
-- 修正：放棄環境變數標記，改用 payload 裡本來就有的 `transcript_path` 判別（Codex 寫 `~/.codex/`，Claude Code 寫 `~/.claude/`），設定檔一個字都不用動，使用者也不需要重新授信任。
-- 規則：**改動 agent 的 hook 註冊檔（command 字串本身）等同讓該 hook 重新進入未授信任狀態**，而失效是靜默的。判別「是誰在跑」優先找 payload 裡既有的、agent 自身性質的欄位（transcript 路徑、家目錄），不要為此去改註冊；真的要改，先確認該 harness 的信任機制與重新授信任的流程。
 
 ## 2026-08-17 從防禦性程式碼反推外部 payload 形狀，推出來的是作者的不確定性不是事實
 - 情境：同上。判斷 Codex 的 hook payload 長什麼樣，依據是同 repo 的 `permissionrequest-codex.mjs` 寫著 `input?.session_id ?? input?.sessionId`。
