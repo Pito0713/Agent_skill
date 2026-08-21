@@ -707,9 +707,56 @@ domain 各異的關係詞、箭頭標籤、迷思符號、文獻來源，摘要�
 直接觸發」關鍵詞列表（已在常駐 frontmatter description 裡，載入後才讀到，對路由零影響）
 與五張互不一致的「與其他 mentor 差異表」，合計估 −1,600 且**無條件節省**（不需要摘要換回去），
 槓桿比本次的骨架抽取更大。分析結果記於 `_shared/mentor-protocol.md` §10，不隨對話消失。
+（→ 2026-08-21 由 **ADR-023** 執行完畢，實際冗餘為三段，實測 −4,784 bytes）
 
 **維護風險**：五份摘要之間可能各自漂移，**沒有任何自動檢查會偵測**。同步清單見該檔 §9。
 
 **驗證**：`python3 bin/validate-skill-index.py` 與 `bash bin/token-budget.sh --strict`
 改動前後皆 exit 0；frontmatter description 未動，固定開場成本不變；`obsidian-save` 依賴的
 專科 mentor 區塊標題（【定位聲明】【機制鏈】【知識層級定位】）確認仍存在，未斷鏈。
+
+---
+
+## ADR-023：mentor SKILL.md 的跨 mentor 對照內容全數移出，只留執行時需要的（2026-08-21）
+
+**背景**：執行 ADR-022 §10 記錄的未處理項（使用者 2026-08-18 裁決「先不動」，2026-08-21
+指示執行）。原分析認定兩段冗餘：「直接觸發」關鍵詞列表與「與其他 mentor 的差異表」。
+
+**動手後修正：冗餘是三段不是兩段。** 原分析把差異表寫成一段，實際上五份 SKILL.md 裡有
+**兩個位置**在講跨 mentor 分工，格式還不同：【角色定位】段的「與其他 mentor 的根本差異」
+維度表，以及【觸發條件】段的「與其他 mentor 的分工」路由表。前者比較方法論，後者比較路由，
+兩者都與 `skills/llms.txt` 的判斷樹講同一件事。
+
+**決策：判準是「這段內容在 skill 載入前就已經被消費完了嗎？」** 是 → 不該留在 SKILL.md。
+三段全部命中：
+
+- 觸發詞列表：正本在 frontmatter `description`，**常駐 system prompt**，路由早已決定
+- 路由表：實際生效的是 `llms.txt` 判斷樹，SKILL.md 這份讀到時已無決策可影響
+- 差異表：每一列在該 SKILL.md 下方都有對應正式段落（天花板 → 確定性分級表；陷阱 → 鐵律；
+  核心問題 → 思考路徑），刪表不損失任何執行時資訊
+
+移出的內容合併為 `_shared/mentor-protocol.md` §11 兩張表（§11.1 路由矩陣、§11.2 方法論
+維度矩陣），**執行時不載入，作用對象是維護者**。合併後才看得出五張原表的比較對象各不相同
+（science 比 neuro+society、tech 比 science、society 比 neuro、neuro 比 academic-mentor、
+invest 比一個不存在的 mentor-business）——這種不一致在分散狀態下沒人看得出來。
+
+**刻意保留的三處例外**（都是「已經進到 skill 之後」的執行時行為，不是路由決策）：
+neuro 的「衝突時詢問」對話樣板；society 的「兩個 mentor 都需要 → 先問使用者」（併進
+【觸發分流】的「需主題確認」段）；tech 的「與 coding-workflow 的界線」（frontmatter
+description 已寫同一句，留著保持一致，其【觸發分流】只用一行指回，不寫第二份）。
+neuro 差異表獨有的「優先期刊 Nature Neuroscience / Neuron / PNAS」併進【3. 文獻定錨】。
+
+**成果**：五份合計 55,404 → 50,620 bytes（**−4,784，−8.6%**；照 `token-budget.sh` 的
+bytes ÷ 3.5 Anthropic 口徑約 −1,367 tok），與 ADR-022 §10 估的 −1,600 tok 同一量級。
+刪 6,577 bytes、換上 1,742 bytes。**與 ADR-022 的對比值得記住**：同樣是消除五份重複，
+上一輪抽骨架只省 −969 tok（摘要要價 300 tok 吃掉大半），這一輪省 4.9 倍——差別在於
+**這三段是無條件冗餘，不需要換上任何替代內容**。判斷抽取價值時，先問「刪掉後要不要補回等價物」。
+
+**維護風險**：SKILL.md 不再自帶跨 mentor 說明，維護者改 mentor 邊界時容易只改一處。
+`_shared` §9「新增第六個 mentor」步驟已補上「先填 §11.2 逼你想清楚差異」與「llms.txt
+判斷樹才是實際生效的路由，必須同步」。同 ADR-022 的老問題：**沒有自動檢查會偵測 §11
+與各 SKILL.md 漂移**，純自律。
+
+**驗證**：`python3 bin/validate-skill-index.py`（PASS 39）與 `bash bin/token-budget.sh
+--strict` 皆 exit 0；frontmatter 未動，固定開場成本維持 25,766 bytes；`obsidian-save`
+依賴的區塊標題（【定位聲明】【機制鏈】【知識層級定位】）確認未受影響。
