@@ -862,7 +862,7 @@ llms.txt 歧義樹改為只分流四個專科 mentor（neuro / science / tech / 
 **連帶修掉三處寫死的測試斷言**（詳見 lessons 2026-08-25 第二條）：`test-skill-usage.sh` 的
 skill 數 `38`（改為從 index.json 導出）與指向已停用 skill 的 fixture；`test-token-budget.sh`
 的 waiver 清單、`pass` 數、成本字串（保留寫死但換上新 baseline
-`plans/baselines/20260825T033010412935+0000-55b6d87-dirty.json`）與越界 padding
+`plans/baselines/20260825T034030239503+0000-8cfd478.json`）與越界 padding
 （`5000` 改為 `30000 - subtotal + 1000`——寫死的 padding 在成本下降後靜默失效，
 會讓「超標是勸告不是硬牆」那條測試永遠測不到該分支）。
 

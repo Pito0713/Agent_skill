@@ -6,7 +6,7 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPORT="$REPO/bin/token_budget_report.py"
 VALIDATOR="$REPO/bin/validate-skill-index.py"
 # 這是預算守門；成本偏離此基準就應讓測試紅掉、逼人決定，而非自動接受新現況。
-BASELINE="$REPO/plans/baselines/20260825T033010412935+0000-55b6d87-dirty.json"
+BASELINE="$REPO/plans/baselines/20260825T034030239503+0000-8cfd478.json"
 STATUS_BEFORE="$(git -C "$REPO" status --porcelain)"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
