@@ -201,11 +201,11 @@ metadata:
 ## 觸發分流（觸發詞正本在 frontmatter `description`；跨 mentor 路由矩陣見 `../_shared/mentor-protocol.md` §11）
 
 **本 skill 的界線**：物質與自然現象的基礎層（分子、能量、定律、演化機制本身）。
-同一個對象往上到「它如何影響認知行為」→ mentor-neuro，往上到「它如何影響社會」→ mentor-society。
+同一個對象往上到「它如何影響認知行為」→ mentor-neuro；往上到「它如何影響社會」→ 不進 mentor，一般回答（仍須說明觀察性研究的方法限制並給至少兩個競爭解釋框架）。
 
 **需主題確認（可能與其他 mentor 衝突）：**
 「大腦的化學」→ 若是神經傳導物質機制 → mentor-neuro；若是基礎神經化學原理 → mentor-science
-「生物演化」→ mentor-science；「演化心理學對社會行為的影響」→ mentor-society
+「生物演化」→ mentor-science；「演化心理學對社會行為的影響」→ 不進 mentor，一般回答
 「能量」→ 確認是物理/化學的能量概念，還是比喻用法（後者不屬於任何 mentor）
 
 ---

@@ -1,0 +1,280 @@
+{
+  "measured_at": "2026-08-25T03:30:10.412935+00:00",
+  "git": {
+    "commit": "55b6d87",
+    "branch": "main",
+    "dirty": true
+  },
+  "spec": "plans/token-budget-optimization.md §1.1 / bin/token-budget.sh 檔頭註解",
+  "token_estimate": {
+    "method": "bytes/3.5",
+    "provider": "Anthropic",
+    "caveat": "非 Codex / agy 的 token 數;僅供參考,制度門檻一律用 bytes"
+  },
+  "exact_tokens": {
+    "scope": "resident_rules_only",
+    "model": "claude-opus-5",
+    "value": null,
+    "status": "未啟用",
+    "note": "不涵蓋 descriptions,因此不是固定開場成本的精確值"
+  },
+  "fixed_startup_cost": {
+    "resident_rules_bytes": 14675,
+    "resident_rules_detail": {
+      "CLAUDE.md": 3647,
+      "rules/coding-standards.md": 2815,
+      "rules/security.md": 4449,
+      "skills/engineering/coding-workflow-core/SKILL.md": 3764
+    },
+    "descriptions_bytes": 8496,
+    "subtotal_bytes": 23171,
+    "budget_bytes": 30000,
+    "over_budget": false
+  },
+  "on_demand_cost": {
+    "measured": false,
+    "reason": "需 per-session 觸發分布,無 transcript / telemetry 支撐（計劃書 §2）"
+  },
+  "maintenance_inventory": {
+    "body_bytes": 160687,
+    "skill_count": 28,
+    "mean_body_bytes": 5739
+  },
+  "description_threshold": {
+    "limit_bytes": 400,
+    "total": 28,
+    "pass": 22,
+    "over": [],
+    "waived": [
+      {
+        "name": "mentor-invest",
+        "bytes": 655,
+        "waiver": "2026-08-07 wits 核准：承載跨 skill 分流條款——六個 mentor 系 skill 互相競爭路由，壓縮會惡化已知的觸發詞重疊（計劃書 §4 目標 C）"
+      },
+      {
+        "name": "unknown-matrix-navigation",
+        "bytes": 613,
+        "waiver": "2026-08-07 wits 核准：計劃書 v1 即點名的合理例外，description 承載三種未知類型的分流判準（計劃書 §4 目標 C）"
+      },
+      {
+        "name": "mentor-tech",
+        "bytes": 601,
+        "waiver": "2026-08-07 wits 核准：承載跨 skill 分流條款——六個 mentor 系 skill 互相競爭路由，壓縮會惡化已知的觸發詞重疊（計劃書 §4 目標 C）"
+      },
+      {
+        "name": "tw-stock-tracker",
+        "bytes": 586,
+        "waiver": "2026-08-07 wits 核准：description 承載與 mentor-invest 的「操作層 vs 概念層」分流條款（計劃書 §4 目標 C）"
+      },
+      {
+        "name": "mentor-neuro",
+        "bytes": 536,
+        "waiver": "2026-08-07 wits 核准：承載跨 skill 分流條款——六個 mentor 系 skill 互相競爭路由，壓縮會惡化已知的觸發詞重疊（計劃書 §4 目標 C）"
+      },
+      {
+        "name": "mentor-science",
+        "bytes": 509,
+        "waiver": "2026-08-07 wits 核准：承載跨 skill 分流條款——六個 mentor 系 skill 互相競爭路由，壓縮會惡化已知的觸發詞重疊（計劃書 §4 目標 C）"
+      }
+    ],
+    "stale_waivers": []
+  },
+  "skills": [
+    {
+      "name": "mentor-invest",
+      "path": "skills/learning/mentor-invest/SKILL.md",
+      "description_waiver": "2026-08-07 wits 核准：承載跨 skill 分流條款——六個 mentor 系 skill 互相競爭路由，壓縮會惡化已知的觸發詞重疊（計劃書 §4 目標 C）",
+      "description_bytes": 655,
+      "body_bytes": 10617
+    },
+    {
+      "name": "unknown-matrix-navigation",
+      "path": "skills/unknown-matrix-navigation/SKILL.md",
+      "description_waiver": "2026-08-07 wits 核准：計劃書 v1 即點名的合理例外，description 承載三種未知類型的分流判準（計劃書 §4 目標 C）",
+      "description_bytes": 613,
+      "body_bytes": 8680
+    },
+    {
+      "name": "mentor-tech",
+      "path": "skills/learning/mentor-tech/SKILL.md",
+      "description_waiver": "2026-08-07 wits 核准：承載跨 skill 分流條款——六個 mentor 系 skill 互相競爭路由，壓縮會惡化已知的觸發詞重疊（計劃書 §4 目標 C）",
+      "description_bytes": 601,
+      "body_bytes": 9102
+    },
+    {
+      "name": "tw-stock-tracker",
+      "path": "skills/investing/tw-stock-tracker/SKILL.md",
+      "description_waiver": "2026-08-07 wits 核准：description 承載與 mentor-invest 的「操作層 vs 概念層」分流條款（計劃書 §4 目標 C）",
+      "description_bytes": 586,
+      "body_bytes": 3858
+    },
+    {
+      "name": "mentor-neuro",
+      "path": "skills/learning/mentor-neuro/SKILL.md",
+      "description_waiver": "2026-08-07 wits 核准：承載跨 skill 分流條款——六個 mentor 系 skill 互相競爭路由，壓縮會惡化已知的觸發詞重疊（計劃書 §4 目標 C）",
+      "description_bytes": 536,
+      "body_bytes": 7670
+    },
+    {
+      "name": "mentor-science",
+      "path": "skills/learning/mentor-science/SKILL.md",
+      "description_waiver": "2026-08-07 wits 核准：承載跨 skill 分流條款——六個 mentor 系 skill 互相競爭路由，壓縮會惡化已知的觸發詞重疊（計劃書 §4 目標 C）",
+      "description_bytes": 509,
+      "body_bytes": 10038
+    },
+    {
+      "name": "ui-design-flow",
+      "path": "skills/design/ui-design-flow/SKILL.md",
+      "description_waiver": null,
+      "description_bytes": 389,
+      "body_bytes": 5369
+    },
+    {
+      "name": "tech-lead-mode",
+      "path": "skills/engineering/tech-lead-mode/SKILL.md",
+      "description_waiver": null,
+      "description_bytes": 386,
+      "body_bytes": 12312
+    },
+    {
+      "name": "knowledge-search",
+      "path": "skills/productivity/knowledge-search/SKILL.md",
+      "description_waiver": null,
+      "description_bytes": 372,
+      "body_bytes": 4925
+    },
+    {
+      "name": "cooking-flow",
+      "path": "skills/lifestyle/cooking-flow/SKILL.md",
+      "description_waiver": null,
+      "description_bytes": 317,
+      "body_bytes": 6447
+    },
+    {
+      "name": "cli-delegate",
+      "path": "skills/engineering/cli-delegate/SKILL.md",
+      "description_waiver": null,
+      "description_bytes": 243,
+      "body_bytes": 10612
+    },
+    {
+      "name": "obsidian-save",
+      "path": "skills/productivity/obsidian-save/SKILL.md",
+      "description_waiver": null,
+      "description_bytes": 234,
+      "body_bytes": 7661
+    },
+    {
+      "name": "new-feature",
+      "path": "skills/engineering/new-feature/SKILL.md",
+      "description_waiver": null,
+      "description_bytes": 231,
+      "body_bytes": 6772
+    },
+    {
+      "name": "onboarding",
+      "path": "skills/productivity/onboarding/SKILL.md",
+      "description_waiver": null,
+      "description_bytes": 230,
+      "body_bytes": 4736
+    },
+    {
+      "name": "handoff",
+      "path": "skills/productivity/handoff/SKILL.md",
+      "description_waiver": null,
+      "description_bytes": 229,
+      "body_bytes": 4681
+    },
+    {
+      "name": "project-dashboard",
+      "path": "skills/productivity/project-dashboard/SKILL.md",
+      "description_waiver": null,
+      "description_bytes": 226,
+      "body_bytes": 3914
+    },
+    {
+      "name": "debug-flow",
+      "path": "skills/engineering/debug-flow/SKILL.md",
+      "description_waiver": null,
+      "description_bytes": 223,
+      "body_bytes": 6932
+    },
+    {
+      "name": "code-review",
+      "path": "skills/engineering/code-review/SKILL.md",
+      "description_waiver": null,
+      "description_bytes": 209,
+      "body_bytes": 7755
+    },
+    {
+      "name": "security-review",
+      "path": "skills/engineering/security-review/SKILL.md",
+      "description_waiver": null,
+      "description_bytes": 197,
+      "body_bytes": 2025
+    },
+    {
+      "name": "deploy-prep",
+      "path": "skills/engineering/deploy-prep/SKILL.md",
+      "description_waiver": null,
+      "description_bytes": 191,
+      "body_bytes": 6187
+    },
+    {
+      "name": "smart-init",
+      "path": "skills/productivity/smart-init/SKILL.md",
+      "description_waiver": null,
+      "description_bytes": 191,
+      "body_bytes": 1111
+    },
+    {
+      "name": "debug",
+      "path": "skills/engineering/debug/SKILL.md",
+      "description_waiver": null,
+      "description_bytes": 180,
+      "body_bytes": 3270
+    },
+    {
+      "name": "testing-strategy",
+      "path": "skills/engineering/testing-strategy/SKILL.md",
+      "description_waiver": null,
+      "description_bytes": 180,
+      "body_bytes": 1591
+    },
+    {
+      "name": "coding-workflow-ref",
+      "path": "skills/engineering/coding-workflow-ref/SKILL.md",
+      "description_waiver": null,
+      "description_bytes": 160,
+      "body_bytes": 819
+    },
+    {
+      "name": "documentation",
+      "path": "skills/engineering/documentation/SKILL.md",
+      "description_waiver": null,
+      "description_bytes": 158,
+      "body_bytes": 3415
+    },
+    {
+      "name": "coding-workflow-core",
+      "path": "skills/engineering/coding-workflow-core/SKILL.md",
+      "description_waiver": null,
+      "description_bytes": 157,
+      "body_bytes": 3423
+    },
+    {
+      "name": "convert-skill",
+      "path": "skills/convert-skill/SKILL.md",
+      "description_waiver": null,
+      "description_bytes": 151,
+      "body_bytes": 4681
+    },
+    {
+      "name": "version-log",
+      "path": "skills/productivity/version-log/SKILL.md",
+      "description_waiver": null,
+      "description_bytes": 142,
+      "body_bytes": 2084
+    }
+  ]
+}

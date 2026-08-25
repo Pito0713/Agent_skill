@@ -89,9 +89,13 @@ preflight，全數通過才進 install，任一失敗即零寫入中止（ADR-01
 │   ├── design/<name>/SKILL.md         # UI/UX 規劃 packages
 │   ├── productivity/<name>/SKILL.md   # 交接與知識工作 packages
 │   ├── learning/<name>/SKILL.md       # 學習與 mentor packages
-│   │   └── _shared/mentor-protocol.md # 五個 mentor-* 的共用協定正本（非 package，執行時不載入）
+│   │   └── _shared/mentor-protocol.md # 四個 mentor-* 的共用協定正本（非 package，執行時不載入）
 │   ├── investing/<name>/SKILL.md      # 投資分析 packages
 │   └── lifestyle/<name>/SKILL.md      # 生活與廚藝 packages（cooking-flow）
+│
+├── deprecated/                        # 停用 skill 存放區（在 skills/ 樹外，不進 index、不被 symlink）
+│   ├── README.md                      # 停用政策、現有清單、復用流程
+│   └── <name>/SKILL.md                # 保留原內容 + 頂端停用 banner（ADR-025）
 │
 ├── agents/                            # 專責 subagents（被 Orchestrator 協調）
 │   ├── 01-core-development/
@@ -112,7 +116,7 @@ preflight，全數通過才進 install，任一失敗即零寫入中止（ADR-01
 ├── sources/
 │   └── registry.md                    # GitHub skill 來源登記清單
 │
-├── knowledge/                         # RAG 知識庫（rag-search skill 的搜尋來源）
+├── knowledge/                         # RAG 知識庫（knowledge-search --source knowledge 的來源）
 │   ├── README.md                      # 新增知識檔案的格式規範
 │   └── engineering/ security/ workflow/
 │
@@ -311,18 +315,22 @@ rules      agents  ⏭      codex 交叉驗證
 | Orchestrator | 觸發詞 | 協調資源 |
 |------|------|------|
 | `new-feature.md` | 「新增功能」、「實作 X」 | api-architect、backend/frontend-engineer、testing-strategy、documentation、codex |
-| `code-review.md` | 「code review」、「PR review」 | security-auditor、frontend-security-auditor、lazyengineer-review（Phase 1.5）、testing、git、codex |
-| `debug-flow.md` | 「bug」、「為什麼錯」、「找不到原因」 | debug、concrete-example、codex 模式B/C |
+| `code-review.md` | 「code review」、「PR review」 | security-auditor、frontend-security-auditor、testing、git、codex（Phase 1.5 過度設計掃描已內聯）|
+| `debug-flow.md` | 「bug」、「為什麼錯」、「找不到原因」 | debug、codex 模式B/C（Phase 2 具體舉例已內聯）|
 | `deploy-prep.md` | 「要上線了」、「deploy 前」 | code-review、security-auditor、e2e-tester、version-log、codex |
 | `security-review.md` | 「安全審查」、「OWASP」、「XSS」、「前端安全」 | security-auditor、frontend-security-auditor、owasp-reviewer |
-| `ui-design-flow.md` | 「規劃 UI」、「設計這個頁面」 | information-architecture、wireframing、ui-visual-design、frontend-engineer、codex |
-| `onboarding.md` | 「接手專案」、「幫我了解這個 repo」 | codex 模式B、information-architecture、handoff |
+| `ui-design-flow.md` | 「規劃 UI」、「設計這個頁面」、「資訊架構」、「wireframe」、「視覺風格」 | 自身三模式 A/B/C + references/design-patterns.md、frontend-engineer、api-architect、codex |
+| `onboarding.md` | 「接手專案」、「幫我了解這個 repo」 | codex 模式B、ui-design-flow 模式 A、handoff |
 
 ---
 
 ## Lazy Engineer 模式
 
 靈感來自 [Ponytail](https://github.com/DietrichGebert/ponytail)，針對本專案重新設計的「最小化實作」規範。
+
+> **v5.10（ADR-025）起不再是獨立 skill**：`lazyengineer` 與 `lazyengineer-review` 兩份
+> 使用統計皆為 0，內容已內聯進 `code-review` 的 Phase 1.5，原檔留在 `deprecated/`。
+> 本節保留下方的決策梯與實測數據作為設計依據，觸發方式見「使用方式」。
 
 ### 決策梯
 
@@ -350,10 +358,8 @@ rules      agents  ⏭      codex 交叉驗證
 ### 使用方式
 
 ```
-說出「lazyengineer」或「精簡一下」→ 啟用決策梯（full 模式）
-說出「有沒有過度設計」或「可以刪什麼」→ 啟用 lazyengineer-review
-
-lazyengineer [lite|full|ultra|off]
+說出「有沒有過度設計」、「可以刪什麼」、「太複雜了」、「lazyengineer」
+→ 觸發 code-review 的 Phase 1.5（過度設計掃描 + 六關決策梯）
 ```
 
 ### 適用場景
@@ -390,10 +396,7 @@ lazyengineer [lite|full|ultra|off]
 | 自動偵測 | `rules/frontend-security.md` | package.json 含 react / vue / next 時 |
 | 按需 | `skills/engineering/coding-workflow-ref/SKILL.md` | 查實作模式時 |
 | 按需 | `skills/engineering/tech-lead-mode/SKILL.md` | 卡關 / 跨檔案 / 高風險任務容易 scope creep 時（工單化 + executor 委派 + close gate）|
-| 按需 | `skills/engineering/lazyengineer/SKILL.md` | 精簡程式碼 / 反 over-engineering 時（實測 -65–90% output tokens）|
-| 按需 | `skills/engineering/lazyengineer-review/SKILL.md` | 掃描過度設計 / 找可刪的程式碼時 |
-| 按需 | `skills/learning/feedback-loop/SKILL.md` | 刻意練習 / 改進特定能力時 |
-| 按需 | `skills/learning/concrete-example/SKILL.md` | 邏輯看不懂 / 反覆出錯時 |
+| 按需 | `skills/productivity/knowledge-search/SKILL.md` | 查既有規範或個人筆記時（`--source knowledge` / `vault` / `both`）|
 
 ---
 
@@ -483,3 +486,4 @@ lazyengineer [lite|full|ultra|off]
 | v5.7 | 2026-08-18 | mentor 共用骨架抽取（ADR-022）：新增 `skills/learning/_shared/mentor-protocol.md` 作為五個 `mentor-*` 的協定正本（Phase 0 vault 讀取／【0. 你已有的節點】／迷思處理格式／知識圖譜節點／末行輸出／共用 Checklist ＋ 五 domain 變數對照表），五份 SKILL.md 各以 12 行內聯摘要取代原本逐字重複的段落。**採內聯而非引用**——引用式要在執行時多讀一份共用檔，省下的體積等額付回，單次呼叫幾乎不省。實測 17,127 → 16,158 tok（−969，每份 −123～−228），**低於規劃預估的 −350～−400／份**，差距來自摘要本身要價約 300 tok（要保住五個 domain 各異的關係詞／箭頭標籤／迷思符號／文獻來源）。本次主要價值是消除五份重複與建立第六個 mentor 的模板，不是省 token；槓桿更大的兩段純冗餘（觸發詞列表、mentor 差異表，估 −1,600）經使用者裁決本次不動，記於該檔 §10。frontmatter description 未動，固定開場成本不變；validator 與 `token-budget --strict` 前後皆 exit 0 |
 | v5.8 | 2026-08-21 | mentor SKILL.md 跨 mentor 對照內容全數移出（ADR-023，執行 ADR-022 §10 的未處理項）：動手後發現冗餘是**三段**不是兩段——【角色定位】的「與其他 mentor 的根本差異」維度表與【觸發條件】的「與其他 mentor 的分工」路由表在講同一件事、格式卻不同，加上「直接觸發」關鍵詞列表（正本在常駐 frontmatter `description`）。判準是**「這段在 skill 載入前就被消費完了嗎？」**，是則移出；三段全數命中，合併為 `_shared/mentor-protocol.md` §11.1 路由矩陣 + §11.2 方法論維度矩陣（執行時不載入，維護者視角）。合併後才看得出五張原表比較對象各不相同。保留三處執行時行為：neuro 衝突時詢問樣板、society「兩個 mentor 都需要→先問使用者」、tech 與 coding-workflow 界線；neuro 獨有的優先期刊清單併入【3. 文獻定錨】。實測 55,404 → 50,620 bytes（**−4,784，−8.6%**，約 −1,367 tok），刪 6,577／換上 1,742。**與 v5.7 對照**：同樣消除五份重複，上輪抽骨架只省 −969 tok，本輪省 4.9 倍——差別在這三段是無條件冗餘，不需要換上替代內容。frontmatter 未動，固定開場成本維持 25,766 bytes；validator（PASS 39）與 `token-budget --strict` 皆 exit 0 |
 | v5.9 | 2026-08-21 | lessons.md 首次走 maintenance §4 精簡流程（ADR-024）：32 條 / 227 行跨過 30 條門檻，按「反覆踩同一件事」分三群歸納——靜默失效／宣稱≠實際 8 條 → **新增 R6**「部署／接線類改動的完成判準」（沒報錯不是證據、舊路徑仍可 resolve、部署物已重生成、停用要含下游反注入、部署狀態禁止寫成散文）；驗收假訊號 4 條 → **擴充 R2** +4 個 checkbox（真實初始化路徑、攔截器要測陰性案例、斷言錯誤訊息內容、委派看 `git diff --stat` 不看 exit code）；codex 委派 1 條 → `delegation-templates.md` §通用檢查。**關鍵前置：歸納前先查規則有沒有落地處**——codex 那兩條的規則 grep 後確認 `cli-delegate` 與 `delegation-templates` 兩處都沒有，只活在 lessons 裡，因此先補進派工模板再移除。**一條刻意不移**：`07-31 bash 全形標點` 的前半（中文訊息裡 shell 變數寫 `${VAR}`）在 `rules/` 無落地處，移除會讓規則消失，14 → 13 條。lessons 32 → 19 條（157 行，含檔頭「已歸納移除」索引表指向 git 歷史與備份）；judgment-rubrics 102 → 152 行；三檔改動前皆備份至 `governance/backups/*.2026-08-21.bak` |
+| v5.10 | 2026-08-25 | 依使用統計停用 7 個 skill、合併 5 個，39 → 28（ADR-025）：`bin/skill-usage.py --days 0`（窗口 3 週）顯示只有 9 個 skill 曾被主動選用（`inv > 0`）、15 個三指標全零，使用者裁決停用 `coding-workflow` / `concrete-example` / `feedback-loop` / `lazyengineer` / `lazyengineer-review` / `mentor-society` / `academic-mentor`，並把 `information-architecture` + `wireframing` + `ui-visual-design` 收成 `ui-design-flow` 三模式（查表移入 `references/design-patterns.md`）、`obsidian-query` + `rag-search` 收成 `knowledge-search`（`--source` 參數）。**「停用」只能是移出索引，加 lifecycle 標記無效**——validator 用 `skills/**/SKILL.md` 與 index 雙向比對（放 `skills/` 內就 FAIL），且 link farm 照 index 建 symlink，標記改變不了可見性；因此檔案搬到 `skills/` 樹外的 `deprecated/`，index 與 llms.txt 各刪一筆，`setup.sh` 的 `prune_orphan_entries` 清掉兩個 farm 共 12 個殘留 entry。委派點一律內聯不留 `deprecated/` 路徑：debug-flow Phase 2 收下具體舉例的格式選擇表與雙方案輸出、code-review Phase 1.5 收下五 tag 表與六關決策梯；學術路由收斂為四個專科 mentor，四個都不匹配→一般回答不硬套 mentor 模式（原 society 的三條方法論限制留在 `_shared/mentor-protocol.md` §11.2 表下）。**實測**：固定開場成本 25,432 → **23,171** bytes（−2,261，−8.9%，佔門檻 84.8% → 77.2%），降幅全來自 description（10,761 → 8,496，−21.0%）；維護 inventory 194,051 → 160,687（−17.2%）；waiver 8 → 6 筆。連帶修掉三處寫死斷言：`test-skill-usage.sh` 的 skill 數與 fixture、`test-token-budget.sh` 的 waiver 清單／`pass` 數／成本字串（換上新 baseline）與越界 padding（`5000` → `30000 - subtotal + 1000`，寫死的 padding 在成本下降後會靜默失效，讓「超標是勸告不是硬牆」永遠測不到）。驗證：validator PASS 28、`token-budget --strict` exit 0、`test-skill-usage.sh` 與 `test-token-budget.sh` 皆 ALL TESTS PASSED、`setup.sh` 重新接線 28 skills。**同批修掉掃描器低估**：`lib_skill_usage.py` 的路徑 regex 字元類不含 `$`，`$HOME/...` 從第二字元起算、抓到的 `HOME/...` 被判為相對路徑而靜默進 unresolved，實測歸戶後 coding-workflow-core read 19→20、cli-delegate 6→7、code-review edit 0→1 |

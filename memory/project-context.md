@@ -18,7 +18,7 @@
 
 - 採用 Grep-based 檢索，不引入外部 vector DB
 - 知識庫路徑：`knowledge/`，分三類：engineering / security / workflow
-- 搜尋 skill：`skills/productivity/rag-search/SKILL.md`
+- 搜尋 skill：`skills/productivity/knowledge-search/SKILL.md`（`--source knowledge`；ADR-025 起由 `rag-search` 合併而來）
 - 決策原因：符合現有 Bash + Markdown 架構，零依賴，可立即使用
 
 ### TODO：評估升級至 Embedding + Vector DB
@@ -812,3 +812,69 @@ judgment-rubrics 102 → 152 行（R1–R5 → R1–R6）；delegation-templates
 `validate-skill-index.py` 與 `token-budget.sh --strict` 皆 exit 0（governance/ 不計入
 固定開場成本，數值未變）；README 目錄結構的 `R1-R5` 已更新為 `R1-R6`，
 v4.5 版本列與 ADR-011 的歷史敘述保留不改史。
+
+---
+
+## ADR-025：依使用統計停用 7 個 skill、合併 5 個，39 → 28（2026-08-25）
+
+**背景**：`bin/skill-usage.py --days 0`（窗口 2026-08-07～08-25）顯示 39 個 skill 中只有 9 個
+曾被模型主動選用（`inv > 0`），15 個三項指標全零。使用者裁決停用其中 7 個、合併 5 個。
+
+**決策**：
+
+| 動作 | 對象 |
+|------|------|
+| 停用（移出索引，檔案保留）| `coding-workflow`、`concrete-example`、`feedback-loop`、`lazyengineer`、`lazyengineer-review`、`mentor-society`、`academic-mentor` |
+| 併入 `ui-design-flow`（三模式）| `information-architecture` → 模式 A、`wireframing` → 模式 B、`ui-visual-design` → 模式 C |
+| 併為 `knowledge-search`（`--source` 參數）| `obsidian-query` → `vault`、`rag-search` → `knowledge` |
+
+**「停用」的實作為何不能只加標記**：`bin/validate-skill-index.py` 用
+`(repo/"skills").rglob("SKILL.md")` 與 index 做雙向 coverage 比對——`skills/` 底下任何一份
+SKILL.md 不在 index 就 FAIL，所以停用資料夾**不能**放在 `skills/` 內。即使放進去並加
+`lifecycle: deprecated`，`bin/lib-skill-farm.sh` 仍會依 index 把它 symlink 進
+`~/.claude/skills/` 與 `~/.codex/skills/`，模型照樣掃得到。**停用必須是移出索引**：
+檔案搬到 repo 根的 `deprecated/`（`skills/` 樹外），index.json 與 llms.txt 各刪一筆，
+`bash setup.sh` 的 `prune_orphan_entries` 清掉兩個 farm 的殘留 symlink（實測清掉 12 個）。
+
+**委派點一律內聯，不留指向 `deprecated/` 的路徑**（使用者裁決；留路徑等於沒停用）：
+`debug-flow` Phase 2 內聯 concrete-example 的格式選擇表與雙方案輸出；`code-review` Phase 1.5
+內聯 lazyengineer-review 的五 tag 表與 lazyengineer 六關決策梯；`cooking-flow` 的
+feedback-loop 引用改為一句原則；`mentor-neuro` 兩條路由改為「不進 mentor，一般回答」。
+
+**學術路由收斂**（使用者裁決）：`academic-mentor` 的兜底角色與 `mentor-society` 一併移除，
+llms.txt 歧義樹改為只分流四個專科 mentor（neuro / science / tech / invest），四個都不匹配
+→ 一般回答，**不硬套 mentor 模式**。原 society 的三條方法論限制（確定性天花板 ⚠️、
+相關≠因果、脈絡依賴）保留在 `_shared/mentor-protocol.md` §11.2 表下，作為一般回答時的提醒。
+
+**實測成本變化**（`bin/token-budget.sh`，對照 2026-08-10 baseline）：
+
+| 項目 | 前 | 後 | 差 |
+|------|----|----|----|
+| 固定開場成本小計 | 25,432 | **23,171** | −2,261（−8.9%），佔門檻 84.8% → 77.2% |
+| frontmatter description 總計 | 10,761 | 8,496 | −2,265（−21.0%）|
+| 常駐 rules | 14,671 | 14,675 | +4（未動）|
+| 維護 inventory（body）| 194,051 | 160,687 | −33,364（−17.2%）|
+| 已核准 waiver | 8 筆 | 6 筆 | academic-mentor / mentor-society 隨 skill 移除 |
+
+固定成本的下降**全部來自 description**，與 §8.2「真正的成長風險在常駐 rules 那 14,671」一致
+——停用 12 個 skill 只動得了另外那半邊。
+
+**連帶修掉三處寫死的測試斷言**（詳見 lessons 2026-08-25 第二條）：`test-skill-usage.sh` 的
+skill 數 `38`（改為從 index.json 導出）與指向已停用 skill 的 fixture；`test-token-budget.sh`
+的 waiver 清單、`pass` 數、成本字串（保留寫死但換上新 baseline
+`plans/baselines/20260825T033010412935+0000-55b6d87-dirty.json`）與越界 padding
+（`5000` 改為 `30000 - subtotal + 1000`——寫死的 padding 在成本下降後靜默失效，
+會讓「超標是勸告不是硬牆」那條測試永遠測不到該分支）。
+
+**同批修掉統計低估**：`lib_skill_usage.py` 的 `SKILL_PATH_PATTERN` 字元類不含 `$`，
+`$HOME/...` 的比對從第二個字元起算，抓到的 `HOME/...` 沒有前導斜線而被判為相對路徑，
+接到 workdir 後面解析失敗、靜默進 unresolved。改為把 `$HOME` / `${HOME}` 提成明確前綴群組，
+resolve 時只展開 HOME（展開任意環境變數等於用掃描器的環境冒充當時 session 的環境）。
+實測歸戶後 `coding-workflow-core` read 19→20、`cli-delegate` read 6→7、`code-review` edit 0→1。
+**本次停用判斷未受影響**——這三個都不在停用名單內。
+
+**未來風險**：① 使用統計窗口只有約 3 週、**agy harness 完全未涵蓋**，因此 0 使用是候選訊號不是刪除依據——
+本次只停用「另有功能重疊證據」的項目，純低頻的 `deploy-prep` / `security-review`
+（`critical-on-demand`）與 `mentor-tech` / `tw-stock-tracker` 等一律不動；
+② `deprecated/` 內的 12 份 SKILL.md 不再受 validator 與 token-budget 統計涵蓋，
+會隨制度演進逐漸過時，復用前必須重讀而非直接搬回。

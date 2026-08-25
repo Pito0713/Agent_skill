@@ -59,7 +59,7 @@ grep -rl "<關鍵字>" "$OBSIDIAN_VAULT_PATH/knowledge/cooking" --include="*.md"
 ```
 
 `OBSIDIAN_VAULT_PATH` 未設定**不是錯誤**，降級只用 references 與網搜即可
-（設定方式見 `skills/productivity/obsidian-query/SKILL.md`）。
+（設定方式見 `skills/productivity/knowledge-search/SKILL.md`）。
 
 ### ③ 網搜補充
 
@@ -170,7 +170,7 @@ servings: <份數>
 ```
 
 **「下次要改」一次只寫一項。** 同時改三個變因，下次就不知道是哪一項起了作用——
-這條跟 `skills/learning/feedback-loop/SKILL.md` 同源。
+這是刻意練習的基本紀律：一次只動一個變因，才有可歸因的回饋。
 
 同一道菜第二次以上被問到 → 先讀 vault 的「下次要改」，把它納入這次輸出並主動提起。
 

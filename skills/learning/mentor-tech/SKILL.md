@@ -200,7 +200,7 @@ Tradeoff 是什麼？在什麼情境下選這個？什麼情境下不選？
 **需主題確認（可能與其他 skill 衝突）：**
 「怎麼實作 X」→ 若是概念理解 → mentor-tech；若是寫程式 → coding-workflow
 「密碼學」→ 若是數學原理 → mentor-science；若是哪種加密演算法選哪個 → mentor-tech
-「AI 發展趨勢」→ 若是技術架構（Transformer、RAG）→ mentor-tech；若是社會影響 → mentor-society
+「AI 發展趨勢」→ 若是技術架構（Transformer、RAG）→ mentor-tech；若是社會影響 → 不進 mentor，一般回答
 
 ---
 

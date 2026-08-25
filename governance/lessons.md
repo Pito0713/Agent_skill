@@ -156,3 +156,43 @@
 - 修正：重新 grep 五份實際檔案，補刪【角色定位】的五張表，§10／ADR 改為記錄「三段」並附實測值。
 - 規則：待辦清單是**當時的觀察**不是規格。動手前先對實際檔案重跑一次掃描，確認範圍與清單一致；
   數字一律先量測再寫進文件，不准先寫估計值等回填。
+
+## 2026-08-25 停用 skill 必須移出索引，加 lifecycle 標記等於沒停用
+- 情境：依使用統計停用 7 個 skill、合併 5 個（ADR-025）。第一直覺是在 `skills/` 下開
+  `_deprecated/` 子目錄並標 `lifecycle: deprecated`。
+- 錯誤/風險：兩層都不成立。① `bin/validate-skill-index.py` 用 `(repo/"skills").rglob("SKILL.md")`
+  比對 index，`skills/` 底下任何一份 SKILL.md 不在 index 就直接 FAIL；② 就算加進 index 標
+  lifecycle，`bin/lib-skill-farm.sh` 照樣把它 symlink 進 `~/.claude/skills/`，模型仍然掃得到——
+  **標記改變不了可見性**。
+- 修正：停用資料夾放 repo 根目錄 `deprecated/`（在 `skills/` 樹外），同時從 index.json 與
+  llms.txt 移除該筆；`bash setup.sh` 的 `prune_orphan_entries` 會清掉兩個 farm 的舊 symlink。
+- 規則：**判斷「某個東西還會不會被讀到」，看的是索引與 symlink，不是檔案裡的標記。**
+  停用前先 `grep -rn "<name>" skills/` 掃現存委派點，決定內聯或移除；改完必跑
+  `validate-skill-index.py` + `token-budget.sh --strict` + `setup.sh`，三者缺一都留得下殘骸。
+
+## 2026-08-25 寫死期望值的守門測試，會在「數量下降」時才暴露
+- 情境：同一批停用作業連續打爆三處寫死的斷言——`test-skill-usage.sh` 的 `38`、
+  該檔用已停用 skill 當 fixture、`test-token-budget.sh` 的 waiver 清單與 `5000` bytes padding。
+- 錯誤/風險：這些斷言在「只增不減」的期間全部安靜通過（新增 skill 時 38→39 才紅一次），
+  真正的失效模式是**移除**：fixture 指向的檔案消失、padding 不再足以越過門檻——後者尤其危險，
+  它讓「超標是勸告不是硬牆」這條測試變成永遠測不到那個分支，卻不會報錯。
+- 修正：能導出的一律改導出（skill 數從 index.json 讀、padding 由 `30000 - subtotal + 1000` 算）；
+  真正要當守門的（waiver 清單、成本 baseline）保留寫死，但同步換上新 baseline 並在 ADR 記明。
+- 規則：測試裡的常數分兩種——**「描述現況」的要導出**（數量、路徑、fixture 名稱），
+  **「守門檻」的才寫死**（預算 baseline、核准清單）。寫死前先問：這個數字變了，我是想被擋下來，
+  還是只是懶得算？後者一律改導出。
+
+## 2026-08-25 正規表達式的字元類漏一個 `$`，把絕對路徑降級成相對路徑
+- 情境：`bin/skill-usage.py` 的 unresolved 桶長期有 `HOME/.codex/skills/<name>/SKILL.md` 三筆，
+  看起來像「外部 skill」，實際是本 repo 的 `coding-workflow-core` / `code-review` / `cli-delegate`。
+- 錯誤/風險：`SKILL_PATH_PATTERN` 的字元類 `[\w./~-]` 不含 `$`，所以 `$HOME/...` 的比對**從
+  第二個字元開始**，抓到的 `HOME/...` 沒有前導斜線 → `is_absolute()` 為 False → 被接到 workdir
+  後面變成不存在的路徑 → 靜默進 unresolved。三個 skill 的真實用量因此被系統性低估，
+  而報表看起來完全正常——**沒有任何錯誤訊息**，只是數字偏小。
+- 修正：把 `$HOME` / `${HOME}` 提成明確的前綴群組（不污染主體字元類），resolve 時只展開 HOME
+  一個變數（展開任意環境變數等於用掃描器的環境冒充當時 session 的環境）；補 fixture 測試並
+  **實測「移除修正後測試會紅」**，確認不是空轉的斷言。
+- 規則：**統計工具的「無法歸類」桶要定期看內容，不是只看總數。** 一筆本該歸戶的資料掉進
+  unresolved 不會報錯，只會讓結論偏一點——這種偏差正是靠人工掃一次桶內清單才抓得到。
+  另：寫路徑比對的 regex 前，先列出真實輸入裡可能出現的前綴形式（`~`、`$HOME`、`${HOME}`、
+  相對路徑），字元類漏一個就是靜默降級。

@@ -26,7 +26,13 @@ ANALYSIS_MARKERS = (".codex/sessions", ".claude/projects")
 # Plan drafts and this mechanism's own products name skills without using them.
 EXCLUDED_TARGET_MARKERS = ("/plans/", "skill-usage", "skill-feedback", "skill-review")
 
-SKILL_PATH_PATTERN = re.compile(r"[\w./~-]*skills/[\w./-]+/SKILL\.md")
+# Shell commands reach us verbatim, so a path may still be written as `$HOME/...`.
+# `$` and `{}` are deliberately not in the body class — capturing the variable as an
+# explicit prefix keeps the rest of the pattern unchanged, and without it the match
+# started one character late (`HOME/.codex/skills/x/SKILL.md`), looked relative, and
+# got joined onto the workdir into a path that resolves to nothing.
+HOME_VARIABLE = r"(?:\$\{?HOME\}?)?"
+SKILL_PATH_PATTERN = re.compile(HOME_VARIABLE + r"[\w./~-]*skills/[\w./-]+/SKILL\.md")
 WORKDIR_PATTERN = re.compile(r'"(?:workdir|cwd)"\s*:\s*"([^"]+)"')
 APPLY_PATCH_TARGET = re.compile(r"\*\*\*\s+(?:Update|Add|Delete) File:\s*(\S+)")
 CODEX_CALL_TYPES = {"function_call", "custom_tool_call", "local_shell_call"}
@@ -93,9 +99,22 @@ def parse_moment(raw: str | None) -> datetime | None:
     return moment.astimezone(timezone.utc) if moment.tzinfo else moment.replace(tzinfo=timezone.utc)
 
 
+def expand_home(raw_path: str) -> str:
+    """Rewrite a leading `$HOME` / `${HOME}` to `~` so expanduser can take it.
+
+    Only HOME is expanded, and only in leading position. Substituting arbitrary
+    environment variables would use the scanner's environment rather than the one
+    the recorded session ran in — a guess this scanner has no business making.
+    """
+    for prefix in ("$HOME/", "${HOME}/"):
+        if raw_path.startswith(prefix):
+            return "~/" + raw_path[len(prefix):]
+    return raw_path
+
+
 def resolve_skill(raw_path: str, workdir: str | None, directories: dict[Path, str]) -> str | None:
     """Map a path to an indexed skill name; None when it points outside the index."""
-    candidate = Path(raw_path).expanduser()
+    candidate = Path(expand_home(raw_path)).expanduser()
     if not candidate.is_absolute():
         if not workdir:
             return None

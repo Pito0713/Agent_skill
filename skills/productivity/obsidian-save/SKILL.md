@@ -11,7 +11,7 @@ metadata:
 # Obsidian Save（寫入知識）
 
 將當前對話中有價值的知識整理成結構化筆記，存入 Obsidian vault。
-**自動偵測來源 skill，academic-mentor 輸出使用專屬學術模板。**
+**自動偵測來源 skill，四個專科 mentor（neuro / science / tech / invest）輸出使用專屬學術模板。**
 
 ---
 
@@ -60,7 +60,7 @@ echo "✅ vault：$VAULT_PATH"
 ```
 偵測條件（符合任一即判斷為 mentor 系來源，走學術模板）：
 [1] 對話中出現確定性符號組合（⚠️ ❓ 🚫 其中之一，或連同文字說明出現）
-[2] 對話中出現四段結構標題：「核心機制」「文獻依據」「社會影響」「深化問題」（academic-mentor）
+[2] 對話中出現四段結構標題：「核心機制」「文獻依據」「社會影響」「深化問題」
 [3] 對話中出現專科 mentor 區塊標題：【定位聲明】【機制鏈】【知識層級定位】
     【Tradeoff 矩陣】【行為偏誤掃描】【知識圖譜節點】其中之一，或 [[wiki-link]] 節點連結
 [4] 對話中有學術引用格式（作者 年份 〈標題〉 期刊）
@@ -76,11 +76,11 @@ echo "✅ vault：$VAULT_PATH"
 
 ---
 
-## 路徑 A：學術模板（academic-mentor 來源）
+## 路徑 A：學術模板（mentor-* 來源）
 
 ### A-1：萃取欄位對應
 
-| academic-mentor 輸出區塊 | Obsidian 欄位 |
+| mentor 輸出區塊 | Obsidian 欄位 |
 |------|------|
 | 核心機制解析（直觀解釋 + 精確定義）| `## 核心機制` |
 | 文獻與研究依據（含確定性符號）| `## 文獻依據` |
@@ -96,7 +96,7 @@ echo "✅ vault：$VAULT_PATH"
 # <主題標題>
 
 > 建立時間：<YYYY-MM-DD HH:MM>
-> 來源：academic-mentor 對話
+> 來源：<mentor-neuro / mentor-science / mentor-tech / mentor-invest> 對話
 > 標籤：#<領域> #academic #<主題關鍵字>
 > 最高確定性：<✅ / ⚠️ / ❓>
 
@@ -146,7 +146,7 @@ echo "✅ vault：$VAULT_PATH"
 # 判斷規則（依來源 mentor 對應目錄）
 # knowledge/neuro/      → mentor-neuro：神經科學、認知心理、行為科學
 # knowledge/health/     → 醫學、生理、心理健康
-# knowledge/society/    → mentor-society：社會現象、科技影響、教育、傳播
+# knowledge/society/    → 社會現象、科技影響、教育、傳播（無專屬 mentor，一般回答亦可存入）
 # knowledge/science/    → mentor-science：自然科學、物理、化學、生物
 # knowledge/tech/       → mentor-tech：技術架構、系統設計、工程權衡（概念層）
 # knowledge/invest/     → mentor-invest：投資框架、行為偏誤、資產配置原則
@@ -259,7 +259,7 @@ mv "$VAULT_PATH/inbox/<filename>.md" "$VAULT_PATH/knowledge/tech/<filename>.md"
 
 ```
 [ ] .env 存在且 OBSIDIAN_VAULT_PATH 有值
-[ ] Phase 0 已判斷來源（academic-mentor 或通用）
+[ ] Phase 0 已判斷來源（mentor-* 或通用）
 [ ] 使用對應模板（A 或 B）
 [ ] 學術模板：確定性符號保留、文獻格式完整
 [ ] 學術模板：存入 knowledge/<領域>/ 而非 inbox/

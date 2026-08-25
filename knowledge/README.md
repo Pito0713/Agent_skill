@@ -1,6 +1,6 @@
 # Knowledge Base
 
-RAG 知識庫，供 rag-search skill 搜尋使用。
+RAG 知識庫，供 knowledge-search skill（`--source knowledge`）搜尋使用。
 
 ## 新增知識檔案規範
 

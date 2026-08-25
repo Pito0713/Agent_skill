@@ -38,4 +38,3 @@
 - 除錯 → `skills/engineering/debug-flow/SKILL.md`
 - Code Review → `skills/engineering/code-review/SKILL.md`
 - 安全審查 → `skills/engineering/security-review/SKILL.md`
-- 精簡程式碼 → `skills/engineering/lazyengineer/SKILL.md`

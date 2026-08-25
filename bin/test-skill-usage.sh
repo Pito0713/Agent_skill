@@ -78,9 +78,15 @@ codex_lines = [
     item("function_call", "k3", "exec_command", json.dumps(
         {"cmd": f"grep -r SKILL.md {home}/.claude/projects && cat {skill('engineering/new-feature')}",
          "workdir": workdir})),
+    # $HOME-prefixed paths: shell commands reach us verbatim, and the farm symlink
+    # must still resolve back onto the canonical package
+    item("function_call", "k6", "exec_command", json.dumps(
+        {"cmd": "cat $HOME/.codex/skills/testing-strategy/SKILL.md && "
+                "cat ${HOME}/.claude/skills/deploy-prep/SKILL.md",
+         "workdir": workdir})),
     # a real patch against a skill package -> maintenance
     item("custom_tool_call", "k4", "apply_patch",
-         f"*** Begin Patch\n*** Update File: {skill('design/wireframing')}\n"
+         f"*** Begin Patch\n*** Update File: {skill('productivity/version-log')}\n"
          f"@@\n-old line\n+new line\n*** End Patch"),
     # a patch against something else whose body quotes many skill paths:
     # those are content, not targets, and must not become edit events
@@ -99,17 +105,19 @@ with (codex_root / "rollout-a.jsonl").open("w", encoding="utf-8") as handle:
 # a rollout with no session_meta and no workdir -> scope must stay unknown
 with (codex_root / "rollout-nocwd.jsonl").open("w", encoding="utf-8") as handle:
     handle.write(json.dumps(item("custom_tool_call", "k9", "exec", json.dumps(
-        {"cmd": f"cat {skill('productivity/rag-search')}"})), ensure_ascii=False) + "\n")
+        {"cmd": f"cat {skill('productivity/smart-init')}"})), ensure_ascii=False) + "\n")
 PY
 
 echo "== scanning fixtures =="
 python3 "$SCANNER" --repo "$REPO" --claude-root "$WORK/claude/projects" \
   --codex-root "$WORK/codex/sessions" --days 0 --json > "$WORK/out.json"
 
-python3 - "$WORK/out.json" <<'PY'
+python3 - "$WORK/out.json" "$REPO" <<'PY'
 import json, sys
 
 report = json.loads(open(sys.argv[1], encoding="utf-8").read())
+# Derived, never hard-coded: adding a skill to the index must not break this test.
+indexed = json.loads(open(f"{sys.argv[2]}/skills/index.json", encoding="utf-8").read())["skills"]
 rows = {row["name"]: row for row in report["skills"]}
 failures = []
 
@@ -126,16 +134,22 @@ check("custom_tool_call schema recognised", rows["debug"]["read"], 1)
 check("read from a downstream project", rows["debug-flow"]["read"], 1)
 check("edit classified as maintenance", rows["handoff"]["edit"], 1)
 check("edit is not counted as usage", rows["handoff"]["read"], 0)
-check("apply_patch classified as maintenance", rows["wireframing"]["edit"], 1)
+check("apply_patch classified as maintenance", rows["version-log"]["edit"], 1)
 check("patch body quoting a skill is not an edit", rows["mentor-neuro"]["edit"], 0)
 check("patch body quoting a skill is not a read", rows["mentor-science"]["read"], 0)
-check("missing workdir stays unknown", rows["rag-search"]["unknown"], 1)
-check("missing workdir is not usage", rows["rag-search"]["read"], 0)
+check("missing workdir stays unknown", rows["smart-init"]["unknown"], 1)
+check("missing workdir is not usage", rows["smart-init"]["read"], 0)
 check("prose mention is not a tool call", rows["new-feature"]["read"], 0)
 check("prose mention is not an invocation", rows["new-feature"]["inv"], 0)
 check("codex prose mention ignored", rows["documentation"]["read"], 0)
 check("skills with zero events still listed", rows["mentor-neuro"]["inv"], 0)
-check("every indexed skill is present", len(report["skills"]), 38)
+check("every indexed skill is present", len(report["skills"]), len(indexed))
+check("no skill missing from the report",
+      sorted(entry["name"] for entry in indexed if entry["name"] not in rows), [])
+check("$HOME prefix resolves through the codex farm", rows["testing-strategy"]["read"], 1)
+check("${HOME} prefix resolves through the claude farm", rows["deploy-prep"]["read"], 1)
+check("$HOME path is not left unresolved",
+      [key for key in report["unresolved"] if "HOME" in key], [])
 check("lifecycle surfaced", rows["deploy-prep"]["lifecycle"], "critical-on-demand")
 check("foreign skill goes to unresolved",
       report["unresolved"].get("anthropic-skills:coding-workflow"), 1)

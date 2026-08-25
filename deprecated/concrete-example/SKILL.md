@@ -8,6 +8,19 @@ metadata:
   last_updated: "2026-06-10"
 ---
 
+> 🚫 **已停用（2026-08-25）**
+>
+> 本檔已移出 `skills/`，**不在 `skills/index.json`、不在 `skills/llms.txt`、不會被任何 harness 掃到**，
+> agent 不會主動讀取或觸發它。保留在此僅作為文件參考與歷史依據。
+>
+> **停用理由**：0 使用；核心「逐步舉例 + 替代解法」已內聯進 debug-flow Phase 2
+>
+> 要復用：把整個目錄搬回 `skills/<分類>/`，在 `index.json` 與 `llms.txt` 補回同一筆路由資料，
+> 跑 `python3 bin/gen-skill-frontmatter.py --write` 重生 frontmatter，再跑 `bash setup.sh`。
+> 政策與完整清單見 `deprecated/README.md`。
+
+---
+
 # Concrete Example（具體情境舉例）
 
 抽象邏輯轉成可逐步追蹤的具體情境，同時提供「正常解法」與「跳脫框架的替代解法」讓使用者選擇方向。

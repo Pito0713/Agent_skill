@@ -28,13 +28,6 @@
       "description": "常見實作模式速查手冊（API endpoint / React 元件 / bug 修復）。"
     },
     {
-      "name": "coding-workflow",
-      "path": "skills/engineering/coding-workflow/SKILL.md",
-      "triggers": "（不直接觸發，完整版參考文件）",
-      "description": "coding-workflow-core + coding-workflow-ref 拆分前的完整版，僅供對照參考。",
-      "lifecycle": "reference"
-    },
-    {
       "name": "debug-flow",
       "path": "skills/engineering/debug-flow/SKILL.md",
       "triggers": "bug、壞掉了、為什麼錯、不如預期、找不到原因、一直出錯、error、為什麼會這樣",
@@ -81,18 +74,6 @@
       "description": "測試策略設計，只輸出測試計畫文件，不寫程式碼（實作交 test-engineer agent）。"
     },
     {
-      "name": "lazyengineer",
-      "path": "skills/engineering/lazyengineer/SKILL.md",
-      "triggers": "精簡一下、有更簡單的寫法嗎、不要 over-engineering、能不能更少、lazyengineer、lazy mode、這段太複雜了",
-      "description": "Lazy Senior 模式，強制走完六關決策梯，確保只寫必要的最小程式碼。"
-    },
-    {
-      "name": "lazyengineer-review",
-      "path": "skills/engineering/lazyengineer-review/SKILL.md",
-      "triggers": "有沒有過度設計、可以刪什麼、lazyengineer review、找多餘的程式碼、掃一下有沒有過度設計",
-      "description": "Over-Engineering 偵測，掃描現有程式碼找出可刪除或簡化的部分，輸出 net: -N lines。"
-    },
-    {
       "name": "documentation",
       "path": "skills/engineering/documentation/SKILL.md",
       "triggers": "幫我寫文件、更新 README、API docs、建立 runbook、寫 API docs",
@@ -107,45 +88,8 @@
     {
       "name": "ui-design-flow",
       "path": "skills/design/ui-design-flow/SKILL.md",
-      "triggers": "規劃 UI、設計這個頁面、這個畫面要怎麼做、UI 架構、幫我規劃這個頁面、設計這個功能的 UI",
-      "description": "UI 設計規劃協調器，從 IA → wireframe → 視覺風格 → 實作交接的完整流程。"
-    },
-    {
-      "name": "information-architecture",
-      "path": "skills/design/information-architecture/SKILL.md",
-      "triggers": "幫我規劃導航、這些功能怎麼分類、資訊架構、IA、API 路由結構",
-      "description": "規劃內容層級與導航結構，也適用於 API 路由結構設計。"
-    },
-    {
-      "name": "wireframing",
-      "path": "skills/design/wireframing/SKILL.md",
-      "triggers": "幫我規劃頁面結構、這個畫面要放什麼、wireframe",
-      "description": "用文字快速規劃頁面版面與資訊層級骨架。"
-    },
-    {
-      "name": "ui-visual-design",
-      "path": "skills/design/ui-visual-design/SKILL.md",
-      "triggers": "幫我決定視覺風格、UI 風格建議、這個產品應該用什麼設計風格",
-      "description": "根據產品類型與目標用戶推薦顏色、字型、間距視覺風格方向。"
-    },
-    {
-      "name": "concrete-example",
-      "path": "skills/learning/concrete-example/SKILL.md",
-      "triggers": "我看不懂、為什麼還是錯、這什麼意思、邏輯是什麼",
-      "description": "用具體情境舉例說明正確邏輯的每一步，提供正常解法與跳脫框架替代解法。"
-    },
-    {
-      "name": "feedback-loop",
-      "path": "skills/learning/feedback-loop/SKILL.md",
-      "triggers": "練習、幫我改進、給我回饋、feedback loop",
-      "description": "刻意練習的立即回饋循環，每輪只指出一個最優先修改點。"
-    },
-    {
-      "name": "academic-mentor",
-      "path": "skills/learning/academic-mentor/SKILL.md",
-      "triggers": "學術角度、有科學根據嗎、這個機制是什麼、研究怎麼說、幫我理解這個研究、academic mentor、有沒有文獻、這是真的嗎（涉及科學主張）、可以跟我介紹、跟我解釋、這原理是什麼、為什麼會這樣、背後的原理（以上通用詞需結合科學/學術主題才觸發，否則走 concrete-example 或 debug-flow；主題屬神經／社會／自然／技術科學者，優先走對應 mentor-*）",
-      "description": "切換為學術導師模式，四段結構回覆（機制→文獻→社會影響→深化提問），每個論點標注確定性等級，主動糾正常見迷思，絕不捏造文獻。",
-      "description_waiver": "2026-08-07 wits 核准：承載跨 skill 分流條款——六個 mentor 系 skill 互相競爭路由，壓縮會惡化已知的觸發詞重疊（計劃書 §4 目標 C）"
+      "triggers": "規劃 UI、設計這個頁面、UI 架構、幫我規劃導航、這些功能怎麼分類、資訊架構、IA、API 路由結構、頁面結構、wireframe、視覺風格、UI 風格建議",
+      "description": "UI 設計協調器，三模式：A 資訊架構、B 版面骨架 wireframe、C 視覺規格（顏色字型間距）。單一模式可獨立跑，三段串起來即完整頁面設計流程。"
     },
     {
       "name": "mentor-neuro",
@@ -176,13 +120,6 @@
       "description_waiver": "2026-08-07 wits 核准：承載跨 skill 分流條款——六個 mentor 系 skill 互相競爭路由，壓縮會惡化已知的觸發詞重疊（計劃書 §4 目標 C）"
     },
     {
-      "name": "mentor-society",
-      "path": "skills/learning/mentor-society/SKILL.md",
-      "triggers": "社群媒體影響、數位社會、媒體識讀、教育制度、階級流動、群體行為、文化差異、科技對社會的影響、社會現象、傳播、輿論、政策效果、社會科學（需涉及社會科學主題；神經機制方向優先 mentor-neuro）",
-      "description": "社會科學專屬導師。確定性天花板為 ⚠️（觀察性研究為主流），自動讀取 knowledge/society/ 上下文，永遠說明研究方法限制，呈現至少兩個競爭解釋框架，主動聲明脈絡邊界（文化/時期/人口），內建社會迷思雷達（7 條），提示存入 vault 形成知識節點。",
-      "description_waiver": "2026-08-07 wits 核准：承載跨 skill 分流條款——六個 mentor 系 skill 互相競爭路由，壓縮會惡化已知的觸發詞重疊（計劃書 §4 目標 C）"
-    },
-    {
       "name": "tw-stock-tracker",
       "path": "skills/investing/tw-stock-tracker/SKILL.md",
       "triggers": "進場點位、台股評分、幫我看 2330、這檔現在能不能進、技術面評分、跑對帳、我的判斷準不準、命中率、校準度（需帶台股代號或明確指向個股操作）",
@@ -200,12 +137,6 @@
       "path": "skills/productivity/project-dashboard/SKILL.md",
       "triggers": "project dashboard、看一下所有專案、跨專案狀態、專案總覽",
       "description": "讀取 ~/.agent-sessions/ 下所有專案的 latest.md，並對各專案 repo 現跑 git，輸出含「交接落後」的跨專案總覽表。"
-    },
-    {
-      "name": "rag-search",
-      "path": "skills/productivity/rag-search/SKILL.md",
-      "triggers": "查知識庫、rag、knowledge base、查一下我們的規範、這個我們有沒有記錄、有沒有相關規範",
-      "description": "搜尋 knowledge/ 知識庫，找出相關規範或模式後回答，來源會標注檔案路徑。"
     },
     {
       "name": "smart-init",
@@ -226,10 +157,10 @@
       "description": "將當前對話壓縮成交接文件，供下一個 session 或 agent 接手。"
     },
     {
-      "name": "obsidian-query",
-      "path": "skills/productivity/obsidian-query/SKILL.md",
-      "triggers": "查我的筆記、Obsidian 有沒有記錄、之前有記過嗎、搜 Obsidian、查歷史筆記",
-      "description": "從 Obsidian vault 搜尋相關歷史筆記並納入回答，來源會標注檔案路徑。需先設定 VAULT_PATH。"
+      "name": "knowledge-search",
+      "path": "skills/productivity/knowledge-search/SKILL.md",
+      "triggers": "查知識庫、rag、查一下我們的規範、這個我們有沒有記錄、有沒有相關規範、查我的筆記、Obsidian 有沒有記錄、之前有記過嗎、查歷史筆記",
+      "description": "知識檢索，--source 決定搜哪裡：knowledge（repo 規範庫）、vault（Obsidian 筆記）、both（預設）。片段一律標來源路徑，沒命中就明說沒有。"
     },
     {
       "name": "obsidian-save",

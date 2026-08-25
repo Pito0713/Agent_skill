@@ -45,18 +45,34 @@ metadata:
 ## Phase 1.5：Over-Engineering 掃描（可選）
 
 > ⏭ **跳過本 Phase**：滿足以下任一條件即跳過，直接進入 Phase 2
-> - 使用者未提到「精簡」、「過度設計」、「可以刪什麼」
+> - 使用者未提到「精簡」、「過度設計」、「可以刪什麼」、「太複雜了」、「lazyengineer」
 > - 審查範圍為 hotfix / 微小變更（< 20 行）
 
-若使用者有提到「lazyengineer」或「太複雜了」，觸發 `skills/engineering/lazyengineer-review/SKILL.md`：
+只問一件事：**這段程式碼裡有什麼是不需要存在的？**（原 `lazyengineer-review` skill，2026-08-25 內聯）
 
 ```
-[ ] 掃描五種 over-engineering 類型（delete / stdlib / native / yagni / shrink）
-[ ] 輸出每筆：L行號: [tag] 描述。替換方案。
+[ ] 逐段套五個 tag，每筆輸出格式：L行號: [tag] 描述。替換方案。
 [ ] 最終輸出：net: -N lines possible
 ```
 
-此 phase 輸出**不影響**後續 Phase 2-5 的安全 / 測試審查。
+| tag | 意義 | 輸出方向 |
+|-----|------|---------|
+| `delete:` | 死程式碼 / 從未被呼叫的功能 | 直接刪 |
+| `stdlib:` | 自己手寫了標準庫已提供的東西 | 換用 stdlib |
+| `native:` | 依賴或自訂碼重複了平台原生功能 | 換用平台能力 |
+| `yagni:` | 只有一個實作的抽象、只有一個呼叫者的 wrapper | 拍平或刪除 |
+| `shrink:` | 相同邏輯可以更少行達成 | 重寫更短 |
+
+**範例**：`L34: yagni: UserRepository 只有一個實作。直接用 class，刪 interface。`
+
+**不標記**：smoke test 與基本 assertion、使用者明確要求的功能、安全相關驗證、已有 `TODO` 或
+`lazyengineer: skip` 註明取捨的地方。這四類標了只會製造雜訊。
+
+**建議實作時同步套決策梯**（原 `lazyengineer` skill 六關，寫 code 前依序自問）：
+① 這需要存在嗎（YAGNI）→ ② stdlib 有嗎 → ③ 平台原生有嗎 → ④ 現有依賴能做嗎 →
+⑤ 一行能搞定嗎 → ⑥ 才輪到寫最小程式碼。
+
+此 phase 輸出**不影響**後續 Phase 2-5 的安全 / 測試審查——過度設計是品質問題，不是正確性問題。
 
 ---
 

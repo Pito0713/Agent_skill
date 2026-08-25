@@ -28,11 +28,6 @@ path: skills/engineering/coding-workflow-ref/SKILL.md
 triggers: 查實作模式、怎麼寫 API、component 怎麼做、有沒有範本
 description: 常見實作模式速查手冊（API endpoint / React 元件 / bug 修復）。
 
-name: coding-workflow
-path: skills/engineering/coding-workflow/SKILL.md
-triggers: （不直接觸發，完整版參考文件）
-description: coding-workflow-core + coding-workflow-ref 拆分前的完整版，僅供對照參考。
-
 name: debug-flow
 path: skills/engineering/debug-flow/SKILL.md
 triggers: bug、壞掉了、為什麼錯、不如預期、找不到原因、一直出錯、error、為什麼會這樣
@@ -72,16 +67,6 @@ path: skills/engineering/testing-strategy/SKILL.md
 triggers: 幫我寫測試、這個怎麼測、test plan、幫我規劃測試
 description: 測試策略設計，只輸出測試計畫文件，不寫程式碼（實作交 test-engineer agent）。
 
-name: lazyengineer
-path: skills/engineering/lazyengineer/SKILL.md
-triggers: 精簡一下、有更簡單的寫法嗎、不要 over-engineering、能不能更少、lazyengineer、lazy mode、這段太複雜了
-description: Lazy Senior 模式，強制走完六關決策梯，確保只寫必要的最小程式碼。
-
-name: lazyengineer-review
-path: skills/engineering/lazyengineer-review/SKILL.md
-triggers: 有沒有過度設計、可以刪什麼、lazyengineer review、找多餘的程式碼、掃一下有沒有過度設計
-description: Over-Engineering 偵測，掃描現有程式碼找出可刪除或簡化的部分，輸出 net: -N lines。
-
 ---
 
 ## Documentation — 文件
@@ -102,42 +87,12 @@ description: commit 前記錄版本號與變更摘要到 README.md 的版本紀�
 
 name: ui-design-flow
 path: skills/design/ui-design-flow/SKILL.md
-triggers: 規劃 UI、設計這個頁面、這個畫面要怎麼做、UI 架構、幫我規劃這個頁面、設計這個功能的 UI
-description: UI 設計規劃協調器，從 IA → wireframe → 視覺風格 → 實作交接的完整流程。
-
-name: information-architecture
-path: skills/design/information-architecture/SKILL.md
-triggers: 幫我規劃導航、這些功能怎麼分類、資訊架構、IA、API 路由結構
-description: 規劃內容層級與導航結構，也適用於 API 路由結構設計。
-
-name: wireframing
-path: skills/design/wireframing/SKILL.md
-triggers: 幫我規劃頁面結構、這個畫面要放什麼、wireframe
-description: 用文字快速規劃頁面版面與資訊層級骨架。
-
-name: ui-visual-design
-path: skills/design/ui-visual-design/SKILL.md
-triggers: 幫我決定視覺風格、UI 風格建議、這個產品應該用什麼設計風格
-description: 根據產品類型與目標用戶推薦顏色、字型、間距視覺風格方向。
+triggers: 規劃 UI、設計這個頁面、UI 架構、幫我規劃導航、這些功能怎麼分類、資訊架構、IA、API 路由結構、頁面結構、wireframe、視覺風格、UI 風格建議
+description: UI 設計協調器，三模式：A 資訊架構、B 版面骨架 wireframe、C 視覺規格（顏色字型間距）。單一模式可獨立跑，三段串起來即完整頁面設計流程。
 
 ---
 
 ## Learning — 學習
-
-name: concrete-example
-path: skills/learning/concrete-example/SKILL.md
-triggers: 我看不懂、為什麼還是錯、這什麼意思、邏輯是什麼
-description: 用具體情境舉例說明正確邏輯的每一步，提供正常解法與跳脫框架替代解法。
-
-name: feedback-loop
-path: skills/learning/feedback-loop/SKILL.md
-triggers: 練習、幫我改進、給我回饋、feedback loop
-description: 刻意練習的立即回饋循環，每輪只指出一個最優先修改點。
-
-name: academic-mentor
-path: skills/learning/academic-mentor/SKILL.md
-triggers: 學術角度、有科學根據嗎、這個機制是什麼、研究怎麼說、幫我理解這個研究、academic mentor、有沒有文獻、這是真的嗎（涉及科學主張）、可以跟我介紹、跟我解釋、這原理是什麼、為什麼會這樣、背後的原理（以上通用詞需結合科學/學術主題才觸發，否則走 concrete-example 或 debug-flow；主題屬神經／社會／自然／技術科學者，優先走對應 mentor-*）
-description: 切換為學術導師模式，四段結構回覆（機制→文獻→社會影響→深化提問），每個論點標注確定性等級，主動糾正常見迷思，絕不捏造文獻。
 
 name: mentor-neuro
 path: skills/learning/mentor-neuro/SKILL.md
@@ -158,11 +113,6 @@ name: mentor-science
 path: skills/learning/mentor-science/SKILL.md
 triggers: 物理、化學、生物、演化、量子、熱力學、基因、分子、原子、科學定律、這個原理是什麼（涉及自然科學）、科學方法、第一原理
 description: 自然科學專屬導師。嚴格區分定律/理論/模型/假說，從第一原理推導，永遠聲明模型適用範圍與邊界條件，讀取 knowledge/science/ vault 上下文，內建科學迷思雷達（8 條），三鐵律（模型≠現實 / 自然≠安全 / 相關≠因果），建立概念層次知識圖譜。
-
-name: mentor-society
-path: skills/learning/mentor-society/SKILL.md
-triggers: 社群媒體影響、數位社會、媒體識讀、教育制度、階級流動、群體行為、文化差異、科技對社會的影響、社會現象、傳播、輿論、政策效果、社會科學（需涉及社會科學主題；神經機制方向優先 mentor-neuro）
-description: 社會科學專屬導師。確定性天花板為 ⚠️（觀察性研究為主流），自動讀取 knowledge/society/ 上下文，永遠說明研究方法限制，呈現至少兩個競爭解釋框架，主動聲明脈絡邊界（文化/時期/人口），內建社會迷思雷達（7 條），提示存入 vault 形成知識節點。
 
 ---
 
@@ -191,11 +141,6 @@ path: skills/productivity/project-dashboard/SKILL.md
 triggers: project dashboard、看一下所有專案、跨專案狀態、專案總覽
 description: 讀取 ~/.agent-sessions/ 下所有專案的 latest.md，並對各專案 repo 現跑 git，輸出含「交接落後」的跨專案總覽表。
 
-name: rag-search
-path: skills/productivity/rag-search/SKILL.md
-triggers: 查知識庫、rag、knowledge base、查一下我們的規範、這個我們有沒有記錄、有沒有相關規範
-description: 搜尋 knowledge/ 知識庫，找出相關規範或模式後回答，來源會標注檔案路徑。
-
 name: smart-init
 path: skills/productivity/smart-init/SKILL.md
 triggers: session 開始、開始新工作、幫我初始化、smart init
@@ -211,10 +156,10 @@ path: skills/productivity/handoff/SKILL.md
 triggers: handoff、收工、交接（僅此三詞；近似說法一律反問確認；完成一段工作／session 結束／剛 commit 都不觸發）
 description: 將當前對話壓縮成交接文件，供下一個 session 或 agent 接手。
 
-name: obsidian-query
-path: skills/productivity/obsidian-query/SKILL.md
-triggers: 查我的筆記、Obsidian 有沒有記錄、之前有記過嗎、搜 Obsidian、查歷史筆記
-description: 從 Obsidian vault 搜尋相關歷史筆記並納入回答，來源會標注檔案路徑。需先設定 VAULT_PATH。
+name: knowledge-search
+path: skills/productivity/knowledge-search/SKILL.md
+triggers: 查知識庫、rag、查一下我們的規範、這個我們有沒有記錄、有沒有相關規範、查我的筆記、Obsidian 有沒有記錄、之前有記過嗎、查歷史筆記
+description: 知識檢索，--source 決定搜哪裡：knowledge（repo 規範庫）、vault（Obsidian 筆記）、both（預設）。片段一律標來源路徑，沒命中就明說沒有。
 
 name: obsidian-save
 path: skills/productivity/obsidian-save/SKILL.md
@@ -256,17 +201,18 @@ description: 將 GitHub 原始 workflow/prompt 文件轉換為本專案標準 sk
     → 只問 commit 格式 / branch 命名 → 只載入 git.md（不執行 skill）
 - 「我看不懂 / 為什麼還是錯」
     → 有 error message / stack trace / 測試失敗 → debug-flow
-    → 沒有具體錯誤，想理解邏輯 → concrete-example
+    → 沒有具體錯誤，只是想理解邏輯 → 不進 skill，直接逐步舉例說明（debug-flow Phase 2 有同一套內聯做法）
     → 兩者都有 → 詢問使用者選擇
-- 「跟我解釋 / 可以介紹 / 這原理是什麼 / 為什麼會這樣」
+- 「跟我解釋 / 可以介紹 / 這原理是什麼 / 為什麼會這樣」（ADR-025：只剩四個專科 mentor）
     → 主題是神經科學、大腦、認知機制、記憶、情緒神經科學 → mentor-neuro
-    → 主題是社會現象、傳播、教育制度、科技影響、群體行為 → mentor-society
     → 主題是物理、化學、生物基礎原理、科學定律 → mentor-science
     → 主題是技術架構、系統設計、技術選型、工程權衡 → mentor-tech
-    → 主題是其他科學、心理、生理（非神經、非社會、非自然科學）→ academic-mentor
-    → 主題是程式邏輯、code 行為、技術概念 → concrete-example
+    → 主題是投資、資產配置、行為偏誤、報酬與風險 → mentor-invest
+    → 主題是社會現象、傳播、教育制度、科技影響、群體行為 → **不進 mentor 模式**，一般回答；
+      但仍須說明研究方法限制（觀察性研究為主）並給至少兩個競爭解釋框架
+    → 主題是程式邏輯、code 行為 → 不進 skill，直接逐步舉例說明
     → 主題是 bug / 錯誤訊息 → debug-flow
-    → 無法判斷主題類型 → 詢問使用者：「這是技術問題還是想了解科學原理？」
+    → 四個專科都不匹配 → **一般回答，不要硬套 mentor 模式**；不確定主題類型才詢問使用者
 - 「股票 / 投資」相關
     → 帶具體台股代號、問進場點位或技術面評分、要對帳看自己準不準 → tw-stock-tracker（操作層）
     → 問投資原則、資產配置、行為偏誤、學術研究怎麼說 → mentor-invest（概念層）
@@ -281,7 +227,7 @@ description: 將 GitHub 原始 workflow/prompt 文件轉換為本專案標準 sk
 
 模糊觸發詞（需詢問使用者意圖）：
 「完善」、「優化」、「讓它更好」、「改進這個功能」、「怎麼讓這個更好」、「有什麼可以加強的」
-→ 詢問：A. 修 bug（debug-flow）B. 審查品質（code-review）C. 新增功能（new-feature）
-  D. 改進建議（feedback-loop）E. 連「要改什麼」都還不確定，想先把未知攤開
+→ 詢問：A. 修 bug（debug-flow）B. 審查品質（code-review，含 Phase 1.5 過度設計掃描）
+  C. 新增功能（new-feature）D. 連「要改什麼」都還不確定，想先把未知攤開
   （unknown-matrix-navigation：盲點掃描 / 極端原型 / 訪談）
-→ 使用者答不出 A–D 是哪個，本身就是 E 的訊號——別逼他從 A–D 硬選一個。
+→ 使用者答不出 A–C 是哪個，本身就是 D 的訊號——別逼他從 A–C 硬選一個。

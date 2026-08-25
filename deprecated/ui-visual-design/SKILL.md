@@ -8,6 +8,19 @@ metadata:
   last_updated: "2026-06-10"
 ---
 
+> 🚫 **已停用（2026-08-25）**
+>
+> 本檔已移出 `skills/`，**不在 `skills/index.json`、不在 `skills/llms.txt`、不會被任何 harness 掃到**，
+> agent 不會主動讀取或觸發它。保留在此僅作為文件參考與歷史依據。
+>
+> **停用理由**：併入 ui-design-flow 模式 C（視覺規格），查表移入其 references/design-patterns.md
+>
+> 要復用：把整個目錄搬回 `skills/<分類>/`，在 `index.json` 與 `llms.txt` 補回同一筆路由資料，
+> 跑 `python3 bin/gen-skill-frontmatter.py --write` 重生 frontmatter，再跑 `bash setup.sh`。
+> 政策與完整清單見 `deprecated/README.md`。
+
+---
+
 # UI Visual Design
 
 根據產品定位快速鎖定視覺風格，給出可直接套用到 Tailwind / CSS 的方向。

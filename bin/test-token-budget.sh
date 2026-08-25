@@ -6,7 +6,7 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPORT="$REPO/bin/token_budget_report.py"
 VALIDATOR="$REPO/bin/validate-skill-index.py"
 # 這是預算守門；成本偏離此基準就應讓測試紅掉、逼人決定，而非自動接受新現況。
-BASELINE="$REPO/plans/baselines/20260810T071650511103+0000-3fb8de4.json"
+BASELINE="$REPO/plans/baselines/20260825T033010412935+0000-55b6d87-dirty.json"
 STATUS_BEFORE="$(git -C "$REPO" status --porcelain)"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
@@ -37,25 +37,25 @@ mode = sys.argv[2]
 payload = json.loads(path.read_text(encoding="utf-8"))
 entries = {entry["name"]: entry for entry in payload["skills"]}
 if mode == "remove":
-    entries["academic-mentor"].pop("description_waiver")
+    entries["mentor-invest"].pop("description_waiver")
 elif mode == "stale":
     entries["debug-flow"]["description_waiver"] = "2026-08-07 wits 核准：fixture waiver"
 elif mode == "empty":
-    entries["academic-mentor"]["description_waiver"] = ""
+    entries["mentor-invest"]["description_waiver"] = ""
 elif mode == "non-string":
-    entries["academic-mentor"]["description_waiver"] = 7
+    entries["mentor-invest"]["description_waiver"] = 7
 elif mode == "invalid-format":
-    entries["academic-mentor"]["description_waiver"] = "x"
+    entries["mentor-invest"]["description_waiver"] = "x"
 elif mode == "missing-approval":
-    entries["academic-mentor"]["description_waiver"] = "2026-08-07 wits 承載跨 skill 分流條款"
+    entries["mentor-invest"]["description_waiver"] = "2026-08-07 wits 承載跨 skill 分流條款"
 elif mode == "invalid-date-shape":
-    entries["academic-mentor"]["description_waiver"] = "2026-8-7 wits 核准：理由"
+    entries["mentor-invest"]["description_waiver"] = "2026-8-7 wits 核准：理由"
 elif mode == "invalid-calendar-date":
-    entries["academic-mentor"]["description_waiver"] = "2026-99-99 wits 核准：理由"
+    entries["mentor-invest"]["description_waiver"] = "2026-99-99 wits 核准：理由"
 elif mode == "empty-reason":
-    entries["academic-mentor"]["description_waiver"] = "2026-08-07 wits 核准："
+    entries["mentor-invest"]["description_waiver"] = "2026-08-07 wits 核准："
 elif mode == "blank-reason":
-    entries["academic-mentor"]["description_waiver"] = "2026-08-07 wits 核准：   "
+    entries["mentor-invest"]["description_waiver"] = "2026-08-07 wits 核准：   "
 else:
     raise ValueError(f"unknown mode: {mode}")
 path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -73,11 +73,9 @@ baseline = json.load(open(sys.argv[2], encoding="utf-8"))
 threshold = report["description_threshold"]
 shared_waiver = "2026-08-07 wits 核准：承載跨 skill 分流條款——六個 mentor 系 skill 互相競爭路由，壓縮會惡化已知的觸發詞重疊（計劃書 §4 目標 C）"
 expected_waived = {
-    "academic-mentor": (655, shared_waiver),
     "mentor-invest": (655, shared_waiver),
     "mentor-neuro": (536, shared_waiver),
     "mentor-science": (509, shared_waiver),
-    "mentor-society": (616, shared_waiver),
     "mentor-tech": (601, shared_waiver),
     "tw-stock-tracker": (586, "2026-08-07 wits 核准：description 承載與 mentor-invest 的「操作層 vs 概念層」分流條款（計劃書 §4 目標 C）"),
     "unknown-matrix-navigation": (613, "2026-08-07 wits 核准：計劃書 v1 即點名的合理例外，description 承載三種未知類型的分流判準（計劃書 §4 目標 C）"),
@@ -89,7 +87,7 @@ actual_waived = {
 assert threshold["over"] == [], threshold["over"]
 assert actual_waived == expected_waived, actual_waived
 assert threshold["stale_waivers"] == [], threshold["stale_waivers"]
-assert threshold["pass"] == 30, threshold["pass"]
+assert threshold["pass"] == 22, threshold["pass"]
 checks = (
     ("fixed_startup_cost", "resident_rules_bytes"),
     ("fixed_startup_cost", "descriptions_bytes"),
@@ -97,7 +95,7 @@ checks = (
 )
 for section, key in checks:
     assert report[section][key] == baseline[section][key], (section, key)
-print("PASS: over=0, waived=8, stale_waivers=0, pass=30; three cost classes match baseline")
+print("PASS: over=0, waived=6, stale_waivers=0, pass=22; three cost classes match baseline")
 PY
 
 bash "$REPO/bin/token-budget.sh" > "$WORK/current-render.txt"
@@ -108,14 +106,14 @@ output = open(sys.argv[1], encoding="utf-8").read()
 threshold = output.split("【description 門檻】", 1)[1].split("\n* token 為", 1)[0]
 waiver_heading = threshold.index("【已核准 waiver】")
 expected_names = {
-    "academic-mentor", "mentor-invest", "mentor-neuro", "mentor-science",
-    "mentor-society", "mentor-tech", "tw-stock-tracker", "unknown-matrix-navigation",
+    "mentor-invest", "mentor-neuro", "mentor-science",
+    "mentor-tech", "tw-stock-tracker", "unknown-matrix-navigation",
 }
 assert "無未核准超標" in threshold, threshold
 assert all(threshold.index(name) > waiver_heading for name in expected_names), threshold
 assert not any("⚠️" in line for line in threshold.splitlines()), threshold
-assert "25,432 / 30,000 bytes (84.8%)" in output, output
-print("PASS: real entrypoint renders no unapproved overages and all 8 waivers after heading")
+assert "23,171 / 30,000 bytes (77.2%)" in output, output
+print("PASS: real entrypoint renders no unapproved overages and all 6 waivers after heading")
 PY
 bash "$REPO/bin/token-budget.sh" --strict > "$WORK/current-strict.txt"
 echo "PASS: real repository passes --strict"
@@ -148,12 +146,12 @@ import json
 import sys
 
 threshold = json.load(open(sys.argv[1], encoding="utf-8"))["description_threshold"]
-assert [row["name"] for row in threshold["over"]] == ["academic-mentor"]
-print("PASS: academic-mentor appears in over")
+assert [row["name"] for row in threshold["over"]] == ["mentor-invest"]
+print("PASS: mentor-invest appears in over")
 PY
 python3 "$REPORT" "$FIXTURE" > "$WORK/remove-render.txt"
-grep -E '⚠️.*academic-mentor' "$WORK/remove-render.txt"
-echo "PASS: renderer shows academic-mentor warning"
+grep -E '⚠️.*mentor-invest' "$WORK/remove-render.txt"
+echo "PASS: renderer shows mentor-invest warning"
 python3 "$REPORT" "$FIXTURE" > /dev/null
 echo "PASS: missing waiver remains exit 0 without --strict"
 if python3 "$REPORT" "$FIXTURE" --strict > /dev/null 2> "$WORK/remove-strict.err"; then
@@ -199,13 +197,18 @@ echo "PASS: stale waiver exits 1 with --strict"
 
 echo "== fixed startup cost over budget is advisory =="
 cp "$REPO/skills/index.json" "$FIXTURE/skills/index.json"
-python3 - "$FIXTURE/rules/coding-standards.md" <<'PY'
+python3 "$REPORT" "$FIXTURE" --json > "$WORK/pre-over-budget.json"
+# 補到剛好越過門檻再加 1000，而非寫死 5000——固定開場成本會隨 skill 增減變動，
+# 寫死的 padding 在成本下降時會靜默失效（2026-08-25 停用 12 個 skill 時實際踩到）。
+python3 - "$FIXTURE/rules/coding-standards.md" "$WORK/pre-over-budget.json" <<'PY'
+import json
 import pathlib
 import sys
 
 path = pathlib.Path(sys.argv[1])
+subtotal = json.load(open(sys.argv[2], encoding="utf-8"))["fixed_startup_cost"]["subtotal_bytes"]
 with path.open("ab") as handle:
-    handle.write(b"x" * 5000)
+    handle.write(b"x" * (30000 - subtotal + 1000))
 PY
 python3 "$REPORT" "$FIXTURE" > "$WORK/over-budget.txt"
 grep -F "固定開場成本超過預算" "$WORK/over-budget.txt"
@@ -230,12 +233,12 @@ for mode in invalid-format missing-approval invalid-date-shape invalid-calendar-
     echo "FAIL: report accepted $mode description_waiver without --strict"
     exit 1
   fi
-  grep -qF "academic-mentor: description_waiver" "$WORK/report-$mode.log"
+  grep -qF "mentor-invest: description_waiver" "$WORK/report-$mode.log"
   if python3 "$VALIDATOR" --repo "$FIXTURE" > "$WORK/validator-$mode.log" 2>&1; then
     echo "FAIL: validator accepted $mode description_waiver"
     exit 1
   fi
-  grep -qF "academic-mentor: description_waiver" "$WORK/validator-$mode.log"
+  grep -qF "mentor-invest: description_waiver" "$WORK/validator-$mode.log"
   case "$mode" in
     empty) grep -qF "不得為空" "$WORK/validator-$mode.log" ;;
     non-string) grep -qF "必須是字串" "$WORK/validator-$mode.log" ;;

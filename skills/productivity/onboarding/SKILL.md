@@ -107,7 +107,7 @@ grep -s '"react"\|"vue"\|"next"\|"express"\|"fastapi"' package.json 2>/dev/null
 > - 使用者明確說「只需要了解後端架構，不需要 IA 整理」
 > - 已有現成的路由文件 / sitemap（使用者確認）
 
-委派 `skills/design/information-architecture/SKILL.md`（閱讀模式）：
+委派 `skills/design/ui-design-flow/SKILL.md` 模式 A（資訊架構，閱讀模式——反向整理既有結構而非設計新的）：
 
 ```
 [ ] 整理功能模組的層級關係
@@ -159,5 +159,5 @@ grep -s '"react"\|"vue"\|"next"\|"express"\|"fastapi"' package.json 2>/dev/null
 | `smart-init` | Phase 0 讀取既有記憶與工作狀態 |
 | `cli-delegate` 模式 B | Phase 1 大型 codebase 掃描 |
 | `coding-workflow-core` Phase 0 | Phase 2 技術堆疊自動偵測 |
-| `information-architecture` | Phase 4 功能地圖與路由整理 |
+| `ui-design-flow` 模式 A | Phase 4 功能地圖與路由整理 |
 | `handoff` | Phase 5 輸出結構化摘要文件 |
