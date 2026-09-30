@@ -6,17 +6,7 @@
 ---
 
 > 2026-09-14 重新開項：逐條實勘 2026-08-08～08-25 各份 handoff 的「待處理」與 `plans/`，
-> 以下 5 項為現況仍成立者。處理順序照編號。
-
-## 1. tw-stock-tracker 的 script 輸入驗證未掃
-
-- **狀態**：⚠️ 待處理（唯一可能是真 bug 的項目）
-- **背景**：2026-08-17 修 cooking-flow `scale.py` 時，11 條發現裡 8 條屬同一性質——**靜默給出看似合理的錯數字**
-  （NaN 繞過 `<= 0` 檢查、負數通過、缺鍵整筆消失、未知單位降級）。tw-stock-tracker 用同一套
-  「script 算數字、LLM 不心算」切分，但那條規約只保證數字來自 script，不保證 script 的輸入驗證是對的。
-  該 skill 自 `f1ad25a` 後無任何 commit 碰過
-- **待辦**：對照 cooking-flow `scale.py` 的 `validate_ingredient()` / `is_finite_number()` 兩道防線，掃 tw-stock-tracker 的 script
-- **決策者與日期**：使用者，2026-09-14 指示依序處理
+> 以下 5 項為現況仍成立者。處理順序照編號。第 1 項已於 2026-09-30 修畢移除（見 git log）；第 6 項為修第 1 項時新發現。
 
 ## 2. `token-budget --strict` 未掛進 pre-commit
 
@@ -53,6 +43,16 @@
 - **待辦**：修改 waiver 屬 §8 🟡（只有使用者能核准），需使用者同意措辭；改後同步測試常數與 baseline 引用；
   mentor-protocol 的「第六個」屬事實錯誤，順手修
 - **決策者與日期**：使用者，2026-09-14
+
+## 6. tw-stock-tracker 還原價未納入現金增資
+
+- **狀態**：待處理（低優先）
+- **背景**：2026-09-30 修第 1 項時發現，`fetch_twse.rebuild_adj_close` 只用現金股利與配股率算參考價，
+  TWT48U_ALL 的 `SubscriptionRatio` / `SubscriptionPricePerShare`（現金增資認購）被忽略。
+  實例：2614 東森 2026-10-06 權息同時有增資 0.38195352 股 @ 12.8 元。除權參考價公式應含認購項，
+  漏掉會讓該日之前的還原價偏差；不會報錯
+- **待辦**：確認 TWSE 除權參考價公式（含認購）後改 `rebuild_adj_close` 與 dividends schema，附離線測試
+- **決策者與日期**：使用者，2026-09-30
 
 ---
 
