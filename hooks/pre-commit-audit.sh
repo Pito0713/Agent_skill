@@ -103,4 +103,30 @@ VALIDATOR_OUT=$(python3 "$VALIDATOR" --repo "$ROOT" 2>&1) || {
   exit 1
 }
 
+# ── 制度層預算 --strict（maintenance-protocol §8.6）─────────────────────────
+#
+# 為什麼需要它：§8.6 寫明 --strict 給 pre-commit 用，但原本沒接上、靠人記得跑。
+# 實證：tw-market-rotation 以 425 bytes（門檻 400）、無 waiver 進了 main，沒人發現。
+#
+# 範圍與失敗策略同上方 validator：沿用其「本 repo + staged 碰到 skills/」閘門
+# （description 與 waiver 都在 skills/ 下）；腳本不存在 → 放行；--strict 非 0
+# （未核准超標、失效 waiver、工具自身報錯）→ 擋。固定開場成本超 30,000 在
+# --strict 下仍 exit 0（具名說明制，不是硬牆），不會被本檢查擋。
+
+BUDGET="$ROOT/bin/token-budget.sh"
+[[ -f "$BUDGET" ]] || exit 0
+
+BUDGET_OUT=$(bash "$BUDGET" --strict 2>&1 >/dev/null) || {
+  echo ""
+  echo "${RED}✖ pre-commit 擋下：制度層預算 --strict 失敗${NC}"
+  echo ""
+  printf '%s\n' "$BUDGET_OUT" | sed 's/^/  /'
+  echo ""
+  echo "  明細：bash bin/token-budget.sh"
+  echo "  修法：壓縮 description 到 400 bytes 內；waiver 只有使用者能核准（§8.3），不得為過關自補"
+  echo "  旁路：git commit --no-verify"
+  echo ""
+  exit 1
+}
+
 exit 0

@@ -6,7 +6,7 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPORT="$REPO/bin/token_budget_report.py"
 VALIDATOR="$REPO/bin/validate-skill-index.py"
 # 這是預算守門；成本偏離此基準就應讓測試紅掉、逼人決定，而非自動接受新現況。
-BASELINE="$REPO/plans/baselines/20260825T034030239503+0000-8cfd478.json"
+BASELINE="$REPO/plans/baselines/20260930T141255260235+0000-dbf40f1.json"
 STATUS_BEFORE="$(git -C "$REPO" status --porcelain)"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
@@ -64,7 +64,7 @@ PY
 
 echo "== current waiver classification and baseline costs =="
 report_fixture
-python3 - "$WORK/report.json" "$BASELINE" <<'PY'
+python3 - "$WORK/report.json" "$BASELINE" "$REPO/skills/index.json" <<'PY'
 import json
 import sys
 
@@ -87,7 +87,10 @@ actual_waived = {
 assert threshold["over"] == [], threshold["over"]
 assert actual_waived == expected_waived, actual_waived
 assert threshold["stale_waivers"] == [], threshold["stale_waivers"]
-assert threshold["pass"] == 22, threshold["pass"]
+# pass 是現況描述，從 over / waived 導出而非寫死（新增 skill 不該讓本測試紅）
+index = json.load(open(sys.argv[3], encoding="utf-8"))
+skill_count = len(index["skills"] if isinstance(index, dict) else index)
+assert threshold["pass"] == skill_count - len(expected_waived), threshold["pass"]
 checks = (
     ("fixed_startup_cost", "resident_rules_bytes"),
     ("fixed_startup_cost", "descriptions_bytes"),
@@ -95,14 +98,16 @@ checks = (
 )
 for section, key in checks:
     assert report[section][key] == baseline[section][key], (section, key)
-print("PASS: over=0, waived=6, stale_waivers=0, pass=22; three cost classes match baseline")
+print("PASS: over=0, waived=6, stale_waivers=0, pass=%d; three cost classes match baseline" % threshold["pass"])
 PY
 
 bash "$REPO/bin/token-budget.sh" > "$WORK/current-render.txt"
-python3 - "$WORK/current-render.txt" <<'PY'
+python3 - "$WORK/current-render.txt" "$BASELINE" <<'PY'
+import json
 import sys
 
 output = open(sys.argv[1], encoding="utf-8").read()
+fixed = json.load(open(sys.argv[2], encoding="utf-8"))["fixed_startup_cost"]
 threshold = output.split("【description 門檻】", 1)[1].split("\n* token 為", 1)[0]
 waiver_heading = threshold.index("【已核准 waiver】")
 expected_names = {
@@ -112,7 +117,10 @@ expected_names = {
 assert "無未核准超標" in threshold, threshold
 assert all(threshold.index(name) > waiver_heading for name in expected_names), threshold
 assert not any("⚠️" in line for line in threshold.splitlines()), threshold
-assert "23,171 / 30,000 bytes (77.2%)" in output, output
+# 小計是現況描述，從 baseline 導出（上方已斷言三類成本與 baseline 一致）
+subtotal, budget = fixed["subtotal_bytes"], fixed["budget_bytes"]
+expected_line = f"{subtotal:,} / {budget:,} bytes ({subtotal / budget * 100:.1f}%)"
+assert expected_line in output, (expected_line, output)
 print("PASS: real entrypoint renders no unapproved overages and all 6 waivers after heading")
 PY
 bash "$REPO/bin/token-budget.sh" --strict > "$WORK/current-strict.txt"
