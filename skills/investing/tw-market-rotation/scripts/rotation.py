@@ -63,12 +63,15 @@ def compute_market_context(rows):
     turnovers = [r["turnover"] for r in rows]
     breadths = []
     for r in rows:
+        if r["advances"] is None or r["declines"] is None:
+            breadths.append(None)
+            continue
         total = r["advances"] + r["declines"]
         breadths.append(r["advances"] / total if total else None)
     output = []
     for i, r in enumerate(rows):
         average = window_mean(turnovers, i, TURNOVER_WINDOW)
-        ratio = turnovers[i] / average if average else None
+        ratio = turnovers[i] / average if average else None      # 窗口含當日，缺值時 average 已是 None
         breadth_5d = window_mean(breadths, i, BREADTH_WINDOW)
         output.append({"date": r["date"], "turnover_ratio": ratio, "breadth_5d": breadth_5d,
                        "market_state": classify_market(ratio, breadth_5d)})

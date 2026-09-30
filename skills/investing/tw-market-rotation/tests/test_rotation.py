@@ -168,5 +168,53 @@ class DatabaseFlowTest(unittest.TestCase):
         self.assertNotIn(today.isoformat(), logged)
 
 
+class ReviewRegressionTest(unittest.TestCase):
+    """codex 審查確認的三個缺陷：缺值中止 sync、錯誤回應誤記假日、BFIAMU 缺資料不重抓。"""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.conn = schema.connect(os.path.join(self.tmp.name, "test.db"))
+
+    def tearDown(self):
+        self.conn.close()
+        self.tmp.cleanup()
+
+    def test_missing_breadth_value_becomes_null_not_crash(self):
+        payload = load_fixture("mi_index_20260929.json")
+        breadth = [t for t in payload["tables"] if "漲跌證券數" in t["title"]][0]
+        breadth["data"][0][2] = "--"
+        market = fetch_market.parse_mi_index(payload)
+        self.assertIsNone(market["advances"])
+        rows = [{"date": "d%02d" % i, "turnover": 100.0, "advances": 60, "declines": 40}
+                for i in range(20)]
+        rows[-1]["advances"] = None
+        rows[-2]["turnover"] = None
+        last = rotation.compute_market_context(rows)[-1]
+        self.assertIsNone(last["breadth_5d"])
+        self.assertIsNone(last["turnover_ratio"])
+        self.assertIsNone(last["market_state"])
+
+    def test_unexpected_stat_raises_instead_of_logging_holiday(self):
+        with mock.patch.object(fetch_market, "_get_json", return_value={"stat": "查詢過於頻繁"}):
+            with self.assertRaises(RuntimeError):
+                fetch_market.fetch_day(self.conn, date(2026, 9, 29))
+        self.assertIsNone(fetch_market._logged_status(self.conn, "2026-09-29"))
+
+    def test_holiday_stat_returns_false(self):
+        with mock.patch.object(fetch_market, "_get_json",
+                               return_value={"stat": "很抱歉，沒有符合條件的資料!"}):
+            self.assertFalse(fetch_market.fetch_day(self.conn, date(2026, 9, 27)))
+
+    def test_missing_bfiamu_is_not_logged_so_next_sync_refetches(self):
+        responses = [load_fixture("mi_index_20260929.json"),
+                     {"stat": "很抱歉，沒有符合條件的資料!"}]
+        with mock.patch.object(fetch_market, "_get_json", side_effect=responses), \
+                mock.patch.object(fetch_market.time, "sleep"):
+            self.assertTrue(fetch_market.fetch_day(self.conn, date(2026, 9, 29)))
+        self.assertIsNone(fetch_market._logged_status(self.conn, "2026-09-29"))
+        saved = self.conn.execute("SELECT * FROM market_daily").fetchone()
+        self.assertEqual(saved["advances"], 374)
+
+
 if __name__ == "__main__":
     unittest.main()

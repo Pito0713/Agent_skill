@@ -26,6 +26,8 @@ USER_AGENT = "Mozilla/5.0 (compatible; tw-market-rotation/1.0)"
 REQUEST_GAP_SEC = 3.0        # TWSE 對密集請求會擋
 HOLIDAY_WEEKDAY_BUFFER = 15  # 往回掃的平日上限 = 所需交易日 + 此緩衝（春節約休 7 個平日，另留餘裕）
 INDUSTRY_REFRESH_DAYS = 7
+# 假日／未開市時 TWSE 回的 stat；其他非 OK 訊息一律視為錯誤，避免把交易日誤記成假日
+NO_DATA_STAT = "沒有符合條件的資料"
 
 
 def _get_json(url, retries=3):
@@ -66,10 +68,12 @@ def _parse_breadth(payload):
     for row in table["data"]:
         label = row[0]
         stock_count = _to_number(row[2])     # 第三欄是「股票」，不含權證等
+        # 個別欄位缺值存 NULL，讓下游窗口計算自然得到 NULL，而不是整批 sync 中止
+        count = None if stock_count is None else int(stock_count)
         if label.startswith("上漲"):
-            counts["advances"] = int(stock_count)
+            counts["advances"] = count
         elif label.startswith("下跌"):
-            counts["declines"] = int(stock_count)
+            counts["declines"] = count
     if len(counts) != 2:
         raise RuntimeError("MI_INDEX 漲跌家數解析失敗：%s" % table["data"])
     return counts
@@ -113,6 +117,16 @@ def parse_bfiamu(payload):
     return turnovers
 
 
+def _is_no_data(payload):
+    """True=假日無資料、False=有資料；其他非 OK 回應直接拋錯。"""
+    stat = payload.get("stat") or ""
+    if stat == "OK":
+        return False
+    if NO_DATA_STAT in stat:
+        return True
+    raise RuntimeError("TWSE 非預期回應：%s" % stat)
+
+
 def _save_day(conn, iso_date, market, sector_turnovers):
     conn.execute(
         "INSERT OR REPLACE INTO market_daily (date, turnover, advances, declines, taiex)"
@@ -124,21 +138,23 @@ def _save_day(conn, iso_date, market, sector_turnovers):
         " VALUES (?, ?, ?, ?)",
         [(iso_date, code, market["index_closes"].get(code), sector_turnovers.get(code))
          for code in sorted(codes)])
-    conn.execute("INSERT OR REPLACE INTO rotation_fetch_log (date, is_trading) VALUES (?, 1)",
-                 (iso_date,))
+    # BFIAMU 缺資料時不寫 fetch_log：下次 sync 會重抓該日，等資料補公布
+    if sector_turnovers:
+        conn.execute("INSERT OR REPLACE INTO rotation_fetch_log (date, is_trading) VALUES (?, 1)",
+                     (iso_date,))
 
 
 def fetch_day(conn, day):
     """抓單日並落庫。回傳 True=交易日、False=無資料。"""
     compact = day.strftime("%Y%m%d")
     mi_payload = _get_json(MI_INDEX_URL % compact)
-    if mi_payload.get("stat") != "OK":
+    if _is_no_data(mi_payload):
         return False
     time.sleep(REQUEST_GAP_SEC)
     bf_payload = _get_json(BFIAMU_URL % compact)
-    sector_turnovers = parse_bfiamu(bf_payload) if bf_payload.get("stat") == "OK" else {}
+    sector_turnovers = {} if _is_no_data(bf_payload) else parse_bfiamu(bf_payload)
     if not sector_turnovers:
-        print("  [warn] %s BFIAMU 無資料，類股成交比重將缺值" % day, file=sys.stderr)
+        print("  [warn] %s BFIAMU 無資料，類股成交比重暫缺，下次 sync 重抓" % day, file=sys.stderr)
     _save_day(conn, day.isoformat(), parse_mi_index(mi_payload), sector_turnovers)
     return True
 

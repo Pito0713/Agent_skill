@@ -21,9 +21,9 @@ CREATE TABLE IF NOT EXISTS rotation_fetch_log (
 
 CREATE TABLE IF NOT EXISTS market_daily (
     date        TEXT PRIMARY KEY,
-    turnover    REAL NOT NULL,           -- 證券合計成交金額（元）
-    advances    INTEGER NOT NULL,        -- 上漲家數（股票）
-    declines    INTEGER NOT NULL,        -- 下跌家數（股票）
+    turnover    REAL,                    -- 證券合計成交金額（元）；缺值存 NULL
+    advances    INTEGER,                 -- 上漲家數（股票）
+    declines    INTEGER,                 -- 下跌家數（股票）
     taiex       REAL NOT NULL            -- 發行量加權股價指數收盤
 );
 
