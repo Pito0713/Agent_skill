@@ -152,9 +152,11 @@ def evaluate(conn, ticker):
     if len(rows) < MIN_BARS:
         raise RuntimeError("%s 僅 %d 根日線，少於 %d 根，不出評分" % (ticker, len(rows), MIN_BARS))
 
-    closes = [r["adj_close"] or r["close"] for r in rows]
-    highs = [r["high"] for r in rows]
-    lows = [r["low"] for r in rows]
+    # 高低價必須與收盤同一還原基準，否則除息前每根 K 棒的真實波幅都會多算一個股利
+    factors = [(r["adj_close"] or r["close"]) / r["close"] for r in rows]
+    closes = [r["close"] * f for r, f in zip(rows, factors)]
+    highs = [r["high"] * f for r, f in zip(rows, factors)]
+    lows = [r["low"] * f for r, f in zip(rows, factors)]
     volumes = [r["volume"] for r in rows]
 
     ma5, ma20, ma60 = (indicators.sma(closes, n) for n in (5, 20, 60))
@@ -208,8 +210,8 @@ def evaluate(conn, ticker):
         "ma5": round(ma5, 2), "ma20": round(ma20, 2), "ma60": round(ma60, 2),
         "bias20_pct": round(bias_pct, 2), "rsi14": round(rsi_value, 2),
         "macd_dif": round(dif, 2), "macd_dea": round(dea, 2),
-        "atr14": round(atr_value, 2), "low60": low60, "high60": high60,
-        "volume_ratio": round(volumes[-1] / avg_volume, 2),
+        "atr14": round(atr_value, 2), "low60": round(low60, 2), "high60": round(high60, 2),
+        "volume_ratio": round(volumes[-1] / avg_volume, 2) if avg_volume else None,
     }
     return result
 

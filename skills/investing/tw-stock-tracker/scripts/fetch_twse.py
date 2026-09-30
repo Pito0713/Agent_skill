@@ -11,6 +11,7 @@
 
 import argparse
 import json
+import re
 import sys
 import time
 import urllib.error
@@ -23,6 +24,8 @@ STOCK_DAY_URL = "https://www.twse.com.tw/exchangeReport/STOCK_DAY"
 DIVIDEND_URL = "https://openapi.twse.com.tw/v1/exchangeReport/TWT48U_ALL"
 USER_AGENT = "Mozilla/5.0 (compatible; tw-stock-tracker/1.0)"
 REQUEST_GAP_SEC = 3.0  # TWSE 對密集請求會擋，月份之間強制間隔
+# 普通股 4 碼、ETF/債券 ETF 可達 6 碼含英文尾碼（00710B、00994A、01004T）
+TICKER_PATTERN = re.compile(r"^[0-9]{4}[0-9A-Z]{0,2}$")
 
 
 def _get_json(url, retries=3):
@@ -111,7 +114,8 @@ def sync_dividends(conn):
     records = []
     for row in payload:
         cash = _to_float(row.get("CashDividend") or "") or 0.0
-        stock_ratio = (_to_float(row.get("StockDividendRatio") or "") or 0.0) / 1000.0
+        # 原始值已是每股配股數（實測興泰 0.5 元配股回 0.04999999），不可再除 1000
+        stock_ratio = _to_float(row.get("StockDividendRatio") or "") or 0.0
         if cash == 0.0 and stock_ratio == 0.0:
             continue
         raw_date = (row.get("Date") or "").strip()
@@ -165,6 +169,8 @@ def rebuild_adj_close(conn, ticker):
 
 def sync_ticker(conn, ticker, months=7):
     """抓取 + 落庫 + 還原，一次完成。回傳摘要 dict。"""
+    if not TICKER_PATTERN.match(ticker or ""):
+        raise RuntimeError("股票代號格式不符（4–6 碼數字，ETF 可含英文尾碼）：%r" % ticker)
     rows = fetch_months(ticker, recent_months(months))
     if not rows:
         raise RuntimeError("%s 無任何日線資料，無法分析" % ticker)

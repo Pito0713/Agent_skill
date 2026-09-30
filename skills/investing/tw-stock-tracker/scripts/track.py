@@ -88,6 +88,13 @@ def _first_quote_on_or_after(conn, ticker, target_date):
         (ticker, target_date)).fetchone()
 
 
+def _mark_needs_review(conn, row, quote):
+    conn.execute("UPDATE predictions SET status='needs_review', resolve_date=?,"
+                 " close_at_resolve=? WHERE id=?",
+                 (quote["date"], quote["close"], row["id"]))
+    return "needs_review"
+
+
 def _resolve_one(conn, row):
     """對帳單筆。回傳狀態字串。"""
     due = (datetime.strptime(row["created_at"], "%Y-%m-%d")
@@ -98,13 +105,19 @@ def _resolve_one(conn, row):
 
     unknown = _exdiv_unknown_in_window(conn, row["ticker"], row["created_at"], quote["date"])
     if unknown:
-        conn.execute("UPDATE predictions SET status='needs_review', resolve_date=?,"
-                     " close_at_resolve=? WHERE id=?",
-                     (quote["date"], quote["close"], row["id"]))
-        return "needs_review"
+        return _mark_needs_review(conn, row, quote)
 
+    # 起點不可用 adj_close_at_pred：那是建立當下的還原基準，持有期間除息後
+    # 整段還原價已重算，兩端基準不同會把股利算成虧損。改讀起點日的現行還原價。
+    start = conn.execute(
+        "SELECT close, adj_close FROM daily_quotes WHERE ticker = ? AND date = ?",
+        (row["ticker"], row["created_at"])).fetchone()
+    if start is None:
+        return _mark_needs_review(conn, row, quote)
+
+    adj_start = start["adj_close"] or start["close"]
     adj_end = quote["adj_close"] or quote["close"]
-    return_pct = (adj_end / row["adj_close_at_pred"] - 1.0) * 100
+    return_pct = (adj_end / adj_start - 1.0) * 100
     hit = None
     if row["signal"] in BULLISH:
         hit = 1 if return_pct > 0 else 0
@@ -241,13 +254,21 @@ def cmd_report(conn, args):
     _print_context_groups(rows)
 
 
+def positive_int(text):
+    """horizon ≤ 0 會讓預測當天就對帳成報酬 0 的假樣本，污染 track record。"""
+    value = int(text)
+    if value <= 0:
+        raise argparse.ArgumentTypeError("必須是正整數，收到 %s" % text)
+    return value
+
+
 def main():
     parser = argparse.ArgumentParser(description="台股預測記錄與校準追蹤")
     sub = parser.add_subparsers(dest="command", required=True)
 
     record = sub.add_parser("record", help="評分並記錄一筆預測")
     record.add_argument("ticker")
-    record.add_argument("--horizon", type=int, default=30, help="時間框架天數，預設 30")
+    record.add_argument("--horizon", type=positive_int, default=30, help="時間框架天數，預設 30")
     record.add_argument("--thesis", default="", help="LLM 撰寫的判斷摘要")
 
     sub.add_parser("reconcile", help="對帳到期預測")
