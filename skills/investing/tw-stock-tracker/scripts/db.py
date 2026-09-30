@@ -58,11 +58,26 @@ CREATE TABLE IF NOT EXISTS predictions (
     close_at_resolve     REAL,
     adj_close_at_resolve REAL,
     return_pct           REAL,
-    hit                  INTEGER
+    hit                  INTEGER,
+    market_state         TEXT,           -- tw-market-rotation 背景欄位，未安裝時 NULL
+    sector_quadrant      TEXT            -- 同上；僅供分組校準，不影響評分
 );
 
 CREATE INDEX IF NOT EXISTS idx_pred_status ON predictions(status, ticker);
 """
+
+
+# 後加欄位：CREATE TABLE IF NOT EXISTS 不會替舊 DB 補欄位，需逐一 ALTER
+ADDED_PREDICTION_COLUMNS = (("market_state", "TEXT"), ("sector_quadrant", "TEXT"))
+
+
+def _migrate(conn):
+    """冪等補上舊 DB 缺少的欄位，不動既有資料。"""
+    existing = {row["name"] for row in conn.execute("PRAGMA table_info(predictions)")}
+    for column, column_type in ADDED_PREDICTION_COLUMNS:
+        if column not in existing:
+            conn.execute("ALTER TABLE predictions ADD COLUMN %s %s" % (column, column_type))
+    conn.commit()
 
 
 def connect(db_path=None):
@@ -72,4 +87,5 @@ def connect(db_path=None):
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
     conn.executescript(SCHEMA)
+    _migrate(conn)
     return conn

@@ -60,6 +60,14 @@
 | resolve_date / close_at_resolve / adj_close_at_resolve | 對帳結果 |
 | return_pct | `(還原結算價 / 還原進場價 − 1) × 100` |
 | hit | 1/0；中性訊號留 NULL，不計入命中率 |
+| market_state | 資料基準日的大盤量能狀態：充足／普通／不足 |
+| sector_quadrant | 資料基準日該股所屬類股的 RRG 近似象限：Leading／Weakening／Lagging／Improving |
+
+`market_state` / `sector_quadrant` 來源：tw-market-rotation 寫入的契約表
+（`market_context`、`sector_context` JOIN `stock_industry`）。
+未安裝或未跑 `rotation.py sync` 時為 NULL，record 照常成功。
+**僅供 `report` 分組校準，不影響評分**——要讓它參與評分，須先有對帳樣本證明組間命中率差異。
+舊 DB 於 `db.connect()` 時以 `ALTER TABLE` 冪等補欄位，既有資料不變。
 
 ### status 語意
 

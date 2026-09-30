@@ -127,6 +127,12 @@
       "description_waiver": "2026-08-07 wits 核准：description 承載與 mentor-invest 的「操作層 vs 概念層」分流條款（計劃書 §4 目標 C）"
     },
     {
+      "name": "tw-market-rotation",
+      "path": "skills/investing/tw-market-rotation/SKILL.md",
+      "triggers": "大盤量能、量能夠不夠、類股輪動、資金輪動、板塊輪替、哪個類股在走強、資金流向哪裡、市場寬度",
+      "description": "台股大盤量能狀態（充足／普通／不足）+ 類股 RRG 近似象限與成交比重變化，寫入契約表供 tw-stock-tracker 記錄背景欄位（不影響評分）。所有數字由 script 計算。與 tw-stock-tracker 的界線是大盤／類股層 vs 個股層。"
+    },
+    {
       "name": "cooking-flow",
       "path": "skills/lifestyle/cooking-flow/SKILL.md",
       "triggers": "今天煮什麼、給我食譜、冰箱有什麼可以煮、幫我排一週菜單、採購清單、份量換算、什麼可以代替",
