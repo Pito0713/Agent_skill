@@ -6,15 +6,7 @@
 ---
 
 > 2026-09-14 重新開項：逐條實勘 2026-08-08～08-25 各份 handoff 的「待處理」與 `plans/`，
-> 以下 5 項為現況仍成立者。處理順序照編號。第 1 項已於 2026-09-30 修畢移除（見 git log）；第 6 項為修第 1 項時新發現。
-
-## 2. `token-budget --strict` 未掛進 pre-commit
-
-- **狀態**：待處理
-- **背景**：`maintenance-protocol.md` §8.6 寫 `--strict` 是給 pre-commit 與 CI 用的，但 `hooks/pre-commit-audit.sh`
-  內沒有呼叫它（2026-08-10 handoff 已記，至今未做），目前靠人記得跑
-- **待辦**：評估掛載方式（fail-open / 只在 skill 或 frontmatter 有變更時跑）後動 `hooks/pre-commit-audit.sh`
-- **決策者與日期**：使用者，2026-09-14
+> 以下 5 項為現況仍成立者。處理順序照編號。第 1、2 項已於 2026-09-30 修畢移除（見 git log）；第 6 項為修第 1 項時新發現。
 
 ## 3. skill-usage 計劃書 Phase 2（自我修正機制）gate 未裁決
 

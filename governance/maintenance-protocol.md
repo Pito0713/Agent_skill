@@ -212,7 +212,7 @@ bash bin/token-budget.sh --strict     # 未核准超標 或 失效 waiver → ex
 python3 bin/validate-skill-index.py   # index / llms / frontmatter 三向一致
 ```
 
-`--strict` 是給 pre-commit 與 CI 用的。**exit code 契約寫清楚，避免誤用**：
+`--strict` 是給 pre-commit 與 CI 用的——**已掛進 `hooks/pre-commit-audit.sh`**（2026-09-30），staged 碰到 `skills/` 時自動跑，非 0 即擋，`--no-verify` 旁路。**exit code 契約寫清楚，避免誤用**：
 
 | 情況 | 不加 `--strict` | 加 `--strict` |
 |------|------|------|
