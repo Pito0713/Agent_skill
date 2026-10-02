@@ -266,3 +266,20 @@
 - 規則：**寫進「已知行為／不用再查」的每一條，都要附一個可否證的判準，不能只給結論。**
   這裡該寫的是「先比對 `~/.codex/sessions` 最新 jsonl 的 mtime：檔案在動而 UI 不動就是 bug」，
   而不是「stale 代表閒置」。給不出判準的，就不該放進免查清單，只能寫成「尚未查證的推測」。
+
+## 2026-09-30 寫了「必跑」卻沒接上 gate 的檢查，等於沒有檢查
+- 情境：`maintenance-protocol.md` §8.6 寫明新增或修改 skill 時必跑 `token-budget.sh --strict`，
+  也寫了「`--strict` 是給 pre-commit 與 CI 用的」，但 hook 一直沒呼叫它（2026-08-10 handoff
+  就記了，TODO 懸置到 09-30）。9/14 新增 tw-market-rotation 時沒人跑，description 以 425 bytes
+  （門檻 400）、無 waiver 直接進了 main。
+- 錯誤/風險：同一個超標同時讓 `bin/test-token-budget.sh` 轉紅（`over == []` 斷言失敗），
+  紅了兩週半沒人看到——檢查工具與它自己的測試都存在，只是沒有任何東西會自動執行它們。
+  修的時候又連撞兩個寫死的現況常數（`pass == 22`、`23,171 bytes`），任何合法的新增 skill
+  都會讓測試紅，紅成常態後就沒人當真。我第一版的「導出」寫法用 pass 自己加回去算總數，
+  斷言恆真，等於把檢查拆掉——自己讀回時才抓到，改成從 `index.json` 獨立取數。
+- 修正：tw-market-rotation 壓到 393 bytes（使用者裁決不補 waiver）；`--strict` 掛進
+  `hooks/pre-commit-audit.sh`（staged 碰 `skills/` 才跑，非 0 即擋），clone 實測四情境；
+  測試裡兩個現況常數改由 index / baseline 導出，baseline 在 clean tree 重量。
+- 規則：**制度檔寫「必跑」的檢查，當天就要接上會自動執行它的地方（pre-commit / CI / 測試入口），
+  接不上就改寫成「建議跑」並記 TODO——不要讓文件承諾一個沒人執行的 gate。**
+  導出常數時，導出來源必須獨立於被驗證的值；用受測值自己算期望值的斷言恆真，比寫死更糟。
