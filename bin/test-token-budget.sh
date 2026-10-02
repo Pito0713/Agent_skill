@@ -71,7 +71,7 @@ import sys
 report = json.load(open(sys.argv[1], encoding="utf-8"))
 baseline = json.load(open(sys.argv[2], encoding="utf-8"))
 threshold = report["description_threshold"]
-shared_waiver = "2026-08-07 wits 核准：承載跨 skill 分流條款——六個 mentor 系 skill 互相競爭路由，壓縮會惡化已知的觸發詞重疊（計劃書 §4 目標 C）"
+shared_waiver = "2026-08-07 wits 核准：承載跨 skill 分流條款——四個 mentor 系 skill 互相競爭路由，壓縮會惡化已知的觸發詞重疊（計劃書 §4 目標 C）"
 expected_waived = {
     "mentor-invest": (655, shared_waiver),
     "mentor-neuro": (536, shared_waiver),

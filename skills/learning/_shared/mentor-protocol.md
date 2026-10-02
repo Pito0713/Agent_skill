@@ -1,11 +1,11 @@
 # Mentor 共用協定（正本）
 
-> **這份檔案在執行時不載入。** 五份 `mentor-*/SKILL.md` 各自內聯了本協定的壓縮摘要，
+> **這份檔案在執行時不載入。** 各份 `mentor-*/SKILL.md` 各自內聯了本協定的壓縮摘要，
 > 執行時照那份摘要做即可，不需要讀這裡。
 >
 > 本檔的用途有兩個：
 > 1. **正本**——摘要寫得不夠清楚、或要確認某個格式的完整長相時，人或模型來這裡查。
-> 2. **模板**——新增第六個 mentor 時，照 §8 把變數填進去，避免又從零抄一份。
+> 2. **模板**——新增 mentor 時，照 §8 把變數填進去，避免又從零抄一份。
 >
 > 非 skill package（無 frontmatter、無 SKILL.md），不進 `skills/index.json`，
 > 不進任何 harness 的路由表，不被 link farm 掛載。
@@ -41,8 +41,8 @@ society 3504→3295 (-209)   invest  3719→3596 (-123)   合計 17127→16158 (
 因此**本次重構的主要價值不是省 token，是消除五份重複與建立新增 mentor 的模板**。
 若日後要真正大幅瘦身，槓桿更大的是各 SKILL.md 裡的兩段純冗餘（見 §10），不是這裡。
 
-**代價要說清楚**：五份摘要之間可能各自漂移，沒有任何機制會偵測。
-改動協定時必須手動同步五份 + 本檔，見 §9。
+**代價要說清楚**：各份摘要之間可能各自漂移，沒有任何機制會偵測。
+改動協定時必須手動同步所有 `mentor-*/SKILL.md` + 本檔，見 §9。
 
 ---
 
@@ -161,7 +161,7 @@ vault 無既有筆記：
 
 ## §7 共用 Checklist 項
 
-五份 Checklist 中逐字相同的部分。各 SKILL.md 的 Checklist 只留 domain 專屬項，
+各份 Checklist 中逐字相同的部分。各 SKILL.md 的 Checklist 只留 domain 專屬項，
 共用項由此處統一定義：
 
 ```
@@ -197,16 +197,16 @@ vault 無既有筆記：
 
 ```
 [ ] 改本檔對應章節
-[ ] 五份 mentor-*/SKILL.md 的「標準 mentor 協定」摘要區塊逐一同步
+[ ] 所有 mentor-*/SKILL.md 的「標準 mentor 協定」摘要區塊逐一同步
 [ ] 改動涉及行為 → memory/project-context.md 追加 ADR
 [ ] bash bin/token-budget.sh --strict
 [ ] python3 bin/validate-skill-index.py
 ```
 
-**新增第六個 mentor 時**：
+**新增 mentor 時**：
 
 1. 在 §8 表格加一欄，填滿七個變數；在 §11.2 加一欄，填滿六個維度（先填 §11.2 會逼你想清楚
-   它和既有五個的差別在哪——填不出來就代表不需要新 mentor）
+   它和既有 mentor 的差別在哪——填不出來就代表不需要新 mentor）
 2. 在 §11.1 加該領域與鄰居最容易混淆的兩三列
 3. 照既有 mentor 的結構寫 SKILL.md：`標準 mentor 協定摘要`（從 §8 展開）→ 角色定位 →
    思考路徑 → 領域確定性標準表 + 鐵律 → 回覆結構主體 → 迷思雷達表 → 觸發分流 → domain Checklist
@@ -253,8 +253,8 @@ neuro 原表獨有的「優先期刊 Nature Neuroscience / Neuron / PNAS」已�
 
 **執行時不載入。** 兩張表的作用對象都是**維護者**——路由在 skill 載入前就決定完了，實際生效的
 是 frontmatter `description` 與 `skills/llms.txt` 的判斷樹；方法論差異則各自寫在該 mentor 的
-確定性分級表、鐵律與回覆結構區塊裡。放在這裡是為了讓五個 mentor 的邊界有一份**彼此一致**的
-定義可對照，新增第六個 mentor 時照這兩張表劃界。
+確定性分級表、鐵律與回覆結構區塊裡。放在這裡是為了讓所有 mentor 的邊界有一份**彼此一致**的
+定義可對照，新增 mentor 時照這兩張表劃界。
 
 ### §11.1 路由矩陣（問題 → 哪個 skill）
 
