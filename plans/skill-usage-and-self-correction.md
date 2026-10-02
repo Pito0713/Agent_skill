@@ -1,6 +1,7 @@
 # 計畫書 v2：Skill 使用次數歸類 + 自我修正機制
 
-> 狀態：待使用者核准後實作
+> 狀態：Phase 1 ✅ 完成（2026-08-08）；**Phase 2 經決策 gate 裁決不做**（使用者 2026-10-02，理由見 §6 Phase 2）；
+>       Phase 3 未排程，啟動條件不變
 > 日期：2026-08-08
 > 專案：`~/Agent_skill`（三 harness 共用制度倉庫）
 > 審查：v1 由 Codex 冷啟動對抗式審查（6 BLOCKER / 8 SHOULD / 5 NIT），本版為整合後結果
@@ -358,6 +359,16 @@ Codex 指出 v1 一次蓋 10 個檔屬過度設計（本專案有 `lazyengineer`
 3. `inferred_read` 的連帶讀取污染有沒有嚴重到讓排名失真？
 
 ### Phase 2 — 自我修正機制（gate 通過才做）
+
+> **❌ 2026-10-02 裁決不做**（gate 逾期 6 週後補裁）。gate 三題：(1) 有——Phase 1 數據導出 ADR-025
+> 停用 7／合併 5；(2) 否——agy 未涵蓋、窗口約 3 週；(3) 未量測。不做的理由：
+> - **基率**：39 個 skill 僅 9 個 `inv > 0`，使用稀疏到週檢多半是空的
+> - **既有管道已夠**：2026-09-30 的 tw-stock-tracker 配股率 bug、description 超標、長期紅燈的測試，
+>   皆經 TODO + lessons 發現並處理，未用到 feedback log
+> - **成本**：需放寬 `governance/` 寫入權限（§5.1 擴權）並新增一個 skill，與 ADR-025 剛收斂 39 → 29 反向
+>
+> 2026-08-08 提出的接線方案（改三份索引檔 vs 只改 `coding-workflow-core`）隨之作廢。
+> 要重啟：先重新回答 gate 三題，不要直接照下列清單實作。
 
 - 修改 `maintenance-protocol §1`（🟡，前置條件）
 - `governance/skill-feedback.jsonl` + schema validator
