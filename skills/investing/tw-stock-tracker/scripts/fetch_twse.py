@@ -4,7 +4,8 @@
   - STOCK_DAY   : 個股單月日線。漲跌價差欄位的 "X" 前綴 = 該日除權息（TWSE 不計算漲跌）。
   - TWT48U_ALL  : 除權除息預告表。只涵蓋「滾動未來約 5 週」，故僅前瞻窗口有配息金額。
 
-還原股價：參考價 = (前收盤 - 現金股利) / (1 + 配股率)，往前累乘 factor。
+還原股價：參考價 = (前收盤 - 現金股利 + 認購價 × 增資率) / (1 + 配股率 + 增資率)，往前累乘 factor。
+  公式出自 TWSE 除權除息參考價試算頁（announcement/ex-right/cal.html）。
 偵測得到除權息日但查不到金額時，adj_close 留 NULL 並由呼叫端標記，
 不猜數字——錯誤的還原價會讓 track record 統計失真。
 """
@@ -108,24 +109,40 @@ def save_quotes(conn, ticker, rows):
     conn.commit()
 
 
+def _subscription_price(raw):
+    """認購價。未公告時 TWSE 回「尚未公告」等文字，回傳 None 而非 0——
+    當 0 算會把參考價壓低成看似合理的錯數字。"""
+    try:
+        return _to_float(raw or "")
+    except ValueError:
+        return None
+
+
+def parse_dividend_row(row):
+    """TWT48U_ALL 單列 -> dividends 欄位 tuple；無事件或金額未定者回 None（維持「金額未知」）。"""
+    cash = _to_float(row.get("CashDividend") or "") or 0.0
+    # 原始值已是每股配股數（實測興泰 0.5 元配股回 0.04999999），不可再除 1000
+    stock_ratio = _to_float(row.get("StockDividendRatio") or "") or 0.0
+    sub_ratio = _to_float(row.get("SubscriptionRatio") or "") or 0.0
+    sub_price = _subscription_price(row.get("SubscriptionPricePerShare")) if sub_ratio else 0.0
+    if not sub_price and sub_ratio:
+        return None
+    if cash == 0.0 and stock_ratio == 0.0 and sub_ratio == 0.0:
+        return None
+    raw_date = (row.get("Date") or "").strip()
+    if len(raw_date) != 7:
+        return None
+    ex_date = "%04d-%s-%s" % (int(raw_date[:3]) + 1911, raw_date[3:5], raw_date[5:7])
+    return (row["Code"].strip(), ex_date, cash, stock_ratio, sub_ratio, sub_price, "TWT48U_ALL")
+
+
 def sync_dividends(conn):
     """抓除權息預告表存入 dividends。回傳寫入筆數。"""
-    payload = _get_json(DIVIDEND_URL)
-    records = []
-    for row in payload:
-        cash = _to_float(row.get("CashDividend") or "") or 0.0
-        # 原始值已是每股配股數（實測興泰 0.5 元配股回 0.04999999），不可再除 1000
-        stock_ratio = _to_float(row.get("StockDividendRatio") or "") or 0.0
-        if cash == 0.0 and stock_ratio == 0.0:
-            continue
-        raw_date = (row.get("Date") or "").strip()
-        if len(raw_date) != 7:
-            continue
-        ex_date = "%04d-%s-%s" % (int(raw_date[:3]) + 1911, raw_date[3:5], raw_date[5:7])
-        records.append((row["Code"].strip(), ex_date, cash, stock_ratio, "TWT48U_ALL"))
+    records = [r for r in map(parse_dividend_row, _get_json(DIVIDEND_URL)) if r]
     conn.executemany(
-        "INSERT OR REPLACE INTO dividends (ticker, ex_date, cash, stock_ratio, source)"
-        " VALUES (?, ?, ?, ?, ?)", records)
+        "INSERT OR REPLACE INTO dividends"
+        " (ticker, ex_date, cash, stock_ratio, sub_ratio, sub_price, source)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?)", records)
     conn.commit()
     return len(records)
 
@@ -142,7 +159,7 @@ def rebuild_adj_close(conn, ticker):
         return 0, []
 
     dividend_map = {
-        row["ex_date"]: (row["cash"], row["stock_ratio"])
+        row["ex_date"]: row
         for row in conn.execute("SELECT * FROM dividends WHERE ticker = ?", (ticker,))
     }
 
@@ -152,12 +169,14 @@ def rebuild_adj_close(conn, ticker):
     for index in range(len(quotes) - 1, -1, -1):
         factors[index] = cumulative
         if quotes[index]["is_exdiv"] and index > 0:
-            cash, stock_ratio = dividend_map.get(quotes[index]["date"], (None, None))
-            if cash is None:
+            event = dividend_map.get(quotes[index]["date"])
+            if event is None:
                 unknown_dates.append(quotes[index]["date"])
                 continue  # 金額未知：不猜，保持 factor 不變並回報
             prev_close = quotes[index - 1]["close"]
-            cumulative *= ((prev_close - cash) / (1.0 + stock_ratio)) / prev_close
+            reference = ((prev_close - event["cash"] + event["sub_price"] * event["sub_ratio"])
+                         / (1.0 + event["stock_ratio"] + event["sub_ratio"]))
+            cumulative *= reference / prev_close
 
     conn.executemany(
         "UPDATE daily_quotes SET adj_close = ? WHERE ticker = ? AND date = ?",

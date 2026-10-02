@@ -30,7 +30,10 @@
 | ticker, ex_date | 主鍵 |
 | cash | 每股現金股利 |
 | stock_ratio | 每股配股數（TWSE 原始值即為每股，如配股 0.5 元 = 0.05） |
+| sub_ratio, sub_price | 每股現金增資認購股數、每股認購價。認購價「尚未公告」時整筆不寫入，維持金額未知標記 |
 | source | 目前恆為 `TWT48U_ALL` |
+
+還原用參考價 = (前收 − cash + sub_price × sub_ratio) / (1 + stock_ratio + sub_ratio)，出自 TWSE 除權除息參考價試算頁（`announcement/ex-right/cal.html`）的 JS。
 
 **涵蓋範圍限制**：TWT48U_ALL 是**預告表**，只有滾動未來約 5 週的事件。
 更早的除息日偵測得到但金額查不到。

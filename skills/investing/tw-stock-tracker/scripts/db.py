@@ -27,7 +27,9 @@ CREATE TABLE IF NOT EXISTS dividends (
     ticker      TEXT NOT NULL,
     ex_date     TEXT NOT NULL,           -- ISO yyyy-mm-dd
     cash        REAL NOT NULL DEFAULT 0, -- 每股現金股利
-    stock_ratio REAL NOT NULL DEFAULT 0, -- 每股配股數（1000 股配 N 股 -> N/1000）
+    stock_ratio REAL NOT NULL DEFAULT 0, -- 每股配股數（TWSE 原始值即每股）
+    sub_ratio   REAL NOT NULL DEFAULT 0, -- 每股現金增資認購股數
+    sub_price   REAL NOT NULL DEFAULT 0, -- 現金增資每股認購價
     source      TEXT,
     PRIMARY KEY (ticker, ex_date)
 );
@@ -68,15 +70,20 @@ CREATE INDEX IF NOT EXISTS idx_pred_status ON predictions(status, ticker);
 
 
 # 後加欄位：CREATE TABLE IF NOT EXISTS 不會替舊 DB 補欄位，需逐一 ALTER
-ADDED_PREDICTION_COLUMNS = (("market_state", "TEXT"), ("sector_quadrant", "TEXT"))
+ADDED_COLUMNS = {
+    "predictions": (("market_state", "TEXT"), ("sector_quadrant", "TEXT")),
+    "dividends": (("sub_ratio", "REAL NOT NULL DEFAULT 0"),
+                  ("sub_price", "REAL NOT NULL DEFAULT 0")),
+}
 
 
 def _migrate(conn):
     """冪等補上舊 DB 缺少的欄位，不動既有資料。"""
-    existing = {row["name"] for row in conn.execute("PRAGMA table_info(predictions)")}
-    for column, column_type in ADDED_PREDICTION_COLUMNS:
-        if column not in existing:
-            conn.execute("ALTER TABLE predictions ADD COLUMN %s %s" % (column, column_type))
+    for table, columns in ADDED_COLUMNS.items():
+        existing = {row["name"] for row in conn.execute("PRAGMA table_info(%s)" % table)}
+        for column, column_type in columns:
+            if column not in existing:
+                conn.execute("ALTER TABLE %s ADD COLUMN %s %s" % (table, column, column_type))
     conn.commit()
 
 
