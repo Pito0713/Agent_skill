@@ -123,7 +123,7 @@
       "name": "tw-stock-tracker",
       "path": "skills/investing/tw-stock-tracker/SKILL.md",
       "triggers": "進場點位、台股評分、幫我看 2330、這檔現在能不能進、技術面評分、跑對帳、我的判斷準不準、命中率、校準度（需帶台股代號或明確指向個股操作）",
-      "description": "台股盤後技術面六維量化評分（100 分）+ 預測 track record 追蹤。三模式：分析（抓 TWSE 真實日線→評分→進場區間與停損）、對帳（到期抓真實價算報酬與命中）、報告（命中率與按分數分層的校準度）。所有數字由 script 計算，LLM 只寫 thesis。與 mentor-invest 的界線是操作層 vs 概念層。",
+      "description": "台股盤後技術面六維量化評分（100 分）+ 預測 track record 追蹤。三模式：分析（抓 TWSE／TPEx 真實日線→評分→進場區間與停損）、對帳（到期抓真實價算報酬與命中）、報告（命中率與按分數分層的校準度）。所有數字由 script 計算，LLM 只寫 thesis。與 mentor-invest 的界線是操作層 vs 概念層。",
       "description_waiver": "2026-08-07 wits 核准：description 承載與 mentor-invest 的「操作層 vs 概念層」分流條款（計劃書 §4 目標 C）"
     },
     {

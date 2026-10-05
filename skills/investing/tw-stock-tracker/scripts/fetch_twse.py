@@ -8,6 +8,8 @@
   公式出自 TWSE 除權除息參考價試算頁（announcement/ex-right/cal.html）。
 偵測得到除權息日但查不到金額時，adj_close 留 NULL 並由呼叫端標記，
 不猜數字——錯誤的還原價會讓 track record 統計失真。
+
+上櫃股不在 STOCK_DAY，sync_ticker 查無資料時改走 fetch_tpex。
 """
 
 import argparse
@@ -20,6 +22,7 @@ import urllib.request
 from datetime import date, timedelta
 
 import db
+import fetch_tpex
 
 STOCK_DAY_URL = "https://www.twse.com.tw/exchangeReport/STOCK_DAY"
 DIVIDEND_URL = "https://openapi.twse.com.tw/v1/exchangeReport/TWT48U_ALL"
@@ -187,20 +190,31 @@ def rebuild_adj_close(conn, ticker):
 
 
 def sync_ticker(conn, ticker, months=7):
-    """抓取 + 落庫 + 還原，一次完成。回傳摘要 dict。"""
+    """抓取 + 落庫 + 還原，一次完成。回傳摘要 dict。
+
+    先試 TWSE（上市），查無資料才轉 TPEx（上櫃）——代號本身看不出市場別，
+    只能靠實際查詢判定。
+    """
     if not TICKER_PATTERN.match(ticker or ""):
         raise RuntimeError("股票代號格式不符（4–6 碼數字，ETF 可含英文尾碼）：%r" % ticker)
-    rows = fetch_months(ticker, recent_months(months))
+    month_list = recent_months(months)
+    market = "TWSE"
+    rows = fetch_months(ticker, month_list)
     if not rows:
-        raise RuntimeError("%s 無任何日線資料，無法分析" % ticker)
+        market = "TPEx"
+        rows, implied_events = fetch_tpex.fetch_months(ticker, month_list)
+        if implied_events:
+            fetch_tpex.save_implied_dividends(conn, ticker, implied_events)
+    if not rows:
+        raise RuntimeError("%s 無任何日線資料（TWSE 與 TPEx 皆查無），無法分析" % ticker)
     save_quotes(conn, ticker, rows)
     count, unknown = rebuild_adj_close(conn, ticker)
     return {"ticker": ticker, "bars": count, "latest": rows[-1]["date"],
-            "unadjusted_exdiv": unknown}
+            "market": market, "unadjusted_exdiv": unknown}
 
 
 def main():
-    parser = argparse.ArgumentParser(description="抓取 TWSE 盤後資料")
+    parser = argparse.ArgumentParser(description="抓取台股盤後資料（上市走 TWSE、上櫃走 TPEx）")
     parser.add_argument("tickers", nargs="+", help="股票代號，如 2330")
     parser.add_argument("--months", type=int, default=7, help="回溯月數（預設 7，約 120 個交易日）")
     parser.add_argument("--skip-dividends", action="store_true")
@@ -211,7 +225,7 @@ def main():
         print("除權息預告表：寫入 %d 筆" % sync_dividends(conn))
     for ticker in args.tickers:
         summary = sync_ticker(conn, ticker, args.months)
-        print("%(ticker)s：%(bars)d 根日線，最新 %(latest)s" % summary)
+        print("%(ticker)s（%(market)s）：%(bars)d 根日線，最新 %(latest)s" % summary)
         if summary["unadjusted_exdiv"]:
             print("  [warn] 除權息金額未知，未還原：%s" % ", ".join(summary["unadjusted_exdiv"]))
     conn.close()
