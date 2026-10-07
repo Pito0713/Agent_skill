@@ -49,7 +49,15 @@ python3 track.py record <代號> --horizon 30 --thesis "<你寫的判斷摘要>"
 **執行前**：先問使用者時間框架（horizon，預設 30 天），因為它決定何時對帳。
 **執行後**：照 `references/output-format.md` 呈現，thesis 需在看到評分結果後再寫。
 
-若使用者只想看評分、不要落記錄 → 改用 `python3 score.py <代號>`。
+若使用者只想看評分、不要落記錄 → 先抓資料再評分：
+
+```bash
+python3 fetch_twse.py <代號>      # 上市／上櫃自動判定，落庫並還原除權息
+python3 score.py <代號> --json
+```
+
+`score.py` 只讀本地 DB、不會自行抓資料；跳過 fetch 會報「僅 0 根日線」（首次查詢）
+或拿舊資料評分（曾查過的標的）。`record` 內建抓取，不需此步。
 
 ---
 
