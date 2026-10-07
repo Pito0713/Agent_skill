@@ -46,7 +46,7 @@ FAKE_RESULT = {
     "date": "2026-09-29", "close": 1000.0, "adj_close": 1000.0, "final_score": 68,
     "parts": {"trend": 20, "bias": 15, "support": 10, "volume": 11, "macd": 8, "rsi": 4},
     "signal": "偏多", "entry_low": 980.0, "entry_high": 1000.0, "stop_loss": 950.0,
-    "hard_rules": [], "flags": [],
+    "hard_rules": [], "flags": [], "thresholds": {"calibration_id": None, "bull": 60, "bear": 45},
 }
 
 

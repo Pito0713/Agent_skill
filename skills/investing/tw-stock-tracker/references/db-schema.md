@@ -72,6 +72,9 @@
 **僅供 `report` 分組校準，不影響評分**——要讓它參與評分，須先有對帳樣本證明組間命中率差異。
 舊 DB 於 `db.connect()` 時以 `ALTER TABLE` 冪等補欄位，既有資料不變。
 
+`calibration_id`：建立該筆預測時採用的 `calibrations.id`；NULL 代表當時用預設門檻。
+`report` 依此分版本顯示命中率，用來比較校準前後。
+
 ### status 語意
 
 | 值 | 意義 |
@@ -80,3 +83,19 @@
 | resolved | 已對帳，計入統計 |
 | needs_review | 持有期間跨到「金額未知的除權息日」，報酬無法正確計算，**不計入統計** |
 | voided | 人工作廢 |
+
+---
+
+## calibrations — 訊號門檻版本
+
+只有 `track.py calibrate --apply` 且驗證通過時才寫入一筆；`score.py` 讀 `adopted = 1` 的最新一筆。
+
+| 欄位 | 說明 |
+|------|------|
+| created_at | 執行校準的日期 |
+| bull_threshold / bear_threshold | 分數 ≥ bull 為偏多、< bear 為偏空 |
+| train_n / valid_n | 前段（剔除重疊後）與後段筆數 |
+| train_metric / valid_metric | 前段、後段的平均方向報酬 % |
+| baseline_metric | 後段「全判偏多」的平均報酬 % |
+| current_metric | 後段沿用舊門檻的平均方向報酬 %；舊門檻在後段無方向預測時 NULL |
+| adopted | 1 = 使用者核准 |

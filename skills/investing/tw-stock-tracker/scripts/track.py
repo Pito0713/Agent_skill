@@ -4,6 +4,7 @@
   record    跑評分並落一筆 open 預測（thesis 由 LLM 提供，是唯一 LLM 欄位）
   reconcile 掃到期的 open 預測，抓真實價算報酬與命中
   report    輸出命中率與「按分數分層的校準度」
+  calibrate 用已對帳樣本提議新的偏多／偏空門檻，--apply 才寫入（見 calibrate.py）
 
 命中定義：偏多類看報酬>0、偏空類看報酬<0；中性不計入命中率（hit 留 NULL）。
 持有期間有除權息但金額未知者一律標 needs_review，不用錯的還原價算報酬。
@@ -14,6 +15,7 @@ import json
 import sys
 from datetime import datetime, timedelta
 
+import calibrate
 import db
 import fetch_twse
 import score as scoring
@@ -57,15 +59,16 @@ def cmd_record(conn, args):
         "INSERT INTO predictions (created_at, ticker, horizon_days, close_at_pred,"
         " adj_close_at_pred, score, s_trend, s_bias, s_support, s_volume, s_macd, s_rsi,"
         " signal, entry_low, entry_high, stop_loss, hard_rules, flags, thesis,"
-        " market_state, sector_quadrant, status)"
-        " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, 'open')",
+        " market_state, sector_quadrant, calibration_id, status)"
+        " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, 'open')",
         (result["date"], args.ticker, args.horizon, result["close"], result["adj_close"],
          result["final_score"], result["parts"]["trend"], result["parts"]["bias"],
          result["parts"]["support"], result["parts"]["volume"], result["parts"]["macd"],
          result["parts"]["rsi"], result["signal"], result["entry_low"], result["entry_high"],
          result["stop_loss"], json.dumps(result["hard_rules"], ensure_ascii=False),
          json.dumps(result["flags"], ensure_ascii=False), args.thesis,
-         result["market_state"], result["sector_quadrant"]))
+         result["market_state"], result["sector_quadrant"],
+         result["thresholds"]["calibration_id"]))
     conn.commit()
     result["prediction_id"] = cursor.lastrowid
     print(json.dumps(result, ensure_ascii=False, indent=2))
@@ -226,6 +229,7 @@ def cmd_report(conn, args):
         print("\n⚠️  樣本數 %d < %d，以下統計在統計上不具意義，僅供觀察趨勢，"
               "不足以判斷分析品質。" % (total, MIN_SAMPLE))
     if not total:
+        calibrate.print_threshold_status(conn)
         return
 
     directional = [r for r in rows if r["hit"] is not None]
@@ -252,6 +256,7 @@ def cmd_report(conn, args):
     if pending:
         print("\n未結案：" + "、".join("%s %d 筆" % (r["status"], r["c"]) for r in pending))
     _print_context_groups(rows)
+    calibrate.print_threshold_status(conn)
 
 
 def positive_int(text):
@@ -273,11 +278,15 @@ def main():
 
     sub.add_parser("reconcile", help="對帳到期預測")
     sub.add_parser("report", help="輸出命中率與校準度")
+    calibration = sub.add_parser("calibrate", help="提議新的訊號門檻（預設不寫入）")
+    calibration.add_argument("--apply", action="store_true", help="驗證通過時寫入並生效")
 
     args = parser.parse_args()
     conn = db.connect()
     try:
-        {"record": cmd_record, "reconcile": cmd_reconcile, "report": cmd_report}[args.command](conn, args)
+        commands = {"record": cmd_record, "reconcile": cmd_reconcile, "report": cmd_report,
+                    "calibrate": calibrate.cmd_calibrate}
+        commands[args.command](conn, args)
     except RuntimeError as error:
         print("錯誤：%s" % error, file=sys.stderr)
         sys.exit(1)

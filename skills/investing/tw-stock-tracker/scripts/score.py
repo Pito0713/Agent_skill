@@ -15,9 +15,13 @@ import indicators
 
 MIN_BARS = 60                # 少於此根數不出評分（MA60 無法成立）
 LIMIT_UP_RATIO = 1.095       # 台股漲跌幅 10%，留 0.5% 容差判定觸及漲停
-NEUTRAL_CAP = 59             # 硬規則壓制後的分數上限（= 中性區間頂端）
-
-SIGNAL_BANDS = [(75, "強烈偏多"), (60, "偏多"), (45, "中性"), (30, "偏空"), (0, "強烈偏空")]
+DEFAULT_BULL_THRESHOLD = 60  # 分數 ≥ 此值為偏多；可由 track.py calibrate 核准新值覆寫
+DEFAULT_BEAR_THRESHOLD = 45  # 分數 < 此值為偏空
+STRONG_OFFSET = 15           # 強烈兩檔僅供顯示，固定距門檻 15 分、不參與校準
+SIGNAL_LABELS = ["強烈偏多", "偏多", "中性", "偏空", "強烈偏空"]
+# 硬規則文字中的標記，calibrate 回測時據此重現壓制與降級
+CAP_RULE_MARK = "壓至中性"
+DOWNGRADE_RULE_MARK = "降一級"
 
 
 def load_series(conn, ticker):
@@ -113,30 +117,44 @@ def score_rsi(value):
     return 0
 
 
-def to_signal(total):
-    for threshold, label in SIGNAL_BANDS:
+def load_thresholds(conn):
+    """讀最新一筆已核准的校準門檻；從未核准過則用預設值，calibration_id 為 None。"""
+    row = conn.execute(
+        "SELECT id, bull_threshold, bear_threshold FROM calibrations"
+        " WHERE adopted = 1 ORDER BY id DESC LIMIT 1").fetchone()
+    if row is None:
+        return {"calibration_id": None, "bull": DEFAULT_BULL_THRESHOLD,
+                "bear": DEFAULT_BEAR_THRESHOLD}
+    return {"calibration_id": row["id"], "bull": row["bull_threshold"],
+            "bear": row["bear_threshold"]}
+
+
+def to_signal(total, bull=DEFAULT_BULL_THRESHOLD, bear=DEFAULT_BEAR_THRESHOLD):
+    bands = [(bull + STRONG_OFFSET, "強烈偏多"), (bull, "偏多"), (bear, "中性"),
+             (bear - STRONG_OFFSET, "偏空")]
+    for threshold, label in bands:
         if total >= threshold:
             return label
     return "強烈偏空"
 
 
-def _downgrade(signal):
-    labels = [label for _, label in SIGNAL_BANDS]
-    index = labels.index(signal)
-    return labels[min(index + 1, len(labels) - 1)]
+def downgrade(signal):
+    index = SIGNAL_LABELS.index(signal)
+    return SIGNAL_LABELS[min(index + 1, len(SIGNAL_LABELS) - 1)]
 
 
 def apply_hard_rules(result, rsi_value, bias_pct, rows, avg_volume):
     """硬規則：觸發即壓制訊號，避免評分把明顯高風險狀態講成好進場點。"""
     triggered = []
     latest, previous = rows[-1], rows[-2]
+    neutral_cap = result["thresholds"]["bull"] - 1   # 中性區間頂端，隨門檻移動
 
     if rsi_value is not None and rsi_value > 80:
         triggered.append("RSI>80 超買，訊號壓至中性")
-        result["score_capped"] = min(result["score"], NEUTRAL_CAP)
+        result["score_capped"] = min(result["score"], neutral_cap)
     if bias_pct > 15:
         triggered.append("正乖離>15% 追高，訊號壓至中性")
-        result["score_capped"] = min(result.get("score_capped", result["score"]), NEUTRAL_CAP)
+        result["score_capped"] = min(result.get("score_capped", result["score"]), neutral_cap)
     if latest["high"] >= previous["close"] * LIMIT_UP_RATIO:
         triggered.append("當日觸及漲停，流動性失真，不出進場區間")
         result["entry_blocked"] = True
@@ -177,13 +195,13 @@ def evaluate(conn, ticker):
     }
     result = {"ticker": ticker, "date": rows[-1]["date"], "close": rows[-1]["close"],
               "adj_close": closes[-1], "parts": parts, "score": sum(parts.values()),
-              "flags": flags}
+              "flags": flags, "thresholds": load_thresholds(conn)}
 
     result["hard_rules"] = apply_hard_rules(result, rsi_value, bias_pct, rows, avg_volume)
     final_score = result.pop("score_capped", result["score"])
-    signal = to_signal(final_score)
+    signal = to_signal(final_score, result["thresholds"]["bull"], result["thresholds"]["bear"])
     if result.pop("downgrade", False):
-        signal = _downgrade(signal)
+        signal = downgrade(signal)
     result["final_score"] = final_score
     result["signal"] = signal
 
@@ -235,7 +253,9 @@ def main():
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return
     print("%s  資料基準日 %s  收盤 %.2f" % (result["ticker"], result["date"], result["close"]))
-    print("總分 %d/100 -> %s" % (result["final_score"], result["signal"]))
+    print("總分 %d/100 -> %s（門檻 偏多≥%d／偏空<%d）"
+          % (result["final_score"], result["signal"],
+             result["thresholds"]["bull"], result["thresholds"]["bear"]))
     for key, value in result["parts"].items():
         print("  %-8s %2d" % (key, value))
     if result["hard_rules"]:

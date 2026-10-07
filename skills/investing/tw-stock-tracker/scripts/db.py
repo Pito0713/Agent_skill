@@ -1,4 +1,4 @@
-"""SQLite 儲存層：日線快取、除權息事件、預測記錄。
+"""SQLite 儲存層：日線快取、除權息事件、預測記錄、校準門檻。
 
 資料庫放家目錄（~/.stock-tracker/tracker.db），不進制度 repo：
 predictions 是個人交易判斷資料且持續增長，不該污染三 harness 共用的正本。
@@ -62,7 +62,22 @@ CREATE TABLE IF NOT EXISTS predictions (
     return_pct           REAL,
     hit                  INTEGER,
     market_state         TEXT,           -- tw-market-rotation 背景欄位，未安裝時 NULL
-    sector_quadrant      TEXT            -- 同上；僅供分組校準，不影響評分
+    sector_quadrant      TEXT,           -- 同上；僅供分組校準，不影響評分
+    calibration_id       INTEGER         -- 當時採用的 calibrations.id；NULL = 預設門檻
+);
+
+CREATE TABLE IF NOT EXISTS calibrations (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    created_at       TEXT NOT NULL,      -- 執行校準的日期
+    bull_threshold   INTEGER NOT NULL,
+    bear_threshold   INTEGER NOT NULL,
+    train_n          INTEGER NOT NULL,   -- 剔除重疊後的前段筆數
+    valid_n          INTEGER NOT NULL,
+    train_metric     REAL NOT NULL,      -- 前段平均方向報酬 %
+    valid_metric     REAL NOT NULL,      -- 後段平均方向報酬 %
+    baseline_metric  REAL NOT NULL,      -- 後段「全判偏多」平均報酬 %
+    current_metric   REAL,               -- 後段沿用舊門檻的平均方向報酬 %；無方向預測時 NULL
+    adopted          INTEGER NOT NULL DEFAULT 0  -- 1 = 使用者以 --apply 核准
 );
 
 CREATE INDEX IF NOT EXISTS idx_pred_status ON predictions(status, ticker);
@@ -71,7 +86,8 @@ CREATE INDEX IF NOT EXISTS idx_pred_status ON predictions(status, ticker);
 
 # 後加欄位：CREATE TABLE IF NOT EXISTS 不會替舊 DB 補欄位，需逐一 ALTER
 ADDED_COLUMNS = {
-    "predictions": (("market_state", "TEXT"), ("sector_quadrant", "TEXT")),
+    "predictions": (("market_state", "TEXT"), ("sector_quadrant", "TEXT"),
+                    ("calibration_id", "INTEGER")),
     "dividends": (("sub_ratio", "REAL NOT NULL DEFAULT 0"),
                   ("sub_price", "REAL NOT NULL DEFAULT 0")),
 }
