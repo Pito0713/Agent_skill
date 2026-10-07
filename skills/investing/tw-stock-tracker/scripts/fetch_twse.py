@@ -3,6 +3,7 @@
 資料源（皆免金鑰）：
   - STOCK_DAY   : 個股單月日線。漲跌價差欄位的 "X" 前綴 = 該日除權息（TWSE 不計算漲跌）。
   - TWT48U_ALL  : 除權除息預告表。只涵蓋「滾動未來約 5 週」，故僅前瞻窗口有配息金額。
+  - TWT49U      : 除權除息計算結果表（歷史）。預告表查不到的除權息日由它補，見 fetch_exright。
 
 還原股價：參考價 = (前收盤 - 現金股利 + 認購價 × 增資率) / (1 + 配股率 + 增資率)，往前累乘 factor。
   公式出自 TWSE 除權除息參考價試算頁（announcement/ex-right/cal.html）。
@@ -22,6 +23,7 @@ import urllib.request
 from datetime import date, timedelta
 
 import db
+import fetch_exright
 import fetch_tpex
 
 STOCK_DAY_URL = "https://www.twse.com.tw/exchangeReport/STOCK_DAY"
@@ -142,10 +144,14 @@ def parse_dividend_row(row):
 def sync_dividends(conn):
     """抓除權息預告表存入 dividends。回傳寫入筆數。"""
     records = [r for r in map(parse_dividend_row, _get_json(DIVIDEND_URL)) if r]
+    # upsert 而非 REPLACE：REPLACE 會整列重建，清掉 TWT49U 補上的官方 ref_ratio
     conn.executemany(
-        "INSERT OR REPLACE INTO dividends"
+        "INSERT INTO dividends"
         " (ticker, ex_date, cash, stock_ratio, sub_ratio, sub_price, source)"
-        " VALUES (?, ?, ?, ?, ?, ?, ?)", records)
+        " VALUES (?, ?, ?, ?, ?, ?, ?)"
+        " ON CONFLICT(ticker, ex_date) DO UPDATE SET cash = excluded.cash,"
+        " stock_ratio = excluded.stock_ratio, sub_ratio = excluded.sub_ratio,"
+        " sub_price = excluded.sub_price, source = excluded.source", records)
     conn.commit()
     return len(records)
 
@@ -176,6 +182,10 @@ def rebuild_adj_close(conn, ticker):
             if event is None:
                 unknown_dates.append(quotes[index]["date"])
                 continue  # 金額未知：不猜，保持 factor 不變並回報
+            if event["ref_ratio"] is not None:
+                # 官方比例：本地日線若有缺口，上一根收盤不等於官方前收，用差額還原會失準
+                cumulative *= event["ref_ratio"]
+                continue
             prev_close = quotes[index - 1]["close"]
             reference = ((prev_close - event["cash"] + event["sub_price"] * event["sub_ratio"])
                          / (1.0 + event["stock_ratio"] + event["sub_ratio"]))
@@ -209,8 +219,19 @@ def sync_ticker(conn, ticker, months=7):
         raise RuntimeError("%s 無任何日線資料（TWSE 與 TPEx 皆查無），無法分析" % ticker)
     save_quotes(conn, ticker, rows)
     count, unknown = rebuild_adj_close(conn, ticker)
+    if unknown and market == "TWSE":
+        # 上櫃已由漲跌欄反推；上市的歷史金額要另查計算結果表。查不到者（如減資）維持未知
+        fill_historical_exdiv(conn, unknown)
+        count, unknown = rebuild_adj_close(conn, ticker)
     return {"ticker": ticker, "bars": count, "latest": rows[-1]["date"],
             "market": market, "unadjusted_exdiv": unknown}
+
+
+def fill_historical_exdiv(conn, unknown_dates):
+    """用 TWT49U 補「偵測到除權息但查無金額」的日子。單次請求涵蓋整段日期、全市場。"""
+    time.sleep(REQUEST_GAP_SEC)
+    payload = _get_json(fetch_exright.build_url(min(unknown_dates), max(unknown_dates)))
+    return fetch_exright.save_events(conn, fetch_exright.parse_events(payload))
 
 
 def main():

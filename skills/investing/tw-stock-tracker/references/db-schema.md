@@ -31,12 +31,16 @@
 | cash | 每股現金股利 |
 | stock_ratio | 每股配股數（TWSE 原始值即為每股，如配股 0.5 元 = 0.05） |
 | sub_ratio, sub_price | 每股現金增資認購股數、每股認購價。認購價「尚未公告」時整筆不寫入，維持金額未知標記 |
-| source | 目前恆為 `TWT48U_ALL` |
+| ref_ratio | 官方「參考價 / 前收」。有值時 `rebuild_adj_close` 直接累乘它，不用本地上一根收盤反算（本地日線有缺口時兩者會對不上）。目前只有 `TWT49U` 會填 |
+| source | `TWT48U_ALL`（預告表，分項金額）／`TWT49U`（上市歷史計算結果，由參考價反推，只填 cash）／`TPEX_IMPLIED`（上櫃，由漲跌欄反推） |
 
 還原用參考價 = (前收 − cash + sub_price × sub_ratio) / (1 + stock_ratio + sub_ratio)，出自 TWSE 除權除息參考價試算頁（`announcement/ex-right/cal.html`）的 JS。
 
-**涵蓋範圍限制**：TWT48U_ALL 是**預告表**，只有滾動未來約 5 週的事件。
-更早的除息日偵測得到但金額查不到。
+**涵蓋範圍**：TWT48U_ALL 是**預告表**，只有滾動未來約 5 週的事件。
+更早的上市除權息日由 `TWT49U` 補：`sync_ticker` 發現金額未知的日子時，以一次請求查該日期區間的
+全市場計算結果，存 `ref_ratio = 參考價 / 前收`（`cash` 欄存差額僅供閱讀，`fetch_exright.py`）。
+差額為 0 的事件也存（ref_ratio = 1），否則會被永遠當成金額未知、每次同步重查。
+寫入用 `INSERT OR IGNORE`，不覆蓋預告表已有的分項金額。兩表都沒有的事件（如減資）維持未知。
 
 > 曾評估用 `t187ap45_L`（股利分派情形）補歷史金額，**放棄**：
 > 該表有金額但無除息日，配對只能靠時序推測；

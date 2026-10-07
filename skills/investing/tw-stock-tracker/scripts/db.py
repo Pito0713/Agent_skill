@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS dividends (
     sub_ratio   REAL NOT NULL DEFAULT 0, -- 每股現金增資認購股數
     sub_price   REAL NOT NULL DEFAULT 0, -- 現金增資每股認購價
     source      TEXT,
+    ref_ratio   REAL,                    -- 官方 參考價/前收；有值時還原直接用它，不依賴本地前收
     PRIMARY KEY (ticker, ex_date)
 );
 
@@ -89,7 +90,7 @@ ADDED_COLUMNS = {
     "predictions": (("market_state", "TEXT"), ("sector_quadrant", "TEXT"),
                     ("calibration_id", "INTEGER")),
     "dividends": (("sub_ratio", "REAL NOT NULL DEFAULT 0"),
-                  ("sub_price", "REAL NOT NULL DEFAULT 0")),
+                  ("sub_price", "REAL NOT NULL DEFAULT 0"), ("ref_ratio", "REAL")),
 }
 
 
