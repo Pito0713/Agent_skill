@@ -15,7 +15,6 @@ HTTP helper 刻意不與 fetch_twse 共用——fetch_twse 匯入本模組，反
 import json
 import sys
 import time
-import urllib.error
 import urllib.request
 
 TPEX_DAY_URL = "https://www.tpex.org.tw/www/zh-tw/afterTrading/tradingStock"
@@ -32,7 +31,8 @@ def _get_json(url, retries=3):
             request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
             with urllib.request.urlopen(request, timeout=30) as response:
                 return json.loads(response.read().decode("utf-8"))
-        except (urllib.error.URLError, json.JSONDecodeError, TimeoutError) as error:
+        # OSError 涵蓋 URLError 與讀取中的 socket.timeout（Python 3.9 它不是 TimeoutError 子類）
+        except (OSError, json.JSONDecodeError) as error:
             last_error = error
             time.sleep(2 ** attempt)
     raise RuntimeError("TPEx 請求失敗 %s: %s" % (url, last_error))
@@ -52,11 +52,13 @@ def roc_to_iso(roc_date):
     return "%04d-%s-%s" % (int(year) + 1911, month, day)
 
 
-def parse_days(raw_rows):
+def parse_days(raw_rows, prev_close=None):
     """TPEx 日成交列 -> (rows, exdiv_events)。
 
     raw_rows 必須是跨月串接後、由舊到新的完整序列——除權息是靠與前一日收盤
     比對推出來的，逐月切開會漏掉落在月初的除權息日。
+    prev_close 為第一根之前那天的收盤（由 DB 提供）；沒給則第一根無從判斷，
+    重抓既有月份時會把該日原有的除權息標記覆蓋成 0。
 
     exdiv_events 為 [(ex_date, cash_equivalent)]：反推成功者才入列，
     推不出來（漲跌欄非數字、參考價不合理）只標 is_exdiv，金額留給
@@ -64,7 +66,6 @@ def parse_days(raw_rows):
     """
     rows = []
     events = []
-    prev_close = None
     for raw in raw_rows:
         close = _to_float(raw[6])
         if close is None:
@@ -92,8 +93,8 @@ def parse_days(raw_rows):
     return rows, events
 
 
-def fetch_months(ticker, months):
-    """抓取指定月份清單（['202609', ...]，由舊到新）的上櫃日線。
+def fetch_months(ticker, months, prev_close=None):
+    """抓取指定月份清單（['202609', ...]，由舊到新）的上櫃日線。prev_close 見 parse_days。
 
     回傳 (rows, exdiv_events)；查無資料回 ([], [])，由呼叫端決定如何回報。
     """
@@ -110,7 +111,7 @@ def fetch_months(ticker, months):
             print("  [warn] TPEx %s %s：無資料" % (ticker, month), file=sys.stderr)
             continue
         raw_rows.extend(data)
-    return parse_days(raw_rows)
+    return parse_days(raw_rows, prev_close)
 
 
 def save_implied_dividends(conn, ticker, events):

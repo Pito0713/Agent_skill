@@ -24,20 +24,25 @@ CAP_RULE_MARK = "壓至中性"
 DOWNGRADE_RULE_MARK = "降一級"
 
 
-def load_series(conn, ticker):
-    """讀出日線，並標記序列中是否存在「偵測到除權息但查無金額」的日子。
+def load_series(conn, ticker, as_of=None):
+    """讀出 as_of（含）以前的日線，並標記其中是否存在「偵測到除權息但查無金額」的日子。
+
+    as_of 供回測用：只給評分看當天以前的資料。adj_close 是用至今所有除權息往回調整的，
+    但同一段序列被乘上同一個比例，均線、乖離、RSI、MACD 正負號、距支撐百分比都不變。
 
     不可用 adj_close == close 推斷未還原：還原是往回調整，
     最近一次除權息之後的日期本來就維持原值，那樣會誤判為未知。
     """
+    as_of = as_of or "9999-12-31"
     rows = conn.execute(
         "SELECT date, open, high, low, close, adj_close, volume, is_exdiv"
-        " FROM daily_quotes WHERE ticker = ? ORDER BY date", (ticker,)).fetchall()
+        " FROM daily_quotes WHERE ticker = ? AND date <= ? ORDER BY date",
+        (ticker, as_of)).fetchall()
     unknown = conn.execute(
         "SELECT COUNT(*) FROM daily_quotes q LEFT JOIN dividends d"
         "  ON d.ticker = q.ticker AND d.ex_date = q.date"
-        " WHERE q.ticker = ? AND q.is_exdiv = 1 AND d.ex_date IS NULL",
-        (ticker,)).fetchone()[0]
+        " WHERE q.ticker = ? AND q.date <= ? AND q.is_exdiv = 1 AND d.ex_date IS NULL",
+        (ticker, as_of)).fetchone()[0]
     return rows, (["has_unadjusted_exdiv"] if unknown else [])
 
 
@@ -117,11 +122,15 @@ def score_rsi(value):
     return 0
 
 
-def load_thresholds(conn):
-    """讀最新一筆已核准的校準門檻；從未核准過則用預設值，calibration_id 為 None。"""
+def load_thresholds(conn, as_of=None):
+    """讀 as_of（含）以前最新一筆已核准的校準門檻；沒有則用預設值，calibration_id 為 None。
+
+    as_of 供回測用：把日後才核准的門檻套回過去，等於讓未來資訊滲進歷史分數。
+    """
     row = conn.execute(
         "SELECT id, bull_threshold, bear_threshold FROM calibrations"
-        " WHERE adopted = 1 ORDER BY id DESC LIMIT 1").fetchone()
+        " WHERE adopted = 1 AND created_at <= ? ORDER BY id DESC LIMIT 1",
+        (as_of or "9999-12-31",)).fetchone()
     if row is None:
         return {"calibration_id": None, "bull": DEFAULT_BULL_THRESHOLD,
                 "bear": DEFAULT_BEAR_THRESHOLD}
@@ -164,9 +173,9 @@ def apply_hard_rules(result, rsi_value, bias_pct, rows, avg_volume):
     return triggered
 
 
-def evaluate(conn, ticker):
-    """回傳完整評分結果 dict。資料不足直接拋錯，不出半套判斷。"""
-    rows, flags = load_series(conn, ticker)
+def evaluate(conn, ticker, as_of=None):
+    """回傳完整評分結果 dict。資料不足直接拋錯，不出半套判斷。as_of 見 load_series。"""
+    rows, flags = load_series(conn, ticker, as_of)
     if len(rows) < MIN_BARS:
         raise RuntimeError("%s 僅 %d 根日線，少於 %d 根，不出評分" % (ticker, len(rows), MIN_BARS))
 
@@ -195,7 +204,7 @@ def evaluate(conn, ticker):
     }
     result = {"ticker": ticker, "date": rows[-1]["date"], "close": rows[-1]["close"],
               "adj_close": closes[-1], "parts": parts, "score": sum(parts.values()),
-              "flags": flags, "thresholds": load_thresholds(conn)}
+              "flags": flags, "thresholds": load_thresholds(conn, as_of)}
 
     result["hard_rules"] = apply_hard_rules(result, rsi_value, bias_pct, rows, avg_volume)
     final_score = result.pop("score_capped", result["score"])

@@ -81,6 +81,37 @@ CREATE TABLE IF NOT EXISTS calibrations (
     adopted          INTEGER NOT NULL DEFAULT 0  -- 1 = 使用者以 --apply 核准
 );
 
+CREATE TABLE IF NOT EXISTS backtest_runs (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    created_at  TEXT NOT NULL,           -- 執行日
+    start_date  TEXT NOT NULL,           -- 最早評估日
+    end_date    TEXT NOT NULL,           -- 最晚評估日
+    tickers     TEXT NOT NULL,           -- JSON array
+    params      TEXT NOT NULL,           -- JSON：years、horizons、報告分組用門檻
+    status      TEXT NOT NULL DEFAULT 'running',  -- running / complete
+    skipped     TEXT NOT NULL DEFAULT '[]'        -- JSON：抓取或評分失敗而略過的標的與原因
+);
+
+CREATE TABLE IF NOT EXISTS backtest_samples (
+    run_id          INTEGER NOT NULL,
+    ticker          TEXT NOT NULL,
+    as_of           TEXT NOT NULL,       -- 評估日（只用此日以前的資料評分）
+    horizon_days    INTEGER NOT NULL,
+    score           INTEGER NOT NULL,
+    s_trend         INTEGER NOT NULL,
+    s_bias          INTEGER NOT NULL,
+    s_support       INTEGER NOT NULL,
+    s_volume        INTEGER NOT NULL,
+    s_macd          INTEGER NOT NULL,
+    s_rsi           INTEGER NOT NULL,
+    signal          TEXT NOT NULL,
+    hard_rules      TEXT NOT NULL DEFAULT '[]',
+    end_date        TEXT,                -- 對帳用的那根日線
+    return_pct      REAL,                -- 還原價報酬；排除時 NULL
+    excluded_reason TEXT,                -- NULL = 計入統計
+    PRIMARY KEY (run_id, ticker, as_of, horizon_days)
+);
+
 CREATE INDEX IF NOT EXISTS idx_pred_status ON predictions(status, ticker);
 """
 
@@ -91,6 +122,8 @@ ADDED_COLUMNS = {
                     ("calibration_id", "INTEGER")),
     "dividends": (("sub_ratio", "REAL NOT NULL DEFAULT 0"),
                   ("sub_price", "REAL NOT NULL DEFAULT 0"), ("ref_ratio", "REAL")),
+    "backtest_runs": (("status", "TEXT NOT NULL DEFAULT 'running'"),
+                      ("skipped", "TEXT NOT NULL DEFAULT '[]'")),
 }
 
 

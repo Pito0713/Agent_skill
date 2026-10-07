@@ -103,3 +103,29 @@
 | baseline_metric | 後段「全判偏多」的平均報酬 % |
 | current_metric | 後段沿用舊門檻的平均方向報酬 %；舊門檻在後段無方向預測時 NULL |
 | adopted | 1 = 使用者核准 |
+
+---
+
+## backtest_runs / backtest_samples — 歷史重演回測
+
+`backtest.py run` 每次新增一筆 run；`report` 預設讀最新一筆。**與 predictions 完全分開**，
+不計入 track record、不餵 calibrate。
+
+| backtest_runs 欄位 | 說明 |
+|------|------|
+| start_date / end_date | 評估日範圍 |
+| tickers | JSON array，預設為 DB 中已有日線的全部標的 |
+| params | JSON：years、horizons、報告分組用的偏多／偏空門檻（評分本身用各評估日當時已核准的門檻） |
+| status | `running` / `complete`；`report` 預設只讀最新一筆 complete |
+| skipped | JSON：抓取或評分失敗而略過的標的與原因 |
+
+| backtest_samples 欄位 | 說明 |
+|------|------|
+| run_id, ticker, as_of, horizon_days | 主鍵。as_of = 每 ISO 週最後一個交易日，評分只讀此日（含）以前的日線 |
+| score / s_* / signal / hard_rules | 同 predictions 口徑 |
+| end_date | 對帳日線：as_of + horizon 天後第一根，同 `track.py reconcile` |
+| return_pct | 還原價報酬 %；被排除時 NULL |
+| excluded_reason | `unknown_exdiv_in_window`（持有期間有金額未知的除權息）／`unknown_exdiv_in_lookback`（評分用的序列有）／`no_quote_near_due`（到期後 7 天內無日線，如長期停牌或資料缺口）；NULL = 計入統計 |
+
+為何評分用的還原價含「日後才發生的除息」也不算偷看未來：往回還原是把整段序列乘上同一比例，
+評分用到的都是比值（均線相對位置、乖離 %、RSI、MACD 正負號、距支撐 %），不受影響。

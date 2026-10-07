@@ -18,7 +18,6 @@ import json
 import re
 import sys
 import time
-import urllib.error
 import urllib.request
 from datetime import date, timedelta
 
@@ -42,7 +41,8 @@ def _get_json(url, retries=3):
             request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
             with urllib.request.urlopen(request, timeout=30) as response:
                 return json.loads(response.read().decode("utf-8"))
-        except (urllib.error.URLError, json.JSONDecodeError, TimeoutError) as error:
+        # OSError 涵蓋 URLError 與讀取中的 socket.timeout（Python 3.9 它不是 TimeoutError 子類）
+        except (OSError, json.JSONDecodeError) as error:
             last_error = error
             time.sleep(2 ** attempt)
     raise RuntimeError("TWSE 請求失敗 %s: %s" % (url, last_error))
@@ -199,20 +199,40 @@ def rebuild_adj_close(conn, ticker):
     return len(quotes), unknown_dates
 
 
+def _close_before(conn, ticker, month):
+    """month（'YYYYMM'）前一個月的最後一根收盤；前一個月沒有快取則 None。
+
+    只接受緊鄰的前一個月：更早的收盤（快取有缺口）拿來比對會把價差誤判成除權息。
+    """
+    first_day = date(int(month[:4]), int(month[4:]), 1)
+    previous_month_start = (first_day - timedelta(days=1)).replace(day=1)
+    row = conn.execute(
+        "SELECT close FROM daily_quotes WHERE ticker = ? AND date >= ? AND date < ?"
+        " ORDER BY date DESC LIMIT 1",
+        (ticker, previous_month_start.isoformat(), first_day.isoformat())).fetchone()
+    return row["close"] if row else None
+
+
 def sync_ticker(conn, ticker, months=7):
+    """抓最近 months 個月。見 sync_months。"""
+    return sync_months(conn, ticker, recent_months(months))
+
+
+def sync_months(conn, ticker, month_list):
     """抓取 + 落庫 + 還原，一次完成。回傳摘要 dict。
 
+    month_list 必須連續（由舊到新）：TPEx 靠相鄰日收盤差偵測除權息，有斷點會誤判。
     先試 TWSE（上市），查無資料才轉 TPEx（上櫃）——代號本身看不出市場別，
     只能靠實際查詢判定。
     """
     if not TICKER_PATTERN.match(ticker or ""):
         raise RuntimeError("股票代號格式不符（4–6 碼數字，ETF 可含英文尾碼）：%r" % ticker)
-    month_list = recent_months(months)
     market = "TWSE"
     rows = fetch_months(ticker, month_list)
     if not rows:
         market = "TPEx"
-        rows, implied_events = fetch_tpex.fetch_months(ticker, month_list)
+        rows, implied_events = fetch_tpex.fetch_months(
+            ticker, month_list, _close_before(conn, ticker, month_list[0]))
         if implied_events:
             fetch_tpex.save_implied_dividends(conn, ticker, implied_events)
     if not rows:
@@ -228,10 +248,17 @@ def sync_ticker(conn, ticker, months=7):
 
 
 def fill_historical_exdiv(conn, unknown_dates):
-    """用 TWT49U 補「偵測到除權息但查無金額」的日子。單次請求涵蓋整段日期、全市場。"""
-    time.sleep(REQUEST_GAP_SEC)
-    payload = _get_json(fetch_exright.build_url(min(unknown_dates), max(unknown_dates)))
-    return fetch_exright.save_events(conn, fetch_exright.parse_events(payload))
+    """用 TWT49U 補「偵測到除權息但查無金額」的日子。每個年度一次請求、全市場。
+
+    按年切：多年區間單次回應過大，實測 3 年區間會讀取逾時。
+    """
+    added = 0
+    for year in sorted({day[:4] for day in unknown_dates}):
+        in_year = [day for day in unknown_dates if day.startswith(year)]
+        time.sleep(REQUEST_GAP_SEC)
+        payload = _get_json(fetch_exright.build_url(min(in_year), max(in_year)))
+        added += fetch_exright.save_events(conn, fetch_exright.parse_events(payload))
+    return added
 
 
 def main():
