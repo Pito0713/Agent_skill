@@ -49,6 +49,10 @@ class BacktestTest(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.conn = db.connect(os.path.join(self.tmp.name, "tracker.db"))
+        # 估值回補會打網路並每次 sleep 3 秒；這裡只測回測本身
+        patcher = mock.patch.object(backtest.fetch_valuation, "backfill", return_value=0)
+        self.backfill = patcher.start()
+        self.addCleanup(patcher.stop)
 
     def tearDown(self):
         self.conn.close()
@@ -71,6 +75,15 @@ class BacktestTest(unittest.TestCase):
         self.conn.execute("UPDATE daily_quotes SET adj_close = adj_close * 0.97")
         after = score.evaluate(self.conn, "2330", as_of=days[150])
         self.assertEqual((before["parts"], before["final_score"]), (after["parts"], after["final_score"]))
+
+    def test_old_unknown_exdiv_outside_window_does_not_flag(self):
+        days = seed_quotes(self.conn)
+        self.conn.execute("UPDATE daily_quotes SET is_exdiv = 1 WHERE date = ?", (days[10],))
+        self.assertEqual(score.evaluate(self.conn, "2330", as_of=days[100])["flags"],
+                         ["has_unadjusted_exdiv"])
+        window_start = len(days[:190]) - score.FLAG_WINDOW_BARS
+        self.assertGreater(window_start, 10)
+        self.assertEqual(score.evaluate(self.conn, "2330", as_of=days[189])["flags"], [])
 
     def test_weekly_dates_take_last_trading_day_of_each_week(self):
         seed_quotes(self.conn, count=10)

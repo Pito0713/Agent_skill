@@ -64,7 +64,13 @@ CREATE TABLE IF NOT EXISTS predictions (
     hit                  INTEGER,
     market_state         TEXT,           -- tw-market-rotation 背景欄位，未安裝時 NULL
     sector_quadrant      TEXT,           -- 同上；僅供分組校準，不影響評分
-    calibration_id       INTEGER         -- 當時採用的 calibrations.id；NULL = 預設門檻
+    calibration_id       INTEGER,        -- 當時採用的 calibrations.id；NULL = 預設門檻
+    pe                   REAL,           -- 估值：只顯示與記錄，不參與評分
+    pb                   REAL,
+    dividend_yield       REAL,
+    pe_percentile        REAL,           -- 相對自身近 3 年的百分位；歷史不足或虧損為 NULL
+    pb_percentile        REAL,
+    yield_percentile     REAL
 );
 
 CREATE TABLE IF NOT EXISTS calibrations (
@@ -109,7 +115,28 @@ CREATE TABLE IF NOT EXISTS backtest_samples (
     end_date        TEXT,                -- 對帳用的那根日線
     return_pct      REAL,                -- 還原價報酬；排除時 NULL
     excluded_reason TEXT,                -- NULL = 計入統計
+    pe_percentile    REAL,               -- 評估日當時的估值百分位（只用當日以前的歷史）
+    pb_percentile    REAL,
+    yield_percentile REAL,
     PRIMARY KEY (run_id, ticker, as_of, horizon_days)
+);
+
+CREATE TABLE IF NOT EXISTS valuations (
+    ticker         TEXT NOT NULL,
+    date           TEXT NOT NULL,
+    pe             REAL,                 -- 本益比；虧損或無資料為 NULL
+    pb             REAL,                 -- 股價淨值比
+    dividend_yield REAL,                 -- 殖利率 %
+    fiscal_period  TEXT,                 -- 計算所用財報年/季（僅上市提供）
+    source         TEXT NOT NULL,        -- BWIBBU_d / TPEX_PE
+    PRIMARY KEY (ticker, date)
+);
+
+CREATE TABLE IF NOT EXISTS valuation_fetches (
+    date    TEXT NOT NULL,
+    market  TEXT NOT NULL,               -- TWSE / TPEx
+    rows    INTEGER NOT NULL,            -- 0 = 休市日（只記已確定的過去日期）
+    PRIMARY KEY (date, market)
 );
 
 CREATE INDEX IF NOT EXISTS idx_pred_status ON predictions(status, ticker);
@@ -119,7 +146,11 @@ CREATE INDEX IF NOT EXISTS idx_pred_status ON predictions(status, ticker);
 # 後加欄位：CREATE TABLE IF NOT EXISTS 不會替舊 DB 補欄位，需逐一 ALTER
 ADDED_COLUMNS = {
     "predictions": (("market_state", "TEXT"), ("sector_quadrant", "TEXT"),
-                    ("calibration_id", "INTEGER")),
+                    ("calibration_id", "INTEGER"), ("pe", "REAL"), ("pb", "REAL"),
+                    ("dividend_yield", "REAL"), ("pe_percentile", "REAL"),
+                    ("pb_percentile", "REAL"), ("yield_percentile", "REAL")),
+    "backtest_samples": (("pe_percentile", "REAL"), ("pb_percentile", "REAL"),
+                         ("yield_percentile", "REAL")),
     "dividends": (("sub_ratio", "REAL NOT NULL DEFAULT 0"),
                   ("sub_price", "REAL NOT NULL DEFAULT 0"), ("ref_ratio", "REAL")),
     "backtest_runs": (("status", "TEXT NOT NULL DEFAULT 'running'"),

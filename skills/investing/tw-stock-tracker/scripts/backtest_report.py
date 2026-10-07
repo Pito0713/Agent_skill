@@ -129,6 +129,47 @@ def print_horizon(samples, horizon, bull, bear):
         print("  同週比較：%d 週中高分組勝出 %.0f%%，平均差 %+.2f%%" % week_summary)
 
 
+VALUATION_BANDS = (("低位 <33", 0, 33), ("中位 33-67", 33, 67), ("高位 ≥67", 67, 101))
+
+
+def valuation_band(percentile):
+    if percentile is None:
+        return "無資料"
+    return next(label for label, low, high in VALUATION_BANDS if low <= percentile < high)
+
+
+def score_band(score_value, bull, bear):
+    if score_value >= bull:
+        return "高分 ≥%d" % bull
+    return "低分 <%d" % bear if score_value < bear else "中性"
+
+
+def valuation_grid(samples, bull, bear):
+    """{(分數組, 本益比百分位組): [報酬...]}。"""
+    grid = {}
+    for row in samples:
+        key = (score_band(row["score"], bull, bear), valuation_band(row["pe_percentile"]))
+        grid.setdefault(key, []).append(row["return_pct"])
+    return grid
+
+
+def print_valuation_grid(samples, horizon, bull, bear):
+    included = [r for r in samples if r["excluded_reason"] is None]
+    grid = valuation_grid(included, bull, bear)
+    columns = [label for label, _, _ in VALUATION_BANDS] + ["無資料"]
+    print("\n--- 技術分 × 本益比百分位（相對自身近 3 年；持有 %d 天平均報酬，括號為筆數）---" % horizon)
+    print("  %-10s" % "" + "".join("%16s" % column for column in columns))
+    for band in ("高分 ≥%d" % bull, "中性", "低分 <%d" % bear):
+        cells = []
+        for column in columns:
+            returns = grid.get((band, column), [])
+            cells.append("%16s" % ("—(%d)" % len(returns) if len(returns) < MIN_GROUP
+                                   else "%+.2f%% (%d)" % (statistics.mean(returns), len(returns))))
+        print("  %-10s" % band + "".join(cells))
+    print("解讀：百分位只表示相對該股自身歷史的位置，不是貴或便宜的判斷。格子未控制大盤時點，\n"
+          "      筆數 < %d 不給數字；虧損股與 ETF 沒有本益比，歸「無資料」。" % MIN_GROUP)
+
+
 def print_quarterly(samples, horizon, bull, bear):
     included = [r for r in samples if r["excluded_reason"] is None]
     print("\n--- 逐季同週比較（持有 %d 天）---" % horizon)
@@ -138,7 +179,7 @@ def print_quarterly(samples, horizon, bull, bear):
         else:
             print("  %s  %2d 週  高分組勝出 %3.0f%%  平均差 %+6.2f%%" % (quarter, *summary))
     print("解讀：同週比較已排除大盤時點差異，但未排除個股組成差異，也沒有信賴區間。\n"
-          "      多數季度勝出比例明顯高於 50%% 才算一致；正負交替代表評分只在某些行情有效。")
+          "      多數季度勝出比例明顯高於 50% 才算一致；正負交替代表評分只在某些行情有效。")
 
 
 def cmd_report(conn, args):
@@ -161,4 +202,6 @@ def cmd_report(conn, args):
         print_horizon(samples, horizon, bull, bear)
         if excluded:
             print("  排除：" + "、".join("%s %d 筆" % item for item in sorted(excluded.items())))
-    print_quarterly(load_samples(conn, run["id"], args.horizon), args.horizon, bull, bear)
+    focus = load_samples(conn, run["id"], args.horizon)
+    print_quarterly(focus, args.horizon, bull, bear)
+    print_valuation_grid(focus, args.horizon, bull, bear)

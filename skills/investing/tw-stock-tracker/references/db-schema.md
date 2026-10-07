@@ -77,6 +77,8 @@
 舊 DB 於 `db.connect()` 時以 `ALTER TABLE` 冪等補欄位，既有資料不變。
 
 `calibration_id`：建立該筆預測時採用的 `calibrations.id`；NULL 代表當時用預設門檻。
+`pe` / `pb` / `dividend_yield` 與三個 `*_percentile`：記錄當下的估值與相對自身近 3 年的百分位，
+**不影響評分**；歷史不足 52 週、虧損或 ETF 時為 NULL。
 `report` 依此分版本顯示命中率，用來比較校準前後。
 
 ### status 語意
@@ -125,7 +127,32 @@
 | score / s_* / signal / hard_rules | 同 predictions 口徑 |
 | end_date | 對帳日線：as_of + horizon 天後第一根，同 `track.py reconcile` |
 | return_pct | 還原價報酬 %；被排除時 NULL |
+| pe_percentile / pb_percentile / yield_percentile | 評估日當時的估值百分位，只用評估日以前的估值歷史 |
 | excluded_reason | `unknown_exdiv_in_window`（持有期間有金額未知的除權息）／`unknown_exdiv_in_lookback`（評分用的序列有）／`no_quote_near_due`（到期後 7 天內無日線，如長期停牌或資料缺口）；NULL = 計入統計 |
 
 為何評分用的還原價含「日後才發生的除息」也不算偷看未來：往回還原是把整段序列乘上同一比例，
 評分用到的都是比值（均線相對位置、乖離 %、RSI、MACD 正負號、距支撐 %），不受影響。
+
+---
+
+## valuations / valuation_fetches — 估值
+
+來源：上市 `BWIBBU_d`、上櫃 `peQryDate`，都是「一天、全市場」一次請求（`fetch_valuation.py`）。
+**存全市場**而非只存追蹤標的：請求成本相同，之後新增標的不必重抓歷史。
+`backfill` 每週取一個交易日（週五起往回找），`latest` 補指定標的最新交易日。
+
+| valuations 欄位 | 說明 |
+|------|------|
+| ticker, date | 主鍵 |
+| pe / pb | 本益比、股價淨值比；虧損或無資料（`-`、0）為 NULL |
+| dividend_yield | 殖利率 % |
+| fiscal_period | 計算所用財報年/季，僅上市提供 |
+| source | `BWIBBU_d` / `TPEX_PE` |
+
+`valuation_fetches(date, market, rows)` 記錄抓過的日期，避免重抓；`rows = 0` 為休市日。
+7 天內回空不記（可能只是尚未公布）。只有明確的「查無資料」才算休市，系統忙碌等異常回應拋錯、不記，下次重試。
+
+百分位（`valuation.py`）：該股 as_of 以前、近 3 年內的估值（**每個 ISO 週只取最後一筆**，
+避免 record 時補的每日資料讓記錄頻繁的期間權重放大）中 ≤ 目前值的比例；
+至少 52 個不同的週才給，最近一筆距 as_of 超過 7 天視為無資料。
+假設：交易所當日公布的本益比使用當時已公布的財報（上市附財報季別可佐證），回測因此不算偷看未來。

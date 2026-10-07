@@ -12,8 +12,13 @@ import sys
 
 import db
 import indicators
+import valuation
 
 MIN_BARS = 60                # 少於此根數不出評分（MA60 無法成立）
+# 只檢查最近這麼多根有無未知除權息。MA60／low60／high60 只看 60 根，ATR 與 MACD 的殘留影響隨
+# 衰減可忽略。已知殘留風險：RSI 是漲跌平均的比值，衰減不會縮小比例誤差；若缺口之後長期幾乎不動
+# （極低波動），窗口外的未還原缺口仍可能改變 RSI 分數。不改成截斷序列：那會改變所有既有評分。
+FLAG_WINDOW_BARS = 120
 LIMIT_UP_RATIO = 1.095       # 台股漲跌幅 10%，留 0.5% 容差判定觸及漲停
 DEFAULT_BULL_THRESHOLD = 60  # 分數 ≥ 此值為偏多；可由 track.py calibrate 核准新值覆寫
 DEFAULT_BEAR_THRESHOLD = 45  # 分數 < 此值為偏空
@@ -38,11 +43,15 @@ def load_series(conn, ticker, as_of=None):
         "SELECT date, open, high, low, close, adj_close, volume, is_exdiv"
         " FROM daily_quotes WHERE ticker = ? AND date <= ? ORDER BY date",
         (ticker, as_of)).fetchall()
+    if not rows:
+        return rows, []
+    # 歷史快取可長達數年，全段檢查會讓多年前的一個缺口永久標記這檔
+    window_start = rows[-FLAG_WINDOW_BARS:][0]["date"]
     unknown = conn.execute(
         "SELECT COUNT(*) FROM daily_quotes q LEFT JOIN dividends d"
         "  ON d.ticker = q.ticker AND d.ex_date = q.date"
-        " WHERE q.ticker = ? AND q.date <= ? AND q.is_exdiv = 1 AND d.ex_date IS NULL",
-        (ticker, as_of)).fetchone()[0]
+        " WHERE q.ticker = ? AND q.date >= ? AND q.date <= ? AND q.is_exdiv = 1"
+        "   AND d.ex_date IS NULL", (ticker, window_start, as_of)).fetchone()[0]
     return rows, (["has_unadjusted_exdiv"] if unknown else [])
 
 
@@ -240,6 +249,8 @@ def evaluate(conn, ticker, as_of=None):
         "atr14": round(atr_value, 2), "low60": round(low60, 2), "high60": round(high60, 2),
         "volume_ratio": round(volumes[-1] / avg_volume, 2) if avg_volume else None,
     }
+    # 估值只附帶顯示與記錄，不影響上面任何分數
+    result["valuation"] = valuation.snapshot(conn, ticker, result["date"])
     return result
 
 
@@ -277,6 +288,7 @@ def main():
         print("進場區間 %.2f ~ %.2f（%s），停損 %.2f"
               % (result["entry_low"], result["entry_high"],
                  result["entry_status"], result["stop_loss"]))
+    print(valuation.describe(result["valuation"]))
 
 
 if __name__ == "__main__":
