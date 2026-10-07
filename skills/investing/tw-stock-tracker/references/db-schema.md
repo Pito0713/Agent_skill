@@ -117,7 +117,7 @@
 |------|------|
 | start_date / end_date | 評估日範圍 |
 | tickers | JSON array，預設為 DB 中已有日線的全部標的 |
-| params | JSON：years、horizons、報告分組用的偏多／偏空門檻（評分本身用各評估日當時已核准的門檻） |
+| params | JSON：years、horizons、報告分組用的偏多／偏空門檻（評分本身用各評估日當時已核准的門檻）、fee_discount |
 | status | `running` / `complete`；`report` 預設只讀最新一筆 complete |
 | skipped | JSON：抓取或評分失敗而略過的標的與原因 |
 
@@ -128,6 +128,9 @@
 | end_date | 對帳日線：as_of + horizon 天後第一根，同 `track.py reconcile` |
 | return_pct | 還原價報酬 %；被排除時 NULL |
 | pe_percentile / pb_percentile / yield_percentile | 評估日當時的估值百分位，只用評估日以前的估值歷史 |
+| entry_date | 可成交口徑的進場日：評估日之後第一個交易日（以開盤價進場） |
+| tradable_return_pct | 可成交口徑報酬 %：還原開盤進場、還原收盤出場，扣買賣手續費（×折扣）與證交稅（股票 0.3%、ETF 0.1%）；不含最低手續費 |
+| tradable_excluded_reason | 收盤口徑已排除者沿用其原因；另有 `entry_limit_up`（進場日開盤 ≥ 前收 × 1.095）、`exit_limit_down`（出場日最高 = 最低且 ≤ 前收 × 0.905）、`no_entry_before_exit`；NULL = 計入 |
 | excluded_reason | `unknown_exdiv_in_window`（持有期間有金額未知的除權息）／`unknown_exdiv_in_lookback`（評分用的序列有）／`no_quote_near_due`（到期後 7 天內無日線，如長期停牌或資料缺口）；NULL = 計入統計 |
 
 為何評分用的還原價含「日後才發生的除息」也不算偷看未來：往回還原是把整段序列乘上同一比例，

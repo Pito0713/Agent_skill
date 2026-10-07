@@ -5,11 +5,13 @@ import statistics
 from collections import Counter
 from datetime import datetime
 
+import backtest_stats
 import track
 
 MIN_GROUP = 5           # 組內樣本低於此數只標示不足，不給數字
 WARNING = ("⚠️  標的是現在挑的（選股偏差），相鄰週的報酬窗口互相重疊：結果會比真實預測樂觀。\n"
-           "    這是歷史重演，不是預測；也不會拿來校準門檻。以下皆為描述性統計，沒有信賴區間。")
+           "    這是歷史重演，不是預測；也不會拿來校準門檻。分層表與交叉表是描述性統計；\n"
+           "    Rank IC 附 t 值（已依持有期重疊修正），但 6 分項 × 3 期間同時檢定，偶有 |t|≥2 可能只是巧合。")
 
 
 def load_run(conn, run_id):
@@ -127,6 +129,58 @@ def print_horizon(samples, horizon, bull, bear):
         print("  同週比較：可比週數不足 %d" % MIN_GROUP)
     else:
         print("  同週比較：%d 週中高分組勝出 %.0f%%，平均差 %+.2f%%" % week_summary)
+    print_tradable_and_ic(samples, horizon)
+
+
+PART_COLUMNS = ("s_trend", "s_bias", "s_support", "s_volume", "s_macd", "s_rsi")
+TRADABLE_REASONS = ("entry_limit_up", "exit_limit_down", "no_entry_before_exit")
+
+
+def tradable_rows(samples):
+    return [r for r in samples
+            if r["tradable_excluded_reason"] is None and r["tradable_return_pct"] is not None]
+
+
+def _format_ic(summary):
+    if summary is None:
+        return "樣本不足"
+    return ("平均 %+.3f，IC 為正的週 %.0f%%，ICIR %+.2f，t = %+.1f（%d 週，重疊 ×%d 修正）→ %s"
+            % (summary["mean"], summary["positive_ratio"], summary["icir"], summary["t"],
+               summary["weeks"], summary["overlap"], backtest_stats.verdict(summary)))
+
+
+def is_legacy_run(samples):
+    """舊版回測沒有可成交欄位：三欄全空。新版即使全部被漲跌停排除，也會有排除原因。"""
+    return all(r["entry_date"] is None and r["tradable_excluded_reason"] is None
+               and r["tradable_return_pct"] is None for r in samples)
+
+
+def print_tradable_and_ic(samples, horizon):
+    if is_legacy_run(samples):
+        print("  可成交口徑：此 run 沒有可成交欄位（舊版回測），請重跑 backtest.py run")
+        return
+    rows = tradable_rows(samples)
+    blocked = Counter(r["tradable_excluded_reason"] for r in samples
+                      if r["tradable_excluded_reason"] in TRADABLE_REASONS)
+    blocked_text = ("因漲跌停或無法進場排除 " + "、".join("%s %d 筆" % item for item in sorted(blocked.items()))
+                    if blocked else "無漲跌停排除")
+    if not rows:
+        print("  可成交（次日開盤進場、扣成本）：無可用樣本，%s" % blocked_text)
+        return
+    # 收盤口徑用同一批樣本，差距才只反映「次日開盤進場 + 成本」
+    print("  可成交（次日開盤進場、扣成本）：平均 %+.2f%%（同一批樣本收盤進場 %+.2f%%），%s"
+          % (statistics.mean(r["tradable_return_pct"] for r in rows),
+             statistics.mean(r["return_pct"] for r in rows), blocked_text))
+    summary = backtest_stats.summarize_ic(
+        backtest_stats.weekly_ic(rows, "score", "tradable_return_pct"), horizon)
+    print("  Rank IC（總分 vs 可成交報酬）：%s" % _format_ic(summary))
+    parts = []
+    for column in PART_COLUMNS:
+        part = backtest_stats.summarize_ic(
+            backtest_stats.weekly_ic(rows, column, "tradable_return_pct"), horizon)
+        parts.append("%s %s" % (column[2:], "—" if part is None
+                                else "%+.3f（t %+.1f）" % (part["mean"], part["t"])))
+    print("  分項 Rank IC：" + "｜".join(parts))
 
 
 VALUATION_BANDS = (("低位 <33", 0, 33), ("中位 33-67", 33, 67), ("高位 ≥67", 67, 101))
@@ -172,12 +226,21 @@ def print_valuation_grid(samples, horizon, bull, bear):
 
 def print_quarterly(samples, horizon, bull, bear):
     included = [r for r in samples if r["excluded_reason"] is None]
-    print("\n--- 逐季同週比較（持有 %d 天）---" % horizon)
-    for quarter, summary, weeks in quarterly_spreads(included, bull, bear):
+    quarter_ic = {}
+    for week, ic in backtest_stats.weekly_ic(tradable_rows(samples), "score", "tradable_return_pct"):
+        monday = datetime.fromisocalendar(week[0], week[1], 1).strftime("%Y-%m-%d")
+        quarter_ic.setdefault(quarter_of(monday), []).append(ic)
+    print("\n--- 逐季同週比較與 Rank IC（持有 %d 天）---" % horizon)
+    spreads = {quarter: (summary, weeks) for quarter, summary, weeks
+               in quarterly_spreads(included, bull, bear)}
+    for quarter in sorted(set(spreads) | set(quarter_ic)):
+        summary, weeks = spreads.get(quarter, (None, 0))
+        ics = quarter_ic.get(quarter)
+        ic_text = "  平均 IC %+.3f" % statistics.mean(ics) if ics else ""
         if summary is None:
-            print("  %s  可比週數 %d，不足 %d" % (quarter, weeks, MIN_GROUP))
+            print("  %s  可比週數 %d，不足 %d%s" % (quarter, weeks, MIN_GROUP, ic_text))
         else:
-            print("  %s  %2d 週  高分組勝出 %3.0f%%  平均差 %+6.2f%%" % (quarter, *summary))
+            print("  %s  %2d 週  高分組勝出 %3.0f%%  平均差 %+6.2f%%%s" % (quarter, *summary, ic_text))
     print("解讀：同週比較已排除大盤時點差異，但未排除個股組成差異，也沒有信賴區間。\n"
           "      多數季度勝出比例明顯高於 50% 才算一致；正負交替代表評分只在某些行情有效。")
 

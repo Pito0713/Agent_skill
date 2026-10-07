@@ -14,6 +14,7 @@ import json
 import sys
 from datetime import date, datetime, timedelta
 
+import backtest_execution
 import backtest_report
 import db
 import fetch_twse
@@ -111,8 +112,8 @@ def forward_return(conn, ticker, as_of, horizon):
     return end["date"], round((adj_end / adj_start - 1.0) * 100, 4), None
 
 
-def score_one_date(conn, run_id, ticker, as_of):
-    """評一個評估日並寫入各期間樣本。回傳寫入筆數；資料不足 60 根回 0。"""
+def score_one_date(conn, run, ticker, as_of):
+    """評一個評估日並寫入各期間樣本。run = {"id", "fee_discount"}。回傳寫入筆數；資料不足 60 根回 0。"""
     try:
         result = scoring.evaluate(conn, ticker, as_of=as_of)
     except RuntimeError:
@@ -126,15 +127,19 @@ def score_one_date(conn, run_id, ticker, as_of):
             continue
         end_date, return_pct, excluded = outcome
         excluded = lookback_flag or excluded
+        # 收盤口徑已排除者，可成交口徑沿用同一原因；否則另判漲跌停與成本
+        tradable = ((None, None, excluded) if excluded else backtest_execution.tradable_return(
+            conn, ticker, (as_of, end_date), run["fee_discount"]))
         conn.execute(
             "INSERT OR REPLACE INTO backtest_samples (run_id, ticker, as_of, horizon_days, score,"
             " s_trend, s_bias, s_support, s_volume, s_macd, s_rsi, signal, hard_rules,"
             " end_date, return_pct, excluded_reason, pe_percentile, pb_percentile,"
-            " yield_percentile) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-            (run_id, ticker, as_of, horizon, result["final_score"],
+            " yield_percentile, entry_date, tradable_return_pct, tradable_excluded_reason)"
+            " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (run["id"], ticker, as_of, horizon, result["final_score"],
              *(result["parts"][name] for name in PART_COLUMNS), result["signal"],
              json.dumps(result["hard_rules"], ensure_ascii=False), end_date,
-             None if excluded else return_pct, excluded, *percentiles))
+             None if excluded else return_pct, excluded, *percentiles, *tradable))
         written += 1
     return written
 
@@ -155,8 +160,9 @@ def cmd_run(conn, args):
         " VALUES (?, ?, ?, ?, ?)",
         (date.today().isoformat(), start.isoformat(), date.today().isoformat(), json.dumps(tickers),
          json.dumps({"years": args.years, "horizons": HORIZONS, "bull": thresholds["bull"],
-                     "bear": thresholds["bear"]})))
+                     "bear": thresholds["bear"], "fee_discount": args.fee_discount})))
     run_id = cursor.lastrowid
+    run = {"id": run_id, "fee_discount": args.fee_discount}
     conn.commit()
     # 先全部抓完再評分：forward_return 以 DB 最新日期判斷「逾期無行情」，
     # 邊抓邊評會讓結果隨標的處理順序而變
@@ -173,7 +179,7 @@ def cmd_run(conn, args):
         if ticker in failed:
             continue
         outcome = _attempt(conn, skipped, ticker,
-                           lambda: score_ticker(conn, run_id, ticker, start))
+                           lambda: score_ticker(conn, run, ticker, start))
         if outcome:
             print("評分 [%d/%d] %s：%d 個評估週、%d 筆樣本" % (index, len(tickers), ticker,
                                                      outcome[1], outcome[0]), flush=True)
@@ -194,14 +200,21 @@ def _attempt(conn, skipped, ticker, action):
         return None
 
 
-def score_ticker(conn, run_id, ticker, start):
+def score_ticker(conn, run, ticker, start):
     """單一標的逐週評分。回傳 (樣本筆數, 評估週數)。零樣本拋 RuntimeError。"""
     dates = weekly_dates(conn, ticker, start.isoformat(), date.today().isoformat())
-    written = sum(score_one_date(conn, run_id, ticker, as_of) for as_of in dates)
+    written = sum(score_one_date(conn, run, ticker, as_of) for as_of in dates)
     conn.commit()
     if not written:
         raise RuntimeError("沒有任何可用樣本（評估期內日線不足 60 根或無資料）")
     return written, len(dates)
+
+
+def fee_discount(text):
+    value = float(text)
+    if not 0 < value <= 1:
+        raise argparse.ArgumentTypeError("必須介於 0（不含）到 1，收到 %s" % text)
+    return value
 
 
 def main():
@@ -211,6 +224,8 @@ def main():
     run.add_argument("--years", type=float, default=3, help="回測年數，預設 3")
     run.add_argument("--tickers", nargs="+", help="預設為 DB 中已有日線的全部標的")
     run.add_argument("--no-fetch", action="store_true", help="只用已快取資料，不抓網路")
+    run.add_argument("--fee-discount", type=fee_discount, default=1.0,
+                     help="券商手續費折扣，0.6 = 6 折；預設 1（不打折，保守）")
     report = sub.add_parser("report", help="輸出分組表現與逐季趨勢")
     report.add_argument("--horizon", type=int, choices=HORIZONS, default=30, help="逐季趨勢用的期間")
     report.add_argument("--run", type=int, help="預設為最新一次 run")

@@ -132,7 +132,7 @@ class BacktestTest(unittest.TestCase):
         def fetch_later_market_data(conn, ticker, start):
             if ticker == "0050":                       # 後處理的標的才把市場資料延伸到更晚
                 seed_quotes(conn, "0050", 230)
-        args = argparse.Namespace(tickers=["2330", "0050"], years=1, no_fetch=False)
+        args = argparse.Namespace(tickers=["2330", "0050"], years=1, no_fetch=False, fee_discount=1.0)
         with mock.patch.object(backtest, "ensure_history", side_effect=fetch_later_market_data), \
                 mock.patch.object(backtest, "date") as fake_date, mock.patch("builtins.print"):
             fake_date.today.return_value = date.fromisoformat(days[-1]) + timedelta(days=60)
@@ -142,7 +142,7 @@ class BacktestTest(unittest.TestCase):
         self.assertGreater(excluded, 0)
 
     def test_ticker_without_samples_is_skipped(self):
-        args = argparse.Namespace(tickers=["9999"], years=1, no_fetch=True)
+        args = argparse.Namespace(tickers=["9999"], years=1, no_fetch=True, fee_discount=1.0)
         with mock.patch("builtins.print"):
             backtest.cmd_run(self.conn, args)
         skipped = json.loads(self.conn.execute("SELECT skipped FROM backtest_runs").fetchone()[0])
@@ -158,7 +158,7 @@ class BacktestTest(unittest.TestCase):
 
     def test_failing_ticker_is_skipped_and_run_marked_complete(self):
         days = seed_quotes(self.conn)
-        args = argparse.Namespace(tickers=["2330", "9999"], years=1, no_fetch=False)
+        args = argparse.Namespace(tickers=["2330", "9999"], years=1, no_fetch=False, fee_discount=1.0)
 
         def fake_history(conn, ticker, start):
             if ticker == "9999":
@@ -173,7 +173,7 @@ class BacktestTest(unittest.TestCase):
 
     def test_run_without_fetch_writes_only_matured_samples(self):
         days = seed_quotes(self.conn)
-        args = argparse.Namespace(tickers=["2330"], years=1, no_fetch=True)
+        args = argparse.Namespace(tickers=["2330"], years=1, no_fetch=True, fee_discount=1.0)
         with mock.patch.object(backtest, "date") as fake_date, mock.patch("builtins.print"):
             fake_date.today.return_value = date.fromisoformat(days[-1])
             backtest.cmd_run(self.conn, args)
@@ -182,6 +182,14 @@ class BacktestTest(unittest.TestCase):
         self.assertTrue(all(r["as_of"] >= days[59] for r in rows))     # 前 60 根不足以評分
         self.assertTrue(all(r["end_date"] <= days[-1] for r in rows))  # 不含未到期樣本
         self.assertEqual({r["horizon_days"] for r in rows}, set(backtest.HORIZONS))
+        self.assertTrue(any(r["tradable_return_pct"] is not None for r in rows))
+        self.assertTrue(all(r["entry_date"] > r["as_of"] for r in rows if r["entry_date"]))
+        report_args = argparse.Namespace(run=None, horizon=30)
+        with mock.patch("builtins.print") as printed:
+            backtest_report.cmd_report(self.conn, report_args)
+        output = "\n".join(str(call.args[0]) for call in printed.call_args_list if call.args)
+        self.assertIn("Rank IC", output)
+        self.assertIn("可成交", output)
 
 
 def months(first, last):

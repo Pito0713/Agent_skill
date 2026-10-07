@@ -118,6 +118,9 @@ CREATE TABLE IF NOT EXISTS backtest_samples (
     pe_percentile    REAL,               -- 評估日當時的估值百分位（只用當日以前的歷史）
     pb_percentile    REAL,
     yield_percentile REAL,
+    entry_date               TEXT,       -- 可成交口徑：次一交易日開盤進場
+    tradable_return_pct      REAL,       -- 可成交口徑報酬（扣手續費與證交稅）
+    tradable_excluded_reason TEXT,       -- 可成交口徑排除原因；NULL = 計入
     PRIMARY KEY (run_id, ticker, as_of, horizon_days)
 );
 
@@ -150,7 +153,8 @@ ADDED_COLUMNS = {
                     ("dividend_yield", "REAL"), ("pe_percentile", "REAL"),
                     ("pb_percentile", "REAL"), ("yield_percentile", "REAL")),
     "backtest_samples": (("pe_percentile", "REAL"), ("pb_percentile", "REAL"),
-                         ("yield_percentile", "REAL")),
+                         ("yield_percentile", "REAL"), ("entry_date", "TEXT"),
+                         ("tradable_return_pct", "REAL"), ("tradable_excluded_reason", "TEXT")),
     "dividends": (("sub_ratio", "REAL NOT NULL DEFAULT 0"),
                   ("sub_price", "REAL NOT NULL DEFAULT 0"), ("ref_ratio", "REAL")),
     "backtest_runs": (("status", "TEXT NOT NULL DEFAULT 'running'"),
