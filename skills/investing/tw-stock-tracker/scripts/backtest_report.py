@@ -6,12 +6,14 @@ from collections import Counter
 from datetime import datetime
 
 import backtest_stats
+import flows
 import track
 
 MIN_GROUP = 5           # 組內樣本低於此數只標示不足，不給數字
 WARNING = ("⚠️  標的是現在挑的（選股偏差），相鄰週的報酬窗口互相重疊：結果會比真實預測樂觀。\n"
            "    這是歷史重演，不是預測；也不會拿來校準門檻。分層表與交叉表是描述性統計；\n"
-           "    Rank IC 附 t 值（已依持有期重疊修正），但 6 分項 × 3 期間同時檢定，偶有 |t|≥2 可能只是巧合。")
+           "    Rank IC 附 t 值（已依持有期重疊修正），但 6 分項 × 3 期間同時檢定，偶有 |t|≥2 可能只是巧合。\n"
+           "    法人因子另有 4 個 × 3 期間：須兩組獨立標的同號且 |t|≥2、前後兩半同號，才算有效。")
 
 
 def load_run(conn, run_id):
@@ -183,6 +185,41 @@ def print_tradable_and_ic(samples, horizon):
     print("  分項 Rank IC：" + "｜".join(parts))
 
 
+def half_cut(samples):
+    """全部評估週的中位週。切點要在篩掉無效週之前決定，否則前段資料稀疏時，
+    「前半」會落在回測後段，各因子的切點也會不同。
+    呼叫端傳入整個 run 跨期間的樣本：長期間尾端未到期不落庫，用單一期間算會讓切點往前移。"""
+    weeks = sorted({week_of(r["as_of"]) for r in samples})
+    return weeks[len(weeks) // 2] if weeks else None
+
+
+def flow_ic(rows, column, horizon, cut):
+    """(全期, cut 以前, cut 以後) 的 summarize_ic，檢查訊號是否只出現在某一段。"""
+    weekly = backtest_stats.weekly_ic(rows, column, "tradable_return_pct")
+    return tuple(backtest_stats.summarize_ic(part, horizon) for part in
+                 (weekly, [w for w in weekly if w[0] < cut], [w for w in weekly if w[0] >= cut]))
+
+
+def _format_half(summary):
+    return "—" if summary is None else "%+.3f（t %+.1f）" % (summary["mean"], summary["t"])
+
+
+def print_flow_ic(samples, horizon, cut):
+    rows = tradable_rows(samples)
+    print("  法人因子 Rank IC（預先登錄 %d 個，vs 可成交報酬；只記錄、不進評分）：" % len(flows.FACTOR_COLUMNS))
+    for column in flows.FACTOR_COLUMNS:
+        covered = [r for r in rows if r[column] is not None]
+        if not covered:
+            print("    %-18s 無資料（此 run 沒有法人因子，或法人資料未回補）" % column)
+            continue
+        whole, first, second = flow_ic(covered, column, horizon, cut)
+        same_sign = (first is not None and second is not None
+                     and first["mean"] * second["mean"] > 0)
+        print("    %-18s %d/%d 筆有值｜%s｜前半 %s、後半 %s%s"
+              % (column, len(covered), len(rows), _format_ic(whole), _format_half(first),
+                 _format_half(second), "" if same_sign else "｜前後兩半不同號或不足"))
+
+
 VALUATION_BANDS = (("低位 <33", 0, 33), ("中位 33-67", 33, 67), ("高位 ≥67", 67, 101))
 
 
@@ -259,10 +296,14 @@ def cmd_report(conn, args):
     if run["status"] != "complete":
         print("⚠️  這次 run 沒有跑完（status=%s），樣本不完整" % run["status"])
     print(WARNING)
+    cut = half_cut(conn.execute("SELECT DISTINCT as_of FROM backtest_samples WHERE run_id = ?",
+                                (run["id"],)).fetchall())
     for horizon in params["horizons"]:
         samples = load_samples(conn, run["id"], horizon)
         excluded = Counter(r["excluded_reason"] for r in samples if r["excluded_reason"])
         print_horizon(samples, horizon, bull, bear)
+        if not is_legacy_run(samples):
+            print_flow_ic(samples, horizon, cut)
         if excluded:
             print("  排除：" + "、".join("%s %d 筆" % item for item in sorted(excluded.items())))
     focus = load_samples(conn, run["id"], args.horizon)

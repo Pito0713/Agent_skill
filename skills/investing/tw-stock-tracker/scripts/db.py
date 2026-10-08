@@ -1,4 +1,4 @@
-"""SQLite 儲存層：日線快取、除權息事件、預測記錄、校準門檻。
+"""SQLite 儲存層：日線快取、除權息事件、預測記錄、校準門檻、估值與法人買賣超。
 
 資料庫放家目錄（~/.stock-tracker/tracker.db），不進制度 repo：
 predictions 是個人交易判斷資料且持續增長，不該污染三 harness 共用的正本。
@@ -121,6 +121,10 @@ CREATE TABLE IF NOT EXISTS backtest_samples (
     entry_date               TEXT,       -- 可成交口徑：次一交易日開盤進場
     tradable_return_pct      REAL,       -- 可成交口徑報酬（扣手續費與證交稅）
     tradable_excluded_reason TEXT,       -- 可成交口徑排除原因；NULL = 計入
+    flow_foreign_5d  REAL,               -- 法人因子：近 N 日淨買超 ÷ 成交股數（只用 as_of 以前）
+    flow_foreign_20d REAL,
+    flow_trust_5d    REAL,
+    flow_trust_20d   REAL,
     PRIMARY KEY (run_id, ticker, as_of, horizon_days)
 );
 
@@ -142,6 +146,23 @@ CREATE TABLE IF NOT EXISTS valuation_fetches (
     PRIMARY KEY (date, market)
 );
 
+CREATE TABLE IF NOT EXISTS institutional_flows (
+    ticker      TEXT NOT NULL,
+    date        TEXT NOT NULL,
+    foreign_net INTEGER NOT NULL,        -- 外資買賣超股數（不含外資自營商）
+    trust_net   INTEGER NOT NULL,        -- 投信
+    dealer_net  INTEGER NOT NULL,        -- 自營商合計（自行買賣 + 避險）
+    total_net   INTEGER NOT NULL,        -- 三大法人合計
+    PRIMARY KEY (ticker, date)
+);
+
+CREATE TABLE IF NOT EXISTS flow_fetches (
+    date    TEXT NOT NULL,
+    market  TEXT NOT NULL,               -- TWSE / TPEx
+    rows    INTEGER NOT NULL,            -- 0 = 休市日（只記已確定的過去日期）
+    PRIMARY KEY (date, market)
+);
+
 CREATE INDEX IF NOT EXISTS idx_pred_status ON predictions(status, ticker);
 """
 
@@ -154,7 +175,9 @@ ADDED_COLUMNS = {
                     ("pb_percentile", "REAL"), ("yield_percentile", "REAL")),
     "backtest_samples": (("pe_percentile", "REAL"), ("pb_percentile", "REAL"),
                          ("yield_percentile", "REAL"), ("entry_date", "TEXT"),
-                         ("tradable_return_pct", "REAL"), ("tradable_excluded_reason", "TEXT")),
+                         ("tradable_return_pct", "REAL"), ("tradable_excluded_reason", "TEXT"),
+                         ("flow_foreign_5d", "REAL"), ("flow_foreign_20d", "REAL"),
+                         ("flow_trust_5d", "REAL"), ("flow_trust_20d", "REAL")),
     "dividends": (("sub_ratio", "REAL NOT NULL DEFAULT 0"),
                   ("sub_price", "REAL NOT NULL DEFAULT 0"), ("ref_ratio", "REAL")),
     "backtest_runs": (("status", "TEXT NOT NULL DEFAULT 'running'"),

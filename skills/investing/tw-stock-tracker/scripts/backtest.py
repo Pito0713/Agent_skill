@@ -17,8 +17,10 @@ from datetime import date, datetime, timedelta
 import backtest_execution
 import backtest_report
 import db
+import fetch_flows
 import fetch_twse
 import fetch_valuation
+import flows
 import score as scoring
 import track
 import valuation
@@ -28,6 +30,7 @@ WARMUP_MONTHS = 4       # MIN_BARS 60 根約 3 個月，多抓 1 個月緩衝
 MAX_ROLL_DAYS = 7       # 對帳日晚於到期日超過此天數（長期停牌或資料缺口）即排除
 PART_COLUMNS = ("trend", "bias", "support", "volume", "macd", "rsi")
 VALUATION_HISTORY_DAYS = 365   # 估值百分位至少要 1 年歷史，回測起點前多抓一年
+FLOW_WARMUP_DAYS = 45          # 法人因子最長 20 個交易日，回測起點前多抓約兩個月曆日
 
 
 def shift_month(month, delta):
@@ -120,6 +123,7 @@ def score_one_date(conn, run, ticker, as_of):
         return 0
     lookback_flag = "unknown_exdiv_in_lookback" if result["flags"] else None
     percentiles = valuation.percentile_values(result["valuation"])   # snapshot 只用 as_of 以前
+    flow_factors = flows.factor_values(conn, ticker, as_of)
     written = 0
     for horizon in HORIZONS:
         outcome = forward_return(conn, ticker, as_of, horizon)
@@ -134,12 +138,12 @@ def score_one_date(conn, run, ticker, as_of):
             "INSERT OR REPLACE INTO backtest_samples (run_id, ticker, as_of, horizon_days, score,"
             " s_trend, s_bias, s_support, s_volume, s_macd, s_rsi, signal, hard_rules,"
             " end_date, return_pct, excluded_reason, pe_percentile, pb_percentile,"
-            " yield_percentile, entry_date, tradable_return_pct, tradable_excluded_reason)"
-            " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            " yield_percentile, entry_date, tradable_return_pct, tradable_excluded_reason, %s)"
+            " VALUES (%s)" % (", ".join(flows.FACTOR_COLUMNS), ",".join("?" * 26)),
             (run["id"], ticker, as_of, horizon, result["final_score"],
              *(result["parts"][name] for name in PART_COLUMNS), result["signal"],
              json.dumps(result["hard_rules"], ensure_ascii=False), end_date,
-             None if excluded else return_pct, excluded, *percentiles, *tradable))
+             None if excluded else return_pct, excluded, *percentiles, *tradable, *flow_factors))
         written += 1
     return written
 
@@ -171,6 +175,9 @@ def cmd_run(conn, args):
         print("抓取估值（全市場，每週一天）", flush=True)
         _attempt(conn, skipped, "(估值資料)", lambda: fetch_valuation.backfill(
             conn, start - timedelta(days=VALUATION_HISTORY_DAYS), date.today()))
+        print("抓取三大法人買賣超（全市場，逐日）", flush=True)
+        _attempt(conn, skipped, "(法人資料)", lambda: fetch_flows.backfill(
+            conn, start - timedelta(days=FLOW_WARMUP_DAYS), date.today()))
         for index, ticker in enumerate(tickers, 1):
             print("抓取 [%d/%d] %s" % (index, len(tickers), ticker), flush=True)
             _attempt(conn, skipped, ticker, lambda: ensure_history(conn, ticker, start))

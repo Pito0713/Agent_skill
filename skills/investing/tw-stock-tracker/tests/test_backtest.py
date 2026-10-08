@@ -53,6 +53,9 @@ class BacktestTest(unittest.TestCase):
         patcher = mock.patch.object(backtest.fetch_valuation, "backfill", return_value=0)
         self.backfill = patcher.start()
         self.addCleanup(patcher.stop)
+        flow_patcher = mock.patch.object(backtest.fetch_flows, "backfill", return_value=0)
+        flow_patcher.start()
+        self.addCleanup(flow_patcher.stop)
 
     def tearDown(self):
         self.conn.close()
