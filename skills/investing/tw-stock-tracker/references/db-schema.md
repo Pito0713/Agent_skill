@@ -186,3 +186,21 @@
 任一市場那天沒抓到則整個因子為 NULL，不猜 0。
 分母用 `daily_quotes.volume`；T86 法人股數含零股與鉅額，日線成交股數口徑未必完全相同，
 比值只用於同週橫斷面排名，不當絕對數字解讀。
+
+---
+
+## 全市場 DB（`~/.stock-tracker/market.db`）
+
+`fetch_market_daily.py` 寫入，schema 與 tracker.db 相同（`db.connect_market()`，可用 `STOCK_TRACKER_MARKET_DB` 覆寫），
+評分程式可原樣共用。獨立存放的原因：上櫃全市場表（`afterTrading/otc`）的成交股數與逐檔表（`tradingStock`）
+差約 1–2%，混進 tracker.db 會讓同一檔的單檔分析分數隨資料源改變。
+
+| 表 | 說明 |
+|------|------|
+| market_fetches(date, market, rows) | 抓過的日期。休市要**兩個市場都回空**才記 `rows = 0`（上市的查無資料回應不帶日期，單看一邊不可靠）；一邊有資料一邊空則拋錯不記。sync 開頭會清掉單邊的 0 筆紀錄重抓 |
+| daily_quotes.turnover | 官方成交金額（元），全市場 DB 才有；篩選的流動性用近 20 個交易日平均，停牌日算 0 |
+| tpex_changes(ticker, date, change) | 上櫃官方「漲跌」；`detect_tpex_exdiv` 逐檔與上櫃前一交易日收盤比對反推除權息；前一交易日停牌、或兩日之間有未確認休市的平日（可能漏抓）則不判斷，重抓時保留既有旗標 |
+| securities(ticker, name, market, industry_code) | 名稱與市場來自日線表；產業代碼來自上市 `t187ap03_L`、上櫃 `t187ap03_O`（兩市場共用同一套代碼） |
+
+上市除權息看 `MI_INDEX`「漲跌(+/-)」的 X 標記，金額由 `TWT48U_ALL`／`TWT49U` 補（同逐檔流程）。
+

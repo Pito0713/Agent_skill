@@ -8,6 +8,9 @@ import os
 import sqlite3
 
 DEFAULT_DB_PATH = os.path.expanduser("~/.stock-tracker/tracker.db")
+# 全市場篩選與回測用的獨立 DB：全市場日線表的上櫃成交量與逐檔表差約 1–2%，
+# 混進 tracker.db 會讓同一檔的單檔分析分數隨資料源改變
+MARKET_DB_PATH = os.path.expanduser("~/.stock-tracker/market.db")
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS daily_quotes (
@@ -20,6 +23,7 @@ CREATE TABLE IF NOT EXISTS daily_quotes (
     volume      INTEGER NOT NULL,        -- 成交股數
     is_exdiv    INTEGER NOT NULL DEFAULT 0,  -- TWSE 漲跌價差 X 標記
     adj_close   REAL,                    -- 還原收盤價，由 rebuild_adj_close 計算
+    turnover    REAL,                    -- 官方成交金額（元）；僅全市場 DB 寫入，逐檔資料為 NULL
     PRIMARY KEY (ticker, date)
 );
 
@@ -163,12 +167,35 @@ CREATE TABLE IF NOT EXISTS flow_fetches (
     PRIMARY KEY (date, market)
 );
 
+-- 以下三張表只在全市場 DB（MARKET_DB_PATH）有資料，由 fetch_market_daily 寫入
+CREATE TABLE IF NOT EXISTS market_fetches (
+    date    TEXT NOT NULL,
+    market  TEXT NOT NULL,               -- TWSE / TPEx
+    rows    INTEGER NOT NULL,            -- 0 = 休市日（只記已確定的過去日期）
+    PRIMARY KEY (date, market)
+);
+
+CREATE TABLE IF NOT EXISTS tpex_changes (
+    ticker  TEXT NOT NULL,
+    date    TEXT NOT NULL,
+    change  REAL,                        -- 官方「漲跌」（對除權息參考價計算）；非數字為 NULL
+    PRIMARY KEY (ticker, date)
+);
+
+CREATE TABLE IF NOT EXISTS securities (
+    ticker        TEXT PRIMARY KEY,
+    name          TEXT,
+    market        TEXT NOT NULL,         -- TWSE / TPEx
+    industry_code TEXT                   -- 上市 t187ap03_L、上櫃 t187ap03_O，兩市場共用同一套代碼
+);
+
 CREATE INDEX IF NOT EXISTS idx_pred_status ON predictions(status, ticker);
 """
 
 
 # 後加欄位：CREATE TABLE IF NOT EXISTS 不會替舊 DB 補欄位，需逐一 ALTER
 ADDED_COLUMNS = {
+    "daily_quotes": (("turnover", "REAL"),),
     "predictions": (("market_state", "TEXT"), ("sector_quadrant", "TEXT"),
                     ("calibration_id", "INTEGER"), ("pe", "REAL"), ("pb", "REAL"),
                     ("dividend_yield", "REAL"), ("pe_percentile", "REAL"),
@@ -204,3 +231,8 @@ def connect(db_path=None):
     conn.executescript(SCHEMA)
     _migrate(conn)
     return conn
+
+
+def connect_market(db_path=None):
+    """全市場 DB；可用 STOCK_TRACKER_MARKET_DB 覆寫。schema 與 tracker.db 相同，評分程式可原樣共用。"""
+    return connect(db_path or os.environ.get("STOCK_TRACKER_MARKET_DB") or MARKET_DB_PATH)
