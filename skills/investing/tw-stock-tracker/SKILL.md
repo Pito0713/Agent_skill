@@ -173,6 +173,27 @@ python3 screen.py --top 20 --verify         # 前 20 名依產業資金流向排
 
 ---
 
+## 儀表板（本機唯讀網頁）
+
+```bash
+python3 dashboard.py            # 開 http://127.0.0.1:8765 ；--port 可改埠號，Ctrl+C 結束
+python3 open_dashboard.py       # 一鍵：沒在跑就背景啟動，就緒後開瀏覽器；可重複點擊
+```
+
+外部按鈕（如桌面懸浮視窗）只要執行
+`/usr/bin/python3 ~/Agent_skill/skills/investing/tw-stock-tracker/scripts/open_dashboard.py`。
+它以 `/healthz` 確認埠上是這個儀表板（不會把其他程式誤當成儀表板），背景啟動的儀表板脫離按鈕程式獨立執行，
+log 在 `~/.stock-tracker/logs/dashboard.log`。失敗會跳 macOS 通知，結束碼：0 已開啟、1 啟動逾時（子程序會收掉）、
+2 埠被其他程式占用、3 儀表板在跑但瀏覽器開不起來。
+持有期間有金額未知的除權息時，浮動報酬顯示「未還原」而不給數字（同對帳的 needs_review）。
+
+一頁看完：open 預測現況（中文名稱、到期日、以最新資料重算的分數、浮動報酬、進場區間、估值百分位）、
+對帳與校準進度、回測摘要（可成交平均、Rank IC、t 值判讀）、排程最近 7 天的執行結果。
+只綁 127.0.0.1、只開唯讀 DB、只回應 GET；每次重新整理重算，資料由排程或手動指令更新。
+數字全來自既有 script 的同一套計算，呈現時同樣適用上方各模式的解讀規則（評分是狀態描述、不是選股訊號）。
+
+---
+
 ## 自動更新（選用，macOS launchd）
 
 `scripts/scheduled_update.sh` 依序跑：`track.py reconcile`（對帳到期預測、更新 open 標的日線）→
