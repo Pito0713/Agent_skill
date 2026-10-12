@@ -30,6 +30,12 @@ metadata:
 ## 環境
 
 - 資料庫：`~/.stock-tracker/tracker.db`（SQLite，不進本 repo）
+- **資料主機：「ASUS Mac mini」**（`scutil --get ComputerName`）。`~/.stock-tracker/` 只在這台是正本：
+  `record`、`reconcile`、`calibrate`、`backtest.py run`、launchd 排程都只在主機跑。repo 只同步程式、不同步資料，
+  在其他機器 `record` 會產生一份對帳不到、也不會被排程更新的平行紀錄。
+  在非主機上被要求執行上述寫入指令時，先提醒使用者並確認；只讀的 `score.py` 不受限。
+  其他機器既有的資料要併回主機時，比照 2026-10-07 的作法：先備份主機 DB，只新增、不刪除。
+  **不要把 DB 放進 iCloud／Dropbox 同步**：SQLite 在多機同時寫入時容易損毀。
 - 相依：Python 3 標準庫，無需 pip 安裝
 - 資料源：TWSE（上市）與 TPEx（上櫃）盤後開放資料，免金鑰；市場別由實際查詢判定
 
