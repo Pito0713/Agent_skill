@@ -167,6 +167,28 @@ python3 screen.py --top 20 --verify         # 前 20 名依產業資金流向排
 
 ---
 
+## 自動更新（選用，macOS launchd）
+
+`scripts/scheduled_update.sh` 依序跑：`track.py reconcile`（對帳到期預測、更新 open 標的日線）→
+`fetch_valuation.py latest`（open 標的最近已公布估值）→ `fetch_valuation.py backfill --years 0.05`（補近幾週每週估值）。
+只更新 tracker.db（open 預測標的），**不含模式 5 的 market.db**——全市場篩選仍手動跑。
+由 launchd 在本機執行，**不需要 Claude session**；log 在 `~/.stock-tracker/logs/update-YYYYMMDD.log`（保留 60 天）。
+
+設定檔放 `~/Library/LaunchAgents/local.tw-stock-tracker.update.plist`（每台機器自己的設定，不進 repo），
+`ProgramArguments` 為 `/bin/bash <本 skill>/scripts/scheduled_update.sh`，`StartCalendarInterval` 設週一到週五 16:30。
+
+```bash
+mkdir -p ~/.stock-tracker/logs   # launchd 在腳本執行前就開 log 檔，目錄須先存在
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/local.tw-stock-tracker.update.plist   # 啟用
+launchctl kickstart gui/$(id -u)/local.tw-stock-tracker.update                                # 立刻跑一次
+launchctl bootout gui/$(id -u)/local.tw-stock-tracker.update                                  # 停用
+```
+
+錯過排程（關機）不會造成資料缺口：日線按月抓、對帳以到期日後第一根收盤計算，下次執行即補齊；
+睡眠中錯過的會在喚醒後補跑一次。休市日照跑無害。手動執行與排程重疊時，後到的會略過（`lockf` 鎖 `~/.stock-tracker/update.lock`，程序結束即釋放）。
+
+---
+
 ## 已知限制（回答時必須誠實揭露）
 
 1. **盤後資料**：TWSE／TPEx 開放資料皆為盤後，非盤中即時報價。
