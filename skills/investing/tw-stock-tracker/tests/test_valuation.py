@@ -27,10 +27,11 @@ TPEX_PAYLOAD = {"stat": "ok", "tables": [{"fields": ["股票代號", "公司名�
 class ParseTest(unittest.TestCase):
     def test_twse_rows_and_loss_making_pe(self):
         rows = fetch_valuation.parse_twse(TWSE_PAYLOAD)
-        self.assertEqual(rows, [("2330", 14.31, 4.33, 2.06, "112/2"), ("2002", None, 1.10, 0.0, "112/2")])
+        self.assertEqual(rows, [("2330", 14.31, 4.33, 2.06, "112/2", "台積電"),
+                                ("2002", None, 1.10, 0.0, "112/2", "中鋼")])
 
     def test_tpex_rows_have_no_fiscal_period(self):
-        self.assertEqual(fetch_valuation.parse_tpex(TPEX_PAYLOAD), [("5425", 13.2, 1.0, 3.5, None)])
+        self.assertEqual(fetch_valuation.parse_tpex(TPEX_PAYLOAD), [("5425", 13.2, 1.0, 3.5, None, "台半")])
 
     def test_holiday_responses_are_empty(self):
         self.assertEqual(fetch_valuation.parse_twse({"stat": "很抱歉，沒有符合條件的資料!"}), [])
@@ -82,12 +83,70 @@ class FetchTest(unittest.TestCase):
     def test_holiday_falls_back_to_previous_trading_day_and_is_remembered(self):
         friday = date(2024, 2, 9)                            # 春節休市
         responses = {date(2024, 2, 9): [], date(2024, 2, 8): [],
-                     date(2024, 2, 7): [("2330", 15.0, 4.0, 2.0, "112/4")]}
+                     date(2024, 2, 7): [("2330", 15.0, 4.0, 2.0, "112/4", "台積電")]}
         with mock.patch.object(fetch_valuation, "_request",
                                side_effect=lambda day, market: (responses[day], "BWIBBU_d")) as request:
             self.assertEqual(fetch_valuation.backfill_week(self.conn, friday, "TWSE"), date(2024, 2, 7))
             self.assertEqual(fetch_valuation.backfill_week(self.conn, friday, "TWSE"), date(2024, 2, 7))
         self.assertEqual(request.call_count, 3)              # 第二次全部走快取
+
+    def seed_quote_dates(self, ticker, days):
+        self.conn.executemany("INSERT INTO daily_quotes (ticker, date, open, high, low, close, volume)"
+                              " VALUES (?, ?, 1, 1, 1, 1, 1)", [(ticker, d.isoformat()) for d in days])
+
+    def test_latest_falls_back_to_previous_trading_day_when_today_unpublished(self):
+        today, previous = date.today(), date.today() - timedelta(days=4)
+        self.seed_quote_dates("2330", [previous, today])
+        published = {previous: [("2330", 20.0, 5.0, 1.5, "115/2", "台積電")]}
+        with mock.patch.object(fetch_valuation, "_request",
+                               side_effect=lambda day, market: (published.get(day, []), "BWIBBU_d")):
+            fetch_valuation.sync_latest(self.conn, "2330")
+        row = self.conn.execute("SELECT date FROM valuations WHERE ticker = '2330'").fetchone()
+        self.assertEqual(row["date"], previous.isoformat())
+        self.assertFalse(fetch_valuation.is_fetched(self.conn, today, "TWSE"))   # 未公布不快取，下次再試
+
+    def test_cached_day_without_name_is_refetched_once(self):
+        day = date.today() - timedelta(days=10)
+        self.seed_quote_dates("2330", [day])
+        self.conn.execute("INSERT INTO valuations (ticker, date, pe, source) VALUES ('2330', ?, 20, 'BWIBBU_d')",
+                          (day.isoformat(),))
+        for market in fetch_valuation.MARKETS:
+            self.conn.execute("INSERT INTO valuation_fetches VALUES (?, ?, 900)", (day.isoformat(), market))
+        rows = [("2330", 20.0, 5.0, 1.5, "115/2", "台積電")]
+        with mock.patch.object(fetch_valuation, "_request",
+                               side_effect=lambda d, market: (rows if market == "TWSE" else [], "X")) as request:
+            fetch_valuation.sync_latest(self.conn, "2330")
+            fetch_valuation.sync_latest(self.conn, "2330")
+        import score
+        self.assertEqual(score.lookup_name(self.conn, "2330"), "台積電")
+        self.assertEqual(request.call_count, 1)                  # 只有 TWSE 那天重抓一次
+
+    def test_tpex_ticker_does_not_refetch_twse_and_old_name_is_refreshed(self):
+        day = date.today() - timedelta(days=10)
+        self.seed_quote_dates("5425", [day])
+        self.conn.execute("INSERT INTO valuations (ticker, date, pe, source) VALUES ('5425', ?, 13, 'TPEX_PE')",
+                          (day.isoformat(),))
+        self.conn.execute("INSERT INTO stock_names VALUES ('5425', '舊名', 'TPEx', '2023-01-06')")
+        for market in fetch_valuation.MARKETS:
+            self.conn.execute("INSERT INTO valuation_fetches VALUES (?, ?, 900)", (day.isoformat(), market))
+        rows = [("5425", 13.0, 1.0, 3.5, None, "台半")]
+        with mock.patch.object(fetch_valuation, "_request",
+                               side_effect=lambda d, market: (rows, "TPEX_PE")) as request:
+            fetch_valuation.sync_latest(self.conn, "5425")
+        self.assertEqual([call.args[1] for call in request.call_args_list], ["TPEx"])
+        import score
+        self.assertEqual(score.lookup_name(self.conn, "5425"), "台半")
+
+    def test_names_keep_newer_date(self):
+        new = [("2887", 10.0, 1.0, 3.0, None, "台新新光金")]
+        old = [("2887", 9.0, 1.0, 3.0, None, "台新金")]
+        with mock.patch.object(fetch_valuation, "_request",
+                               side_effect=lambda day, market: (new if day.year == 2026 else old, "BWIBBU_d")):
+            fetch_valuation.fetch_date(self.conn, date(2026, 9, 4), "TWSE")
+            fetch_valuation.fetch_date(self.conn, date(2023, 9, 1), "TWSE")      # 回補舊日期
+        import score
+        self.assertEqual(score.lookup_name(self.conn, "2887"), "台新新光金")
+        self.assertIsNone(score.lookup_name(self.conn, "0050"))
 
     def test_recent_empty_day_is_not_recorded_as_holiday(self):
         today = date.today()
@@ -164,6 +223,14 @@ class SnapshotTest(unittest.TestCase):
         self.assertIsNone(valuation.snapshot(self.conn, "2330", "2026-10-07"))   # 最近一筆已逾 7 天
         self.assertIsNone(valuation.snapshot(self.conn, "0050", "2026-09-25"))
         self.assertEqual(valuation.percentile_values(None), (None, None, None))
+
+    def test_long_holiday_uses_trading_days_not_calendar_days(self):
+        self.seed_weekly(60, end=date(2026, 2, 13))            # 春節前最後一筆估值
+        for day in ("2026-02-11", "2026-02-12", "2026-02-13", "2026-02-23", "2026-02-24"):
+            self.conn.execute("INSERT INTO daily_quotes (ticker, date, open, high, low, close, volume)"
+                              " VALUES ('2330', ?, 1, 1, 1, 1, 1)", (day,))
+        snap = valuation.snapshot(self.conn, "2330", "2026-02-24")   # 相隔 11 天、但只差 2 根
+        self.assertEqual(snap["date"], "2026-02-13")
 
     def test_attach_to_prediction(self):
         self.seed_weekly(60)

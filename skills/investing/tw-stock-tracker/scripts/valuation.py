@@ -9,7 +9,8 @@ from datetime import date, timedelta
 
 LOOKBACK_DAYS = 3 * 365
 MIN_HISTORY = 52            # 至少 52 個不同的週（約 1 年）；不足就不給百分位
-STALE_DAYS = 7              # 最近一筆估值距 as_of 超過此天數視為無資料
+STALE_BARS = 5              # 最近一筆估值早於該股最近第 5 根日線視為過舊（用交易日，長假才不會誤判）
+STALE_DAYS = 7              # 該股沒有日線時退回的日曆天門檻
 METRICS = (("pe", "本益比", "pe_percentile"), ("pb", "股價淨值比", "pb_percentile"),
            ("dividend_yield", "殖利率", "yield_percentile"))
 
@@ -39,13 +40,22 @@ def _percentile(conn, ticker, column, current):
         len(history)
 
 
+def _stale_cutoff(conn, ticker, as_of):
+    """as_of 往前第 STALE_BARS 根日線的日期；日線不足時退回 STALE_DAYS 個日曆天。"""
+    bars = [row[0] for row in conn.execute(
+        "SELECT date FROM daily_quotes WHERE ticker = ? AND date <= ? ORDER BY date DESC LIMIT ?",
+        (ticker, as_of, STALE_BARS))]
+    if len(bars) == STALE_BARS:
+        return bars[-1]
+    return (date.fromisoformat(as_of) - timedelta(days=STALE_DAYS)).isoformat()
+
+
 def snapshot(conn, ticker, as_of):
     """as_of（含）以前最近一筆估值與百分位；查無或過舊回 None。"""
     current = conn.execute(
         "SELECT * FROM valuations WHERE ticker = ? AND date <= ? AND date >= ?"
         " ORDER BY date DESC LIMIT 1",
-        (ticker, as_of, (date.fromisoformat(as_of) - timedelta(days=STALE_DAYS)).isoformat())
-    ).fetchone()
+        (ticker, as_of, _stale_cutoff(conn, ticker, as_of))).fetchone()
     if current is None:
         return None
     result = {"date": current["date"], "fiscal_period": current["fiscal_period"]}

@@ -55,7 +55,7 @@ JSON 的 `valuation` 是本益比／淨值比／殖利率與「相對該股自�
 
 ```bash
 python3 fetch_twse.py <代號>      # 上市／上櫃自動判定，落庫並還原除權息
-python3 fetch_valuation.py latest <代號>   # 選用：補當日估值，不跑則估值顯示無資料
+python3 fetch_valuation.py latest <代號>   # 選用：補最近已公布的估值與中文名稱，不跑則顯示無資料
 python3 score.py <代號> --json
 ```
 

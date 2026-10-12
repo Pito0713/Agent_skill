@@ -22,9 +22,11 @@ TWSE_URL = "https://www.twse.com.tw/rwd/zh/afterTrading/BWIBBU_d?date=%s&selectT
 TPEX_URL = "https://www.tpex.org.tw/www/zh-tw/afterTrading/peQryDate?date=%s&response=json"
 REQUEST_GAP_SEC = 3.0
 MARKETS = ("TWSE", "TPEx")
+SOURCES = {"TWSE": "BWIBBU_d", "TPEx": "TPEX_PE"}
 UNPUBLISHED_GRACE_DAYS = 7   # 這幾天內回空不記為休市，可能只是還沒公布
-TWSE_FIELDS = ("證券代號", "本益比", "股價淨值比", "殖利率(%)", "財報年/季")
-TPEX_FIELDS = ("股票代號", "本益比", "股價淨值比", "殖利率(%)")
+TWSE_FIELDS = ("證券代號", "本益比", "股價淨值比", "殖利率(%)", "財報年/季", "證券名稱")
+TPEX_FIELDS = ("股票代號", "本益比", "股價淨值比", "殖利率(%)", "公司名稱")
+LATEST_LOOKBACK_BARS = 5     # latest 往前找幾個交易日：當天估值收盤後才公布，常晚於日線
 
 
 def _to_float(raw):
@@ -53,7 +55,7 @@ TWSE_NO_DATA = "沒有符合條件的資料"
 
 
 def parse_twse(payload):
-    """BWIBBU_d -> [(ticker, pe, pb, dividend_yield, fiscal_period)]。休市回 []。
+    """BWIBBU_d -> [(ticker, pe, pb, dividend_yield, fiscal_period, name)]。休市回 []。
 
     只有明確的「查無資料」才算休市；其他非 OK（如系統忙碌）拋錯，
     否則會被記成休市而永久不再重試。
@@ -64,8 +66,9 @@ def parse_twse(payload):
     data = payload.get("data")
     if stat != "OK" or not data:
         raise RuntimeError("BWIBBU_d 回應異常：stat=%s、%d 筆" % (stat or "無", len(data or [])))
-    return [(ticker.strip(), _positive(pe), _positive(pb), _to_float(dy), str(period).strip() or None)
-            for ticker, pe, pb, dy, period in
+    return [(ticker.strip(), _positive(pe), _positive(pb), _to_float(dy), str(period).strip() or None,
+             name.strip())
+            for ticker, pe, pb, dy, period, name in
             _rows_by_fields(payload.get("fields") or [], data, TWSE_FIELDS)]
 
 
@@ -79,19 +82,35 @@ def parse_tpex(payload):
     data = tables[0]["data"]
     if not data:
         return []
-    return [(ticker.strip(), _positive(pe), _positive(pb), _to_float(dy), None)
-            for ticker, pe, pb, dy in _rows_by_fields(tables[0].get("fields") or [], data, TPEX_FIELDS)]
+    return [(ticker.strip(), _positive(pe), _positive(pb), _to_float(dy), None, name.strip())
+            for ticker, pe, pb, dy, name in
+            _rows_by_fields(tables[0].get("fields") or [], data, TPEX_FIELDS)]
 
 
 def _request(day, market):
     if market == "TWSE":
-        return parse_twse(fetch_twse._get_json(TWSE_URL % day.strftime("%Y%m%d"))), "BWIBBU_d"
-    return parse_tpex(fetch_tpex._get_json(TPEX_URL % day.strftime("%Y/%m/%d"))), "TPEX_PE"
+        return parse_twse(fetch_twse._get_json(TWSE_URL % day.strftime("%Y%m%d"))), SOURCES["TWSE"]
+    return parse_tpex(fetch_tpex._get_json(TPEX_URL % day.strftime("%Y/%m/%d"))), SOURCES["TPEx"]
+
+
+def fetched_rows(conn, day, market):
+    """已抓過回筆數（0 = 休市），沒抓過回 None。"""
+    row = conn.execute("SELECT rows FROM valuation_fetches WHERE date = ? AND market = ?",
+                       (day.isoformat(), market)).fetchone()
+    return None if row is None else row["rows"]
 
 
 def is_fetched(conn, day, market):
-    return conn.execute("SELECT 1 FROM valuation_fetches WHERE date = ? AND market = ?",
-                        (day.isoformat(), market)).fetchone() is not None
+    return fetched_rows(conn, day, market) is not None
+
+
+def _save_names(conn, day, market, rows):
+    """名稱以較新的日期為準：回補舊日期時不可蓋掉改名後的名稱（如合併更名的金控）。"""
+    conn.executemany(
+        "INSERT INTO stock_names (ticker, name, market, updated_at) VALUES (?, ?, ?, ?)"
+        " ON CONFLICT(ticker) DO UPDATE SET name = excluded.name, market = excluded.market,"
+        " updated_at = excluded.updated_at WHERE excluded.updated_at >= stock_names.updated_at",
+        [(row[0], row[5], market, day.isoformat()) for row in rows if row[5]])
 
 
 def fetch_date(conn, day, market):
@@ -100,7 +119,8 @@ def fetch_date(conn, day, market):
     conn.executemany(
         "INSERT OR REPLACE INTO valuations (ticker, date, pe, pb, dividend_yield, fiscal_period,"
         " source) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        [(ticker, day.isoformat(), pe, pb, dy, period, source) for ticker, pe, pb, dy, period in rows])
+        [(ticker, day.isoformat(), pe, pb, dy, period, source) for ticker, pe, pb, dy, period, _ in rows])
+    _save_names(conn, day, market, rows)
     if rows or day < date.today() - timedelta(days=UNPUBLISHED_GRACE_DAYS):
         conn.execute("INSERT OR REPLACE INTO valuation_fetches (date, market, rows) VALUES (?, ?, ?)",
                      (day.isoformat(), market, len(rows)))
@@ -115,14 +135,16 @@ def _fetch_with_gap(conn, day, market):
 
 def backfill_week(conn, friday, market):
     """週五起往回找到第一個有資料的交易日。整週休市（如春節）回 0。"""
-    for offset in range(5):
-        day = friday - timedelta(days=offset)
-        if is_fetched(conn, day, market):
-            if conn.execute("SELECT rows FROM valuation_fetches WHERE date = ? AND market = ?",
-                            (day.isoformat(), market)).fetchone()["rows"]:
-                return day
-            continue
-        if _fetch_with_gap(conn, day, market):
+    return _first_with_data(conn, [friday - timedelta(days=offset) for offset in range(5)], market)
+
+
+def _first_with_data(conn, days, market):
+    """依序找第一個有估值的日子（快取優先，沒抓過才請求）。都沒有回 None。"""
+    for day in days:
+        cached = fetched_rows(conn, day, market)
+        if cached:
+            return day
+        if cached is None and _fetch_with_gap(conn, day, market):
             return day
     return None
 
@@ -147,14 +169,31 @@ def backfill(conn, start, end):
 
 
 def sync_latest(conn, ticker):
-    """補該檔最新一根日線那天的估值（兩個市場都查，不必知道市場別）。"""
-    latest = conn.execute("SELECT MAX(date) FROM daily_quotes WHERE ticker = ?", (ticker,)).fetchone()[0]
-    if latest is None:
-        return
-    day = date.fromisoformat(latest)
+    """補該檔最近一個「已公布估值」的交易日（兩個市場都查，不必知道市場別）。
+
+    估值收盤後才公布、常晚於日線；只查最新一天的話，當天未公布就整欄空白。
+    改為沿該檔最近 LATEST_LOOKBACK_BARS 個交易日往前找。
+    """
+    days = [date.fromisoformat(row[0]) for row in conn.execute(
+        "SELECT date FROM daily_quotes WHERE ticker = ? ORDER BY date DESC LIMIT ?",
+        (ticker, LATEST_LOOKBACK_BARS))]
     for market in MARKETS:
-        if not is_fetched(conn, day, market):
-            _fetch_with_gap(conn, day, market)
+        day = _first_with_data(conn, days, market)
+        if day and _name_outdated(conn, ticker, day, market):
+            _fetch_with_gap(conn, day, market)   # 該日快取早於名稱功能，重抓一次補名稱
+
+
+def _name_outdated(conn, ticker, day, market):
+    """該檔當天在「這個市場」有估值，但名稱沒有或取自更舊的日期（可能已更名）。
+
+    只看本市場的估值列：上櫃股不會因上市快取觸發重抓。ETF 沒有估值列，不會觸發。
+    """
+    has_row = conn.execute("SELECT 1 FROM valuations WHERE ticker = ? AND date = ? AND source = ?",
+                           (ticker, day.isoformat(), SOURCES[market])).fetchone()
+    if not has_row:
+        return False
+    name = conn.execute("SELECT updated_at FROM stock_names WHERE ticker = ?", (ticker,)).fetchone()
+    return name is None or name["updated_at"] < day.isoformat()
 
 
 def main():

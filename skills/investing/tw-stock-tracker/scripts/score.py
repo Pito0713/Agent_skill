@@ -182,6 +182,12 @@ def apply_hard_rules(result, rsi_value, bias_pct, rows, avg_volume):
     return triggered
 
 
+def lookup_name(conn, ticker):
+    """中文簡稱（來自交易所估值資料）；ETF 或尚未抓過估值者回 None。"""
+    row = conn.execute("SELECT name FROM stock_names WHERE ticker = ?", (ticker,)).fetchone()
+    return row["name"] if row else None
+
+
 def evaluate(conn, ticker, as_of=None):
     """回傳完整評分結果 dict。資料不足直接拋錯，不出半套判斷。as_of 見 load_series。"""
     rows, flags = load_series(conn, ticker, as_of)
@@ -211,7 +217,8 @@ def evaluate(conn, ticker, as_of=None):
         "macd": score_macd(dif, dea),
         "rsi": score_rsi(rsi_value),
     }
-    result = {"ticker": ticker, "date": rows[-1]["date"], "close": rows[-1]["close"],
+    result = {"ticker": ticker, "name": lookup_name(conn, ticker),
+              "date": rows[-1]["date"], "close": rows[-1]["close"],
               "adj_close": closes[-1], "parts": parts, "score": sum(parts.values()),
               "flags": flags, "thresholds": load_thresholds(conn, as_of)}
 
@@ -272,7 +279,8 @@ def main():
     if args.json:
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return
-    print("%s  資料基準日 %s  收盤 %.2f" % (result["ticker"], result["date"], result["close"]))
+    print("%s %s  資料基準日 %s  收盤 %.2f" % (result["ticker"], result["name"] or "（名稱未知）",
+                                         result["date"], result["close"]))
     print("總分 %d/100 -> %s（門檻 偏多≥%d／偏空<%d）"
           % (result["final_score"], result["signal"],
              result["thresholds"]["bull"], result["thresholds"]["bear"]))

@@ -143,6 +143,13 @@ CREATE TABLE IF NOT EXISTS valuations (
     PRIMARY KEY (ticker, date)
 );
 
+CREATE TABLE IF NOT EXISTS stock_names (
+    ticker      TEXT PRIMARY KEY,
+    name        TEXT NOT NULL,           -- 交易所估值資料附帶的中文簡稱
+    market      TEXT NOT NULL,           -- TWSE / TPEx
+    updated_at  TEXT NOT NULL            -- 取得名稱的資料日期；只以較新日期覆蓋
+);
+
 CREATE TABLE IF NOT EXISTS valuation_fetches (
     date    TEXT NOT NULL,
     market  TEXT NOT NULL,               -- TWSE / TPEx
