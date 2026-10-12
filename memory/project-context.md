@@ -919,5 +919,5 @@ resolve 時只展開 HOME（展開任意環境變數等於用掃描器的環境�
 `fetch_market_daily.py` 381 行，超過 300 行上限，待拆分。
 
 **更新（2026-10-12）**：決策 4「不設排程」由使用者改為設定本機 launchd 排程
-（`scripts/scheduled_update.sh`，週一到週五 16:30）。範圍只限 tracker.db 的 open 預測標的：
-對帳、最近已公布估值、近幾週每週估值回補；**不含 market.db 與全市場篩選**（仍手動），也不寄信。
+（`scripts/scheduled_update.sh`，週一到週五 16:30）。只寫 tracker.db：日線與對帳只動 open 預測標的；估值一律整天全市場寫入（估值表本就存全市場）——
+`latest` 依 open 標的挑出最近已公布的日子、`backfill` 補近 13 週缺的週。**不含 market.db 與全市場篩選**（仍手動），也不寄信。

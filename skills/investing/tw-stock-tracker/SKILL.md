@@ -170,8 +170,9 @@ python3 screen.py --top 20 --verify         # 前 20 名依產業資金流向排
 ## 自動更新（選用，macOS launchd）
 
 `scripts/scheduled_update.sh` 依序跑：`track.py reconcile`（對帳到期預測、更新 open 標的日線）→
-`fetch_valuation.py latest`（open 標的最近已公布估值）→ `fetch_valuation.py backfill --years 0.05`（補近幾週每週估值）。
-只更新 tracker.db（open 預測標的），**不含模式 5 的 market.db**——全市場篩選仍手動跑。
+`fetch_valuation.py latest`（依 open 標的挑最近已公布估值的日子，寫入該日全市場估值）→ `fetch_valuation.py backfill --years 0.25`（近 13 週每週估值）。
+日線與對帳只動 open 預測標的；估值一律整天**全市場**寫入（估值表本就存全市場，一次請求成本相同），
+已抓過的週走快取、只補缺的週。只寫 tracker.db，**不含模式 5 的 market.db**——全市場篩選仍手動跑。
 由 launchd 在本機執行，**不需要 Claude session**；log 在 `~/.stock-tracker/logs/update-YYYYMMDD.log`（保留 60 天）。
 
 設定檔放 `~/Library/LaunchAgents/local.tw-stock-tracker.update.plist`（每台機器自己的設定，不進 repo），
@@ -185,6 +186,7 @@ launchctl bootout gui/$(id -u)/local.tw-stock-tracker.update                    
 ```
 
 錯過排程（關機）不會造成資料缺口：日線按月抓、對帳以到期日後第一根收盤計算，下次執行即補齊；
+每週估值只自動補最近 13 週，關機更久時手動跑 `fetch_valuation.py backfill --years <年數>`；
 睡眠中錯過的會在喚醒後補跑一次。休市日照跑無害。手動執行與排程重疊時，後到的會略過（`lockf` 鎖 `~/.stock-tracker/update.lock`，程序結束即釋放）。
 
 ---

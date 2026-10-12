@@ -47,7 +47,8 @@ elif [ -n "$open_tickers" ]; then
     # shellcheck disable=SC2086  # 代號以空白分隔，需要拆成多個參數
     run_step fetch_valuation.py latest $open_tickers
 fi
-run_step fetch_valuation.py backfill --years 0.05   # 約 2.5 週；已抓過的週走快取，不重複請求
+# 約 13 週：已抓過的週走快取不發請求，只補真正缺的週（如關機數週）；估值本就存全市場
+run_step fetch_valuation.py backfill --years 0.25
 
 # 清理失敗只記警告：舊 log 刪不掉不代表資料沒更新
 find "$LOG_DIR" -name 'update-*.log' -mtime +"$LOG_RETENTION_DAYS" -delete 2>> "$LOG" \
