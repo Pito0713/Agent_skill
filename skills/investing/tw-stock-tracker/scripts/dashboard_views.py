@@ -12,6 +12,8 @@ h1{font-size:20px;margin:4px 0}h2{font-size:16px;margin:0 0 8px}
 .note{color:var(--muted);font-size:12px}.banner{border-left:4px solid var(--warn)}
 table{border-collapse:collapse;width:100%}th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
 th{color:var(--muted);font-weight:500;font-size:12px}td.num{text-align:right;font-variant-numeric:tabular-nums}
+a,a:visited{color:inherit;font-weight:600;text-decoration:underline;text-decoration-color:var(--muted);text-underline-offset:3px}
+a:hover{text-decoration-color:var(--text)}
 .up{color:var(--up)}.down{color:var(--down)}.warn{color:var(--warn)}.grid{display:flex;gap:24px;flex-wrap:wrap}
 """
 
@@ -33,6 +35,11 @@ def _pct_class(value):
 def _table(headers, rows):
     head = "".join("<th>%s</th>" % escape(h) for h in headers)
     return "<table><tr>%s</tr>%s</table>" % (head, "".join(rows))
+
+
+def _ticker_link(ticker, name):
+    """連到個股詳情頁（只用在「個股詳情」區塊：只有跑過 --fetch 的個股才有詳情頁）。"""
+    return '<a href="/stock/%s">%s</a> %s' % (escape(ticker), escape(ticker), escape(name or ""))
 
 
 def _shares_text(shares):
@@ -73,10 +80,33 @@ def render_positions(items):
             % (len(items), _table(headers, [_position_row(i) for i in items])))
 
 
+STALE_DETAIL_DAYS = 7
+
+
+def render_detail_views(items):
+    if not items:
+        return ('<section class="card"><h2>個股詳情</h2><p class="note">尚未查過個股詳情。'
+                "在對話中說「2330 個股詳情」，或執行 python3 detail.py &lt;代號&gt; --fetch</p></section>")
+    rows = []
+    for item in items:
+        stale = item["age_days"] > STALE_DETAIL_DAYS
+        refreshed = '<span class="%s">%s（%s）</span>' % (
+            "warn" if stale else "", escape(item["refreshed_at"]),
+            "今天" if item["age_days"] == 0 else "%d 天前" % item["age_days"])
+        failed = "、".join(item["failed_steps"])
+        rows.append("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>" % (
+            _ticker_link(item["ticker"], item["name"]), refreshed, escape(item["quote_date"] or "–"),
+            escape(item["revenue_month"] or "–"), escape(item["financial_period"] or "–"),
+            '<span class=warn>%s</span>' % escape(failed) if failed else "–"))
+    return ('<section class="card"><h2>個股詳情（%d 檔）</h2>%s<p class="note">更新時間＝最近一次 detail.py --fetch 完成時間；'
+            "超過 %d 天標黃。要重抓請在對話中說「重新更新 &lt;代號&gt;」。</p></section>"
+            % (len(items), _table(["標的", "更新時間", "日線至", "月營收至", "財報期別", "上次更新失敗"], rows),
+               STALE_DETAIL_DAYS))
+
+
 def _prediction_row(item):
     now = item["now"]
-    name = escape(item["name"] or "")
-    ticker = "%s %s" % (escape(item["ticker"]), name)
+    ticker = "%s %s" % (escape(item["ticker"]), escape(item["name"] or ""))
     if now is None:
         return "<tr><td>–</td><td>%s</td><td colspan=8 class=warn>%s</td></tr>" % (ticker, escape(item["error"]))
     valuation = now.get("valuation") or {}
@@ -179,8 +209,9 @@ def render_page(data):
                  escape(fresh["latest_valuation"] or "–"), _num(fresh["db_mb"], "%.1f")))
     banner = ('<section class="card banner"><b>評分是技術面狀態描述，不是選股訊號。</b>'
               "兩組 3 年回測顯示總分沒有可證實的預測力（ADR-026）；本頁不構成投資建議。</section>")
-    sections = [render_positions(data.get("positions", [])), render_predictions(data["predictions"]), render_resolved(data["resolved"]),
-                render_backtests(data["backtests"]), render_schedule(data["schedule"])]
+    sections = [render_positions(data.get("positions", [])), render_predictions(data["predictions"]),
+                render_resolved(data["resolved"]), render_backtests(data["backtests"]), render_schedule(data["schedule"]),
+                render_detail_views(data.get("detail_views", []))]
     return ("<!doctype html><html lang=zh-Hant><head><meta charset=utf-8>"
             "<meta name=viewport content='width=device-width,initial-scale=1'><title>台股追蹤儀表板</title>"
             "<style>%s</style></head><body><main>%s%s%s</main></body></html>"

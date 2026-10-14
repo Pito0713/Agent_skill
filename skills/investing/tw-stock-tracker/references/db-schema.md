@@ -228,3 +228,20 @@
 
 損益與停損比較用 basis_date 那根日線現在的還原比例（adj_close / close）換到現行基準；
 持有期間有金額未知的除權息時不給數字。
+
+---
+
+## 基本面（個股詳情，模式 6）
+
+只顯示、不參與評分。金額單位皆為**千元**（MOPS 原始單位）。
+
+| 表 | 說明 |
+|------|------|
+| monthly_revenue(ticker, month, …) | 月營收：當月、上月、去年同月、當年累計、去年累計、公司備註原文。`source` = `OPENAPI`（t187ap05_L／mopsfin_t187ap05_O，最新一期）或 `MOPS_HTML`（mopsov 靜態頁 t21sc03，國內 `_0` 與國外 `_1` 兩頁，歷史回補；重抓會更新 MOPS_HTML 列，不覆蓋 OpenAPI 列） |
+| revenue_fetches(month, market, rows) | 歷史回補抓過的月份；過了次月 15 日才記，之前抓到的可能缺晚報的公司，下次會重抓 |
+| quarterly_financials(ticker, year, quarter, …) | 財報**年初至該季累計**：基本 EPS、營收、營業利益（金融業 NULL）、業外、稅後淨利、出表日期。來源 t187ap14_L／t187ap14_O，只有最新一季，靠排程逐季累積 |
+| investor_conferences(ticker, date, time, …) | 法說會：日期（多日活動取首日，`end_date` 為末日）、地點、擇要訊息原文、中英文簡報 PDF 網址（`mopsov…/nas/STR/<檔名>`）、公司網站。`detail.py --fetch` 時查今年與去年 |
+| detail_views(ticker, refreshed_at, failed_steps) | 使用者查過詳情的個股：最近一次 `detail.py --fetch` 完成時間與失敗的來源（JSON）。儀表板「個股詳情」區塊的清單來源 |
+
+新聞（Google News RSS）不落庫。
+

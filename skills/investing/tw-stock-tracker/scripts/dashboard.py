@@ -9,19 +9,23 @@ import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import dashboard_data
+import dashboard_detail
 import dashboard_views
+from fetch_twse import TICKER_PATTERN
 
 HOST = "127.0.0.1"
 DEFAULT_PORT = 8765
 ALLOWED_HOSTNAMES = ("127.0.0.1", "localhost")
 HEALTH_PATH = "/healthz"
 HEALTH_MARKER = b"tw-stock-tracker-dashboard"   # open_dashboard.py 用來確認埠上是這個儀表板
+STOCK_PREFIX = "/stock/"
 
 
 def build_page(backtest_cache):
     conn = dashboard_data.connect_readonly()
     try:
         data = {"positions": dashboard_data.open_positions(conn),
+                "detail_views": dashboard_data.detail_views(conn),
                 "predictions": dashboard_data.open_predictions(conn),
                 "resolved": dashboard_data.resolved_summary(conn),
                 "backtests": dashboard_data.backtest_runs(conn, backtest_cache),
@@ -30,6 +34,14 @@ def build_page(backtest_cache):
     finally:
         conn.close()
     return dashboard_views.render_page(data)
+
+
+def build_detail_page(ticker):
+    conn = dashboard_data.connect_readonly()
+    try:
+        return dashboard_detail.render_detail(dashboard_data.stock_detail(conn, ticker))
+    finally:
+        conn.close()
 
 
 def make_handler(backtest_cache):
@@ -43,12 +55,20 @@ def make_handler(backtest_cache):
             if self.path == HEALTH_PATH:
                 self._send(200, "text/plain; charset=utf-8", HEALTH_MARKER)
                 return
-            if self.path not in ("/", "/index.html"):
+            ticker = self.path[len(STOCK_PREFIX):] if self.path.startswith(STOCK_PREFIX) else None
+            if ticker is not None and not TICKER_PATTERN.match(ticker):
+                self.send_error(404)
+                return
+            if ticker is None and self.path not in ("/", "/index.html"):
                 self.send_error(404)
                 return
             try:
-                body = build_page(backtest_cache).encode("utf-8")
+                page = build_detail_page(ticker) if ticker else build_page(backtest_cache)
+                body = page.encode("utf-8")
                 status = 200
+            except LookupError:
+                self.send_error(404)
+                return
             except Exception as error:  # noqa: BLE001 — 任何錯誤都要回成頁面，不能讓伺服器掛掉
                 self.log_error("render failed: %r", error)
                 body = ("<!doctype html><meta charset=utf-8><p>儀表板產生失敗：%s</p>"

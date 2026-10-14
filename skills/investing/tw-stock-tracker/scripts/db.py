@@ -1,4 +1,4 @@
-"""SQLite 儲存層：日線快取、除權息事件、預測記錄、校準門檻、估值與法人買賣超。
+"""SQLite 儲存層：日線快取、除權息事件、預測記錄、校準門檻、估值、法人買賣超與基本面（月營收、財報、法說會）。
 
 資料庫放家目錄（~/.stock-tracker/tracker.db），不進制度 repo：
 predictions 是個人交易判斷資料且持續增長，不該污染三 harness 共用的正本。
@@ -212,6 +212,63 @@ CREATE TABLE IF NOT EXISTS positions (
     status       TEXT NOT NULL DEFAULT 'open',  -- open / closed
     sell_date    TEXT,
     sell_price   REAL
+);
+
+-- 個股詳情（基本面）：只顯示、不參與評分。金額單位皆為千元（MOPS 原始單位）
+CREATE TABLE IF NOT EXISTS monthly_revenue (
+    ticker                TEXT NOT NULL,
+    month                 TEXT NOT NULL, -- yyyy-mm（營收所屬月份）
+    revenue               INTEGER NOT NULL,
+    prev_month_revenue    INTEGER,
+    last_year_revenue     INTEGER,       -- 去年同月
+    cum_revenue           INTEGER,       -- 當年累計至本月
+    cum_last_year_revenue INTEGER,
+    note                  TEXT,          -- 公司自填的增減原因，原文照存
+    source                TEXT NOT NULL, -- OPENAPI / MOPS_HTML
+    PRIMARY KEY (ticker, month)
+);
+
+CREATE TABLE IF NOT EXISTS revenue_fetches (
+    month   TEXT NOT NULL,
+    market  TEXT NOT NULL,               -- TWSE / TPEx
+    rows    INTEGER NOT NULL,            -- 只記有資料的月份；未公布不記，下次再試
+    PRIMARY KEY (month, market)
+);
+
+-- 財報為「年初至該季」累計數（台灣財報慣例），不是單季
+CREATE TABLE IF NOT EXISTS quarterly_financials (
+    ticker           TEXT NOT NULL,
+    year             INTEGER NOT NULL,   -- 西元年
+    quarter          INTEGER NOT NULL,
+    eps              REAL,               -- 基本每股盈餘（元），累計
+    revenue          INTEGER,
+    operating_income INTEGER,            -- 金融業無此欄，為 NULL
+    non_operating    INTEGER,
+    net_income       INTEGER,            -- 稅後淨利
+    published        TEXT,               -- 交易所出表日期
+    source           TEXT NOT NULL,      -- t187ap14_L / t187ap14_O
+    PRIMARY KEY (ticker, year, quarter)
+);
+
+CREATE TABLE IF NOT EXISTS investor_conferences (
+    ticker      TEXT NOT NULL,
+    date        TEXT NOT NULL,           -- 召開日（多日活動取首日）
+    end_date    TEXT,                    -- 多日活動的末日
+    time        TEXT NOT NULL DEFAULT '',
+    location    TEXT,
+    summary     TEXT,                    -- 擇要訊息原文；前瞻指引只能從這裡和簡報引用
+    slides_zh   TEXT,                    -- 簡報 PDF 網址
+    slides_en   TEXT,
+    website     TEXT,
+    fetched_at  TEXT NOT NULL,
+    PRIMARY KEY (ticker, date, time)
+);
+
+-- 使用者要求查看過的個股：儀表板「個股詳情」區塊的清單，由 detail.py --fetch 寫入
+CREATE TABLE IF NOT EXISTS detail_views (
+    ticker        TEXT PRIMARY KEY,
+    refreshed_at  TEXT NOT NULL,         -- 最近一次 --fetch 完成時間（本機時間 yyyy-mm-dd HH:MM）
+    failed_steps  TEXT NOT NULL DEFAULT '[]'  -- JSON：該次更新失敗的資料來源
 );
 
 CREATE INDEX IF NOT EXISTS idx_pred_status ON predictions(status, ticker);

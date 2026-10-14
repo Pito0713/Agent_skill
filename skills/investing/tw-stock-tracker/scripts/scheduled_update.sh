@@ -1,5 +1,5 @@
 #!/bin/bash
-# 盤後自動更新：對帳到期預測、更新 open 標的的估值、補最近幾週的每週估值。
+# 盤後自動更新：對帳到期預測、更新 open 標的的估值、補最近幾週的每週估值、更新月營收與最新一季財報。
 # 由 launchd 呼叫（設定見 SKILL.md「自動更新」），不需要 Claude session。
 # 錯過一次不會造成資料缺口：日線按月抓、對帳以歷史收盤計算，下次執行即補齊。
 
@@ -49,6 +49,9 @@ elif [ -n "$open_tickers" ]; then
 fi
 # 約 13 週：已抓過的週走快取不發請求，只補真正缺的週（如關機數週）；估值本就存全市場
 run_step fetch_valuation.py backfill --years 0.25
+# 基本面（個股詳情用）：OpenAPI 只給最新一期，每天抓才能逐季累積財報；已抓過的月份走快取
+run_step fetch_fundamentals.py latest
+run_step fetch_fundamentals.py backfill --months 13
 
 # 清理失敗只記警告：舊 log 刪不掉不代表資料沒更新
 find "$LOG_DIR" -name 'update-*.log' -mtime +"$LOG_RETENTION_DAYS" -delete 2>> "$LOG" \

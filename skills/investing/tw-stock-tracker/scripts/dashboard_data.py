@@ -16,6 +16,7 @@ import backtest_report
 import backtest_stats
 import calibrate
 import db
+import detail as stock_details
 import positions as holdings
 import score as scoring
 import track
@@ -72,6 +73,39 @@ def open_predictions(conn):
         output.append(item)
     # 依最新重算分數高到低；同分維持建立日順序（sort 穩定），算不出分數的排最後
     output.sort(key=lambda item: -item["now"]["final_score"] if item["now"] else float("inf"))
+    return output
+
+
+def stock_detail(conn, ticker):
+    """個股詳情（不抓新聞）。沒跑過 --fetch 的個股、或舊 DB 尚未建表（唯讀連線不會自動建）拋 LookupError。"""
+    tables = {r["name"] for r in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+    missing = {"monthly_revenue", "quarterly_financials", "investor_conferences", "detail_views"} - tables
+    if missing:
+        raise LookupError("尚未建立個股詳情資料")
+    # 只有使用者跑過 --fetch 的個股才有詳情頁，其他代號一律當不存在
+    if not conn.execute("SELECT 1 FROM detail_views WHERE ticker = ?", (ticker,)).fetchone():
+        raise LookupError("%s 沒有個股詳情" % ticker)
+    return stock_details.build(conn, ticker, include_news=False)
+
+
+def detail_views(conn):
+    """查過詳情的個股：更新時間與各資料來源的最新日期，最近更新的在前。舊 DB 沒這張表回空清單。"""
+    exists = conn.execute("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'detail_views'").fetchone()
+    if not exists:
+        return []
+    output = []
+    for row in conn.execute("SELECT * FROM detail_views ORDER BY refreshed_at DESC, ticker"):
+        ticker = row["ticker"]
+        financial = conn.execute("SELECT year, quarter FROM quarterly_financials WHERE ticker = ?"
+                                 " ORDER BY year DESC, quarter DESC LIMIT 1", (ticker,)).fetchone()
+        output.append({
+            "ticker": ticker, "name": scoring.lookup_name(conn, ticker), "refreshed_at": row["refreshed_at"],
+            "age_days": (date.today() - date.fromisoformat(row["refreshed_at"][:10])).days,
+            "failed_steps": json.loads(row["failed_steps"]),
+            "quote_date": conn.execute("SELECT MAX(date) FROM daily_quotes WHERE ticker = ?", (ticker,)).fetchone()[0],
+            "revenue_month": conn.execute("SELECT MAX(month) FROM monthly_revenue WHERE ticker = ?",
+                                          (ticker,)).fetchone()[0],
+            "financial_period": "%dQ%d" % (financial["year"], financial["quarter"]) if financial else None})
     return output
 
 
