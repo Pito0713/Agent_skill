@@ -16,6 +16,7 @@ import backtest_report
 import backtest_stats
 import calibrate
 import db
+import positions as holdings
 import score as scoring
 import track
 
@@ -69,7 +70,15 @@ def open_predictions(conn):
                                   else _unrealized_return(conn, row["ticker"], row["created_at"], now))
         item["name"] = scoring.lookup_name(conn, row["ticker"])
         output.append(item)
+    # 依最新重算分數高到低；同分維持建立日順序（sort 穩定），算不出分數的排最後
+    output.sort(key=lambda item: -item["now"]["final_score"] if item["now"] else float("inf"))
     return output
+
+
+def open_positions(conn):
+    """使用者持股現況；舊 DB 尚未建 positions 表（唯讀連線不會自動建）時回空清單。"""
+    exists = conn.execute("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'positions'").fetchone()
+    return holdings.open_positions(conn) if exists else []
 
 
 def resolved_summary(conn):

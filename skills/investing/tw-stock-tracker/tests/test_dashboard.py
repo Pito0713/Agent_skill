@@ -75,6 +75,28 @@ class DashboardTest(unittest.TestCase):
         self.assertEqual((item["due"], item["days_left"]), (due.isoformat(), (due - date.today()).days))
         self.assertAlmostEqual(item["unrealized"], (189 / 160 - 1) * 100, places=6)   # 最後一根收盤 189
 
+    def test_open_predictions_sorted_by_current_score_desc(self):
+        conn = db.connect(self.path)
+        conn.executemany("INSERT INTO daily_quotes (ticker, date, open, high, low, close, volume, is_exdiv,"
+                         " adj_close) VALUES ('2317', ?, ?, ?, ?, ?, 1000, 0, ?)",
+                         [(d, 200 - i, 201 - i, 199 - i, 200 - i, 200 - i) for i, d in enumerate(self.days)])
+        conn.execute("INSERT INTO predictions (created_at, ticker, horizon_days, close_at_pred, adj_close_at_pred,"
+                     " score, s_trend, s_bias, s_support, s_volume, s_macd, s_rsi, signal, thesis, status)"
+                     " VALUES (?, '2317', 30, 140, 140, 60, 0, 0, 0, 0, 0, 0, '偏多', '', 'open')", (self.days[50],))
+        conn.execute("INSERT INTO predictions (created_at, ticker, horizon_days, close_at_pred, adj_close_at_pred,"
+                     " score, s_trend, s_bias, s_support, s_volume, s_macd, s_rsi, signal, thesis, status)"
+                     " VALUES (?, '9999', 30, 1, 1, 60, 0, 0, 0, 0, 0, 0, '偏多', '', 'open')", (self.days[40],))
+        conn.commit()
+        conn.close()
+        conn = dashboard_data.connect_readonly()
+        items = dashboard_data.open_predictions(conn)
+        conn.close()
+        scores = [i["now"]["final_score"] for i in items if i["now"]]
+        self.assertEqual(len(scores), 2)
+        self.assertNotEqual(scores[0], scores[1])          # 測資要能區分排序，同分就測不到
+        self.assertEqual(scores, sorted(scores, reverse=True))
+        self.assertEqual(items[-1]["ticker"], "9999")      # 無日線、算不出分數者排最後
+
     def test_unknown_exdiv_in_window_hides_unrealized_return(self):
         conn = db.connect(self.path)
         conn.execute("UPDATE daily_quotes SET is_exdiv = 1 WHERE date = ?", (self.days[70],))

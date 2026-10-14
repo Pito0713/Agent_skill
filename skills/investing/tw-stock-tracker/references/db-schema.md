@@ -211,3 +211,20 @@
 
 上市除權息看 `MI_INDEX`「漲跌(+/-)」的 X 標記，金額由 `TWT48U_ALL`／`TWT49U` 補（同逐檔流程）。
 
+
+---
+
+## positions — 使用者實際持股
+
+與 predictions 完全分開，不進對帳、校準、回測。由 `positions.py` 寫入。
+
+| 欄位 | 說明 |
+|------|------|
+| buy_date / buy_price / shares | 使用者輸入的成交日、成交價（原始價）、股數 |
+| basis_date / basis_close | 停損取自哪一根日線（買進日當天或之前最近一根）與該根原始收盤 |
+| stop_loss | 買進時固定的規則停損，換成 basis_date 的原始價；封鎖時 NULL |
+| score / signal | 買進時評分，只供對照 |
+| status | open / closed；closed 時填 sell_date、sell_price |
+
+損益與停損比較用 basis_date 那根日線現在的還原比例（adj_close / close）換到現行基準；
+持有期間有金額未知的除權息時不給數字。

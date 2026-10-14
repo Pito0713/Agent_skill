@@ -21,7 +21,8 @@ HEALTH_MARKER = b"tw-stock-tracker-dashboard"   # open_dashboard.py 用來確認
 def build_page(backtest_cache):
     conn = dashboard_data.connect_readonly()
     try:
-        data = {"predictions": dashboard_data.open_predictions(conn),
+        data = {"positions": dashboard_data.open_positions(conn),
+                "predictions": dashboard_data.open_predictions(conn),
                 "resolved": dashboard_data.resolved_summary(conn),
                 "backtests": dashboard_data.backtest_runs(conn, backtest_cache),
                 "schedule": dashboard_data.schedule_status(),

@@ -196,6 +196,24 @@ CREATE TABLE IF NOT EXISTS securities (
     industry_code TEXT                   -- 上市 t187ap03_L、上櫃 t187ap03_O，兩市場共用同一套代碼
 );
 
+-- 使用者實際持股：與 predictions 分開，不進對帳、校準與回測統計
+CREATE TABLE IF NOT EXISTS positions (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    ticker       TEXT NOT NULL,
+    buy_date     TEXT NOT NULL,          -- 使用者輸入的成交日
+    buy_price    REAL NOT NULL,          -- 使用者輸入的成交價（原始價）
+    shares       INTEGER NOT NULL,       -- 股數（1 張 = 1000 股）
+    basis_date   TEXT NOT NULL,          -- 停損取自哪一根日線（buy_date 當天或之前最近一根）
+    basis_close  REAL NOT NULL,          -- 該根原始收盤，與 basis_date 一起用來換算之後的還原基準
+    stop_loss    REAL,                   -- 買進時固定的規則停損（原始價）；硬規則封鎖時 NULL
+    score        INTEGER NOT NULL,       -- 買進時評分，只供對照
+    signal       TEXT NOT NULL,
+    note         TEXT,
+    status       TEXT NOT NULL DEFAULT 'open',  -- open / closed
+    sell_date    TEXT,
+    sell_price   REAL
+);
+
 CREATE INDEX IF NOT EXISTS idx_pred_status ON predictions(status, ticker);
 """
 
