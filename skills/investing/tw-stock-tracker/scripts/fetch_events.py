@@ -29,7 +29,7 @@ CONFERENCE_URL = "https://mopsov.twse.com.tw/mops/web/ajax_t100sb02_1"
 SLIDES_URL = "https://mopsov.twse.com.tw/nas/STR/%s"
 NEWS_URL = "https://news.google.com/rss/search?q=%s&hl=zh-TW&gl=TW&ceid=TW:zh-Hant"
 NEWS_LIMIT = 10
-NEWS_MAX_AGE_DAYS = 30
+NEWS_MAX_AGE_DAYS = 14
 CONFERENCE_ROW = re.compile(r"<tr class='(?:even|odd)' data-type='body'\s*>(.*?)</tr>", re.S)
 CELL = re.compile(r"<td[^>]*>(.*?)</td>", re.S)
 PDF_NAME = re.compile(r"fileName\.value=\"([0-9A-Za-z_.-]+\.pdf)\"")

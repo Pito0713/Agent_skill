@@ -43,6 +43,7 @@ RSS = """<?xml version="1.0" encoding="UTF-8"?><rss><channel>
 <source url="x">來源甲</source></item>
 <item><title>舊的</title><link>https://news.example/2</link><pubDate>Tue, 01 Jul 2026 08:00:00 GMT</pubDate></item>
 <item><title>較早</title><link>https://news.example/3</link><pubDate>Mon, 12 Oct 2026 08:00:00 GMT</pubDate></item>
+<item><title>超過兩週</title><link>https://news.example/4</link><pubDate>Thu, 24 Sep 2026 08:00:00 GMT</pubDate></item>
 </channel></rss>"""
 
 
