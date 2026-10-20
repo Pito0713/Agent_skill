@@ -83,6 +83,31 @@ def render_positions(items):
 STALE_DETAIL_DAYS = 7
 
 
+def _closed_row(item):
+    pnl = '<span class="%s">%s（%s%%）</span>' % (_pct_class(item["pnl"]), _num(item["pnl"], "%.0f", True),
+                                                 _num(item["return_pct"], signed=True))
+    if item["had_exdiv"]:
+        pnl += ' <span class=warn title="持有期間有除權息，股利不在成交價差內">未含股利</span>'
+    cells = ["%s %s" % (escape(item["ticker"]), escape(item["name"] or "")),
+             "%s → %s" % (escape(item["buy_date"]), escape(item["sell_date"])), _shares_text(item["shares"]),
+             _num(item["buy_price"]), _num(item["sell_price"]), _num(item["amount"], "%.0f"),
+             _num(item["proceeds"], "%.0f"), pnl]
+    return "<tr>%s</tr>" % "".join(
+        '<td class="num">%s</td>' % c if i in (3, 4, 5, 6, 7) else "<td>%s</td>" % c for i, c in enumerate(cells))
+
+
+def render_closed_positions(items):
+    if not items:
+        return ""
+    total = sum(item["pnl"] for item in items)
+    total_row = ('<tr><td colspan=7><b>合計（%d 筆）</b></td><td class="num"><b class="%s">%s</b></td></tr>'
+                 % (len(items), _pct_class(total), _num(total, "%.0f", True)))
+    headers = ["標的", "持有期間", "數量", "買進價", "賣出價", "進場金額", "賣出金額", "已實現損益"]
+    return ('<section class="card"><h2>已平倉</h2>%s<p class="note">以實際成交價計算，未扣手續費與證交稅；'
+            "持有期間的股利不在成交價差內，有除權息者標「未含股利」。</p></section>"
+            % _table(headers, [_closed_row(i) for i in items] + [total_row]))
+
+
 def render_detail_views(items):
     if not items:
         return ('<section class="card"><h2>個股詳情</h2><p class="note">尚未查過個股詳情。'
@@ -209,7 +234,8 @@ def render_page(data):
                  escape(fresh["latest_valuation"] or "–"), _num(fresh["db_mb"], "%.1f")))
     banner = ('<section class="card banner"><b>評分是技術面狀態描述，不是選股訊號。</b>'
               "兩組 3 年回測顯示總分沒有可證實的預測力（ADR-026）；本頁不構成投資建議。</section>")
-    sections = [render_positions(data.get("positions", [])), render_predictions(data["predictions"]),
+    sections = [render_positions(data.get("positions", [])), render_closed_positions(data.get("closed_positions", [])),
+                render_predictions(data["predictions"]),
                 render_resolved(data["resolved"]), render_backtests(data["backtests"]), render_schedule(data["schedule"]),
                 render_detail_views(data.get("detail_views", []))]
     return ("<!doctype html><html lang=zh-Hant><head><meta charset=utf-8>"

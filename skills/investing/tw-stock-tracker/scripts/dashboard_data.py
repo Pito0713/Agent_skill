@@ -109,10 +109,19 @@ def detail_views(conn):
     return output
 
 
+def _has_positions_table(conn):
+    # 舊 DB 尚未建 positions 表時，唯讀連線不會自動建
+    return conn.execute("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'positions'").fetchone()
+
+
 def open_positions(conn):
-    """使用者持股現況；舊 DB 尚未建 positions 表（唯讀連線不會自動建）時回空清單。"""
-    exists = conn.execute("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'positions'").fetchone()
-    return holdings.open_positions(conn) if exists else []
+    """使用者持股現況；沒有 positions 表時回空清單。"""
+    return holdings.open_positions(conn) if _has_positions_table(conn) else []
+
+
+def closed_positions(conn):
+    """已平倉紀錄；沒有 positions 表時回空清單。"""
+    return holdings.closed_positions(conn) if _has_positions_table(conn) else []
 
 
 def resolved_summary(conn):

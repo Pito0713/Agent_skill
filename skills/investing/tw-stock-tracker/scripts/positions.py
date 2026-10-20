@@ -4,6 +4,8 @@
   python3 positions.py close <id> --price 13.0 [--date 2026-10-20]
   python3 positions.py list [--all]
 
+已平倉的已實現損益以原始成交價計算；持有期間有除權息時只標記未含股利，不推估股利金額。
+
 停損在買進時固定：取 buy_date 當天（尚無當天日線時取之前最近一根）的評分停損，之後不隨重算移動。
 狀態警示只描述規則觸發的狀態，不產生目標價或出場價（見 SKILL.md「已知限制 6」）。
 持股與 predictions 完全分開，不進對帳、校準或回測統計。
@@ -126,6 +128,27 @@ def _state_alerts(row, now):
 def open_positions(conn):
     rows = conn.execute("SELECT * FROM positions WHERE status = 'open' ORDER BY buy_date, id").fetchall()
     return [position_status(conn, row) for row in rows]
+
+
+def closed_positions(conn):
+    """已平倉逐筆，賣出日新到舊：已實現損益以原始成交價計算（使用者實際進出的金額）。
+
+    持有期間有除權息時，股利不在成交價差裡，標記 had_exdiv 提醒損益未含股利，不自行推估金額。
+    """
+    output = []
+    for row in conn.execute("SELECT * FROM positions WHERE status = 'closed' ORDER BY sell_date DESC, id DESC"):
+        amount = row["buy_price"] * row["shares"]
+        proceeds = row["sell_price"] * row["shares"]
+        had_exdiv = conn.execute(
+            "SELECT 1 FROM daily_quotes WHERE ticker = ? AND date > ? AND date <= ? AND is_exdiv = 1",
+            (row["ticker"], row["buy_date"], row["sell_date"])).fetchone() is not None
+        output.append({"id": row["id"], "ticker": row["ticker"], "name": scoring.lookup_name(conn, row["ticker"]),
+                       "buy_date": row["buy_date"], "buy_price": row["buy_price"], "shares": row["shares"],
+                       "sell_date": row["sell_date"], "sell_price": row["sell_price"], "amount": amount,
+                       "proceeds": proceeds, "pnl": proceeds - amount,
+                       "return_pct": (row["sell_price"] / row["buy_price"] - 1) * 100,
+                       "stop_loss": row["stop_loss"], "had_exdiv": had_exdiv})
+    return output
 
 
 def cmd_add(conn, args):

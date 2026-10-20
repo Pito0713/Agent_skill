@@ -125,6 +125,33 @@ class PositionsTest(unittest.TestCase):
             positions.close_position(self.conn, position_id, 160.0, self.days[-1])
         self.assertEqual(positions.open_positions(self.conn), [])
 
+    def test_closed_positions_realized_pnl_newest_first(self):
+        self.load(rising_rows(self.days))
+        first, _, _ = self.add(price=150.0, shares=350)
+        second, _, _ = self.add(price=100.0, shares=1000, buy_index=65)
+        positions.close_position(self.conn, first, 140.0, self.days[80])
+        positions.close_position(self.conn, second, 110.0, self.days[85])
+        items = positions.closed_positions(self.conn)
+        self.assertEqual([i["id"] for i in items], [second, first])
+        self.assertAlmostEqual(items[1]["pnl"], -3500.0)
+        self.assertAlmostEqual(items[1]["return_pct"], (140 / 150 - 1) * 100)
+        self.assertFalse(items[0]["had_exdiv"])
+        page = dashboard.build_page({})
+        self.assertLess(page.index("我的持股"), page.index("已平倉"))
+        self.assertIn("+6500", page)                      # 合計 = +10000 − 3500
+
+    def test_closed_position_across_exdiv_marked_without_dividend(self):
+        self.load(rising_rows(self.days, exdiv_index=80, cash=40.0), dividend=(self.days[80], 40.0))
+        position_id, _, _ = self.add(price=170.0)
+        positions.close_position(self.conn, position_id, 150.0, self.days[85])
+        self.assertTrue(positions.closed_positions(self.conn)[0]["had_exdiv"])
+        self.assertIn("未含股利", dashboard.build_page({}))
+
+    def test_no_closed_positions_hides_section(self):
+        self.load(rising_rows(self.days))
+        self.add()
+        self.assertNotIn("<h2>已平倉", dashboard.build_page({}))
+
     def test_dashboard_shows_positions_first_and_escapes_names(self):
         self.load(rising_rows(self.days))
         self.conn.execute("INSERT INTO stock_names VALUES ('2330', ?, 'TWSE', ?)", (EVIL, self.days[-1]))
