@@ -29,6 +29,12 @@ class TpexParseTest(unittest.TestCase):
         self.assertEqual(rows[0]["volume"], 13402000)
         self.assertEqual(rows[0]["date"], "2026-09-01")
 
+    def test_annotated_date_drops_trailing_mark(self):
+        rows, _ = fetch_tpex.parse_days([
+            tpex_row("114/10/20*", "132.50", "137.00", "132.00", "136.50", "4.00", "100"),
+        ])
+        self.assertEqual(rows[0]["date"], "2025-10-20")
+
     def test_normal_day_is_not_flagged_as_exdiv(self):
         rows, events = fetch_tpex.parse_days([
             tpex_row("115/09/01", "94.40", "97.60", "94.10", "95.20", "0.40", "100"),

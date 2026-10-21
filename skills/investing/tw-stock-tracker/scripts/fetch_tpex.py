@@ -47,9 +47,12 @@ def _to_float(raw):
 
 
 def roc_to_iso(roc_date):
-    """民國日期 '115/09/01' -> '2026-09-01'。"""
+    """民國日期 '115/09/01' -> '2026-09-01'。
+
+    TPEx 會在部分日期後加註記號（如 '114/10/20*'），只取日期本身，否則會寫入無法解析的日期。
+    """
     year, month, day = roc_date.strip().split("/")
-    return "%04d-%s-%s" % (int(year) + 1911, month, day)
+    return "%04d-%s-%s" % (int(year) + 1911, month, day.rstrip("* "))
 
 
 def parse_days(raw_rows, prev_close=None):
