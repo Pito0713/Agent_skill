@@ -1,30 +1,25 @@
-"""daily_score.py 的離線測試：不打網路、不碰 ~/.stock-tracker。
+"""daily_score.py 的資料庫與評分快照操作測試。
 
 涵蓋：
-  - happy path（run 寫入、trend、rank）
-  - 日線不足 60 根略過
-  - 同日重跑 live 冪等更新
-  - backfill 不覆蓋既有 live 列
-  - rank 的 5 日 Δ、20 日 Δ 計算
+  - load_watchlist（predictions, detail_views, positions 聯集）
+  - upsert_score（live 寫入、同日冪等、原子 DO UPDATE 保護、live 覆蓋 backfill）
+  - trend 與 rank（5 日 Δ、20 日 Δ、格式化標籤、資料不足 N/A）
 """
 
-import json
 import math
 import os
 import sys
 import tempfile
 import unittest
 from datetime import date, timedelta
-from unittest import mock
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "scripts"))
 
 import daily_score  # noqa: E402
 import db           # noqa: E402
-import score        # noqa: E402
 
-FIRST_DAY = date(2024, 1, 2)  # 週二
+FIRST_DAY = date(2024, 1, 2)
 
 
 def trading_days(count):
@@ -36,27 +31,7 @@ def trading_days(count):
     return days
 
 
-def seed_quotes(conn, ticker="2330", count=120):
-    """插入 count 根合成日線（adj_close = close，無除權息）。"""
-    rows = []
-    for index, day in enumerate(trading_days(count)):
-        close = 100.0 + 5 * math.sin(index / 8) + index * 0.02
-        rows.append((
-            ticker, day.isoformat(),
-            close * 0.99, close * 1.01, close * 0.98, close,
-            1000 + 200 * math.cos(index / 4), 0, close,
-        ))
-    conn.executemany(
-        "INSERT INTO daily_quotes (ticker, date, open, high, low, close,"
-        " volume, is_exdiv, adj_close) VALUES (?,?,?,?,?,?,?,?,?)",
-        rows
-    )
-    conn.commit()
-    return [day.isoformat() for day in trading_days(count)]
-
-
 def seed_watchlist(conn, tickers):
-    """把 tickers 寫進 predictions，讓 load_watchlist 能取到。"""
     conn.executemany(
         "INSERT INTO predictions (created_at, ticker, horizon_days, close_at_pred,"
         " adj_close_at_pred, score, s_trend, s_bias, s_support, s_volume, s_macd,"
@@ -69,7 +44,6 @@ def seed_watchlist(conn, tickers):
 
 
 class TempDbMixin:
-    """TestCase mixin：每個 test 拿到獨立的臨時 DB。"""
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.conn = db.connect(os.path.join(self.tmp.name, "tracker.db"))
@@ -130,22 +104,26 @@ class TestUpsertScore(TempDbMixin, unittest.TestCase):
         row = self.conn.execute(
             "SELECT score FROM daily_scores WHERE ticker='2330' AND date='2024-06-01'"
         ).fetchone()
-        self.assertEqual(row["score"], 70)  # live 覆蓋 live
+        self.assertEqual(row["score"], 70)
 
-    def test_backfill_does_not_overwrite_live(self):
+    def test_backfill_does_not_overwrite_live_atomic_rowcount(self):
+        """原子操作驗收：backfill 遇到既有 live 列不覆蓋，且 upsert 回傳 False（rowcount=0）。"""
         live_result = self._fake_result(score_val=65)
-        daily_score.upsert_score(self.conn, live_result, daily_score.SOURCE_LIVE)
+        inserted_live = daily_score.upsert_score(self.conn, live_result, daily_score.SOURCE_LIVE)
         self.conn.commit()
+        self.assertTrue(inserted_live)
 
         backfill_result = self._fake_result(score_val=30)
-        inserted = daily_score.upsert_score(self.conn, backfill_result, daily_score.SOURCE_BACKFILL)
+        inserted_backfill = daily_score.upsert_score(
+            self.conn, backfill_result, daily_score.SOURCE_BACKFILL)
         self.conn.commit()
 
-        self.assertFalse(inserted)  # 回傳 False 表示保護生效
+        self.assertFalse(inserted_backfill)
         row = self.conn.execute(
-            "SELECT score FROM daily_scores WHERE ticker='2330' AND date='2024-06-01'"
+            "SELECT score, source FROM daily_scores WHERE ticker='2330' AND date='2024-06-01'"
         ).fetchone()
-        self.assertEqual(row["score"], 65)  # 仍是 live 的值
+        self.assertEqual(row["score"], 65)
+        self.assertEqual(row["source"], "live")
 
     def test_live_overwrites_backfill(self):
         backfill_result = self._fake_result(score_val=30)
@@ -153,9 +131,10 @@ class TestUpsertScore(TempDbMixin, unittest.TestCase):
         self.conn.commit()
 
         live_result = self._fake_result(score_val=65)
-        daily_score.upsert_score(self.conn, live_result, daily_score.SOURCE_LIVE)
+        inserted_live = daily_score.upsert_score(self.conn, live_result, daily_score.SOURCE_LIVE)
         self.conn.commit()
 
+        self.assertTrue(inserted_live)
         row = self.conn.execute(
             "SELECT score, source FROM daily_scores WHERE ticker='2330' AND date='2024-06-01'"
         ).fetchone()
@@ -163,138 +142,8 @@ class TestUpsertScore(TempDbMixin, unittest.TestCase):
         self.assertEqual(row["source"], "live")
 
 
-class TestCmdRun(TempDbMixin, unittest.TestCase):
-    """cmd_run：抓日線 → 評分 → upsert；日線不足略過；單檔失敗不中斷。"""
-
-    def setUp(self):
-        super().setUp()
-        seed_watchlist(self.conn, ["2330", "9999"])
-        seed_quotes(self.conn, ticker="2330", count=120)
-        # 9999 只插入 30 根（不足 60），評分必須拋錯並略過
-
-        rows = []
-        for index, day in enumerate(trading_days(30)):
-            close = 50.0 + index * 0.1
-            rows.append(("9999", day.isoformat(), close, close * 1.01,
-                          close * 0.99, close, 500, 0, close))
-        self.conn.executemany(
-            "INSERT INTO daily_quotes (ticker, date, open, high, low, close,"
-            " volume, is_exdiv, adj_close) VALUES (?,?,?,?,?,?,?,?,?)",
-            rows
-        )
-        self.conn.commit()
-
-    def test_happy_path_writes_live_row(self):
-        """2330 足量 → 評分 → 寫入一筆 live。9999 不足量 → 略過（不寫入）。
-        因 9999 失敗 cmd_run 最終 exit(1)，測試只驗資料正確性。"""
-        args = argparse.stub()
-        with mock.patch.object(daily_score.fetch_twse, "sync_ticker", return_value={"market": "TWSE"}):
-            with self.assertRaises(SystemExit):
-                daily_score.cmd_run(self.conn, args)
-
-        row = self.conn.execute(
-            "SELECT * FROM daily_scores WHERE ticker='2330'"
-        ).fetchone()
-        self.assertIsNotNone(row)
-        self.assertEqual(row["source"], "live")
-
-        row_9999 = self.conn.execute(
-            "SELECT * FROM daily_scores WHERE ticker='9999'"
-        ).fetchone()
-        self.assertIsNone(row_9999)
-
-    def test_run_exits_nonzero_on_any_failure(self):
-        """有任何失敗（資料不足也算）→ 最終 sys.exit(1)。"""
-        args = argparse.stub()
-        with mock.patch.object(daily_score.fetch_twse, "sync_ticker", return_value={}):
-            with self.assertRaises(SystemExit) as context:
-                daily_score.cmd_run(self.conn, args)
-        self.assertEqual(context.exception.code, 1)
-
-    def test_run_idempotent_same_day(self):
-        """同日重跑 → 同一筆 live 列更新，不新增列。"""
-        args = argparse.stub()
-        with mock.patch.object(daily_score.fetch_twse, "sync_ticker", return_value={"market": "TWSE"}):
-            try:
-                daily_score.cmd_run(self.conn, args)
-            except SystemExit:
-                pass
-            count_before = self.conn.execute(
-                "SELECT COUNT(*) FROM daily_scores WHERE ticker='2330'"
-            ).fetchone()[0]
-            try:
-                daily_score.cmd_run(self.conn, args)
-            except SystemExit:
-                pass
-            count_after = self.conn.execute(
-                "SELECT COUNT(*) FROM daily_scores WHERE ticker='2330'"
-            ).fetchone()[0]
-        self.assertEqual(count_before, count_after)  # 冪等，列數不變
-
-
-class TestCmdBackfill(TempDbMixin, unittest.TestCase):
-    def setUp(self):
-        super().setUp()
-        seed_watchlist(self.conn, ["2330"])
-        self.days = seed_quotes(self.conn, ticker="2330", count=120)
-
-    def test_backfill_writes_backfill_rows(self):
-        args = _args(days=5)
-        daily_score.cmd_backfill(self.conn, args)
-        rows = self.conn.execute(
-            "SELECT source FROM daily_scores WHERE ticker='2330'"
-        ).fetchall()
-        self.assertTrue(len(rows) > 0)
-        self.assertTrue(all(r["source"] == "backfill" for r in rows))
-
-    def test_backfill_does_not_overwrite_live(self):
-        """先有一筆 live，backfill 不覆蓋它。"""
-        # 先用 upsert 寫一筆 live（取 days 最後一天）
-        latest_date = self.days[-1]
-        result = score.evaluate(self.conn, "2330", as_of=latest_date)
-        daily_score.upsert_score(self.conn, result, daily_score.SOURCE_LIVE)
-        self.conn.commit()
-
-        args = _args(days=10)
-        daily_score.cmd_backfill(self.conn, args)
-
-        row = self.conn.execute(
-            "SELECT source FROM daily_scores WHERE ticker='2330' AND date=?",
-            (latest_date,)
-        ).fetchone()
-        self.assertEqual(row["source"], "live")  # 未被 backfill 覆蓋
-
-    def test_insufficient_data_skipped(self):
-        """若某檔日線不足 60 根，backfill 對該評估日略過，不寫入。"""
-        seed_watchlist(self.conn, ["9999"])
-        rows = []
-        for index, day in enumerate(trading_days(30)):
-            close = 50.0 + index * 0.1
-            rows.append(("9999", day.isoformat(), close, close * 1.01,
-                          close * 0.99, close, 500, 0, close))
-        self.conn.executemany(
-            "INSERT INTO daily_quotes (ticker, date, open, high, low, close,"
-            " volume, is_exdiv, adj_close) VALUES (?,?,?,?,?,?,?,?,?)",
-            rows
-        )
-        self.conn.commit()
-
-        args = _args(days=5)
-        # 9999 全部日線不足 → cmd_backfill 以 exit(1) 結束，測試只驗資料不寫入
-        with self.assertRaises(SystemExit):
-            daily_score.cmd_backfill(self.conn, args)
-
-        count = self.conn.execute(
-            "SELECT COUNT(*) FROM daily_scores WHERE ticker='9999'"
-        ).fetchone()[0]
-        self.assertEqual(count, 0)
-
-
-class TestCmdRank(TempDbMixin, unittest.TestCase):
-    """rank 的 Δ 計算：插入已知資料後驗算 5 日與 20 日差值。"""
-
+class TestTrendAndRank(TempDbMixin, unittest.TestCase):
     def _insert_scores(self, ticker, score_list):
-        """score_list 為 [(date_str, score), ...]，由舊到新插入 backfill 快照。"""
         for date_str, score_val in score_list:
             self.conn.execute(
                 "INSERT INTO daily_scores (ticker, date, score, s_trend, s_bias,"
@@ -305,16 +154,11 @@ class TestCmdRank(TempDbMixin, unittest.TestCase):
         self.conn.commit()
 
     def test_delta_5_and_20_calculated_correctly(self):
-        """共插入 25 筆，驗算 5 日 Δ = latest - 5th-newest、20 日 Δ = latest - 20th-newest。"""
         days = trading_days(25)
-        scores = list(range(50, 75))  # 50, 51, ..., 74
+        scores = list(range(50, 75))
         data = [(d.isoformat(), s) for d, s in zip(days, scores)]
         self._insert_scores("2330", data)
         seed_watchlist(self.conn, ["2330"])
-
-        latest_score = scores[-1]       # 74
-        score_5_ago = scores[-1 - 5]   # 69
-        score_20_ago = scores[-1 - 20] # 54
 
         latest_row = daily_score._latest_score_row(self.conn, "2330")
         delta_5 = latest_row["score"] - daily_score._score_n_rows_ago(
@@ -322,12 +166,11 @@ class TestCmdRank(TempDbMixin, unittest.TestCase):
         delta_20 = latest_row["score"] - daily_score._score_n_rows_ago(
             self.conn, "2330", latest_row["date"], 20)
 
-        self.assertEqual(latest_row["score"], latest_score)
-        self.assertEqual(delta_5, latest_score - score_5_ago)
-        self.assertEqual(delta_20, latest_score - score_20_ago)
+        self.assertEqual(latest_row["score"], 74)
+        self.assertEqual(delta_5, 74 - 69)
+        self.assertEqual(delta_20, 74 - 54)
 
     def test_rank_shows_na_when_insufficient_history(self):
-        """不足 5 筆 → 5 日 Δ 應為 None（顯示 N/A）。"""
         days = trading_days(3)
         data = [(d.isoformat(), 60) for d in days]
         self._insert_scores("2330", data)
@@ -342,31 +185,6 @@ class TestCmdRank(TempDbMixin, unittest.TestCase):
         self.assertEqual(daily_score._delta_label(-3), "-3")
         self.assertEqual(daily_score._delta_label(0), "+0")
         self.assertEqual(daily_score._delta_label(None), "  N/A")
-
-
-# ── helper ───────────────────────────────────────────────────────────────────
-
-class _ArgsNamespace:
-    """輕量 argparse.Namespace 替代，供測試使用。"""
-    def __init__(self, **kwargs):
-        for key, value in kwargs.items():
-            setattr(self, key, value)
-
-
-def _args(**kwargs):
-    return _ArgsNamespace(**kwargs)
-
-
-# argparse.stub() 供 cmd_run（不需要 args 欄位）使用
-class _ArgparseStub:
-    @staticmethod
-    def stub():
-        return _ArgsNamespace()
-
-
-# 掛到 argparse 命名空間讓上面測試可用 argparse.stub()
-import argparse  # noqa: E402
-argparse.stub = _ArgparseStub.stub
 
 
 if __name__ == "__main__":

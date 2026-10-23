@@ -12,7 +12,7 @@
 import argparse
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import datetime
 
 import db
 import fetch_twse
@@ -45,16 +45,12 @@ def _computed_at_now():
 
 
 def upsert_score(conn, result, source):
-    """將評分結果 upsert 至 daily_scores。live 可覆蓋 backfill；同 source 同日重跑視為冪等更新。"""
-    existing = conn.execute(
-        "SELECT source FROM daily_scores WHERE ticker = ? AND date = ?",
-        (result["ticker"], result["date"])
-    ).fetchone()
+    """將評分結果 upsert 至 daily_scores。
 
-    if existing and existing["source"] == SOURCE_LIVE and source == SOURCE_BACKFILL:
-        return False  # live 不被 backfill 覆蓋
-
-    conn.execute(
+    原子操作保護 live 快照不被 backfill 覆蓋；同 source 同日重跑視為冪等更新。
+    回傳 True 表示有寫入/更新，False 表示受 live 保護未寫入。
+    """
+    cursor = conn.execute(
         "INSERT INTO daily_scores"
         " (ticker, date, score, s_trend, s_bias, s_support, s_volume, s_macd, s_rsi,"
         "  signal, hard_rules, source, computed_at)"
@@ -64,7 +60,8 @@ def upsert_score(conn, result, source):
         "  s_support=excluded.s_support, s_volume=excluded.s_volume,"
         "  s_macd=excluded.s_macd, s_rsi=excluded.s_rsi,"
         "  signal=excluded.signal, hard_rules=excluded.hard_rules,"
-        "  source=excluded.source, computed_at=excluded.computed_at",
+        "  source=excluded.source, computed_at=excluded.computed_at"
+        " WHERE NOT (daily_scores.source = 'live' AND excluded.source = 'backfill')",
         (result["ticker"], result["date"],
          result["final_score"],
          result["parts"]["trend"], result["parts"]["bias"],
@@ -74,15 +71,10 @@ def upsert_score(conn, result, source):
          json.dumps(result["hard_rules"], ensure_ascii=False),
          source, _computed_at_now())
     )
-    return True
+    return cursor.rowcount > 0
 
 
 # ── run ──────────────────────────────────────────────────────────────────────
-
-def _sync_ticker_quietly(conn, ticker):
-    """抓最新日線（上市走 TWSE、上櫃走 TPEx），回傳摘要或拋出 RuntimeError。"""
-    return fetch_twse.sync_ticker(conn, ticker)
-
 
 def cmd_run(conn, _args):
     """抓日線 → 評最新交易日 → upsert（source=live）。單檔失敗不中斷整批。"""
@@ -92,17 +84,23 @@ def cmd_run(conn, _args):
 
     for ticker in tickers:
         try:
-            _sync_ticker_quietly(conn, ticker)
+            fetch_twse.sync_ticker(conn, ticker)
+            rows, _ = scoring.load_series(conn, ticker)
+            if len(rows) < scoring.MIN_BARS:
+                print("[skip] %s: 日線不足 %d 根（現有 %d 根），略過" % (
+                    ticker, scoring.MIN_BARS, len(rows)), file=sys.stderr)
+                skip_count += 1
+                continue
             result = scoring.evaluate(conn, ticker)
             upsert_score(conn, result, SOURCE_LIVE)
             conn.commit()
             success_count += 1
-        except RuntimeError as error:
-            print("[skip] %s: %s" % (ticker, error), file=sys.stderr)
-            skip_count += 1
+        except (RuntimeError, ValueError, KeyError) as error:
+            print("[fail] %s: %s" % (ticker, error), file=sys.stderr)
             fail_tickers.append(ticker)
 
-    print("完成：成功 %d、略過 %d" % (success_count, skip_count))
+    print("完成：成功 %d、資料不足略過 %d、失敗 %d" % (
+        success_count, skip_count, len(fail_tickers)))
     if fail_tickers:
         print("失敗清單：%s" % ", ".join(fail_tickers), file=sys.stderr)
         sys.exit(1)
@@ -111,7 +109,7 @@ def cmd_run(conn, _args):
 # ── backfill ─────────────────────────────────────────────────────────────────
 
 def _trading_days_before(conn, days):
-    """從 daily_scores 現有最早日期往前回推，不依賴網路；也可從 daily_quotes 取得。"""
+    """從 daily_quotes 取最近 days 個交易日（由舊到新），供回補使用。"""
     rows = conn.execute(
         "SELECT DISTINCT date FROM daily_quotes ORDER BY date DESC LIMIT ?",
         (days,)
@@ -128,25 +126,29 @@ def cmd_backfill(conn, args):
         return
 
     print("回補：%d 檔 × %d 個交易日  %s" % (len(tickers), len(as_of_dates), DISCLAIMER))
-    written, skipped, fail_tickers = 0, 0, []
+    success_count, skip_count, fail_count = 0, 0, 0
+    fail_tickers = []
 
     for ticker in tickers:
         for as_of in as_of_dates:
             try:
+                rows, _ = scoring.load_series(conn, ticker, as_of=as_of)
+                if len(rows) < scoring.MIN_BARS:
+                    skip_count += 1
+                    continue
                 result = scoring.evaluate(conn, ticker, as_of=as_of)
                 inserted = upsert_score(conn, result, SOURCE_BACKFILL)
                 if inserted:
-                    written += 1
-                else:
-                    skipped += 1
-            except RuntimeError as error:
-                print("[skip] %s %s: %s" % (ticker, as_of, error), file=sys.stderr)
-                skipped += 1
+                    success_count += 1
+            except (RuntimeError, ValueError, KeyError) as error:
+                print("[fail] %s %s: %s" % (ticker, as_of, error), file=sys.stderr)
+                fail_count += 1
                 if ticker not in fail_tickers:
                     fail_tickers.append(ticker)
         conn.commit()
 
-    print("回補完成：寫入 %d 筆、略過 %d 筆（含 live 保護與資料不足）" % (written, skipped))
+    print("回補完成：成功 %d、資料不足略過 %d、失敗 %d" % (
+        success_count, skip_count, fail_count))
     if fail_tickers:
         sys.exit(1)
 
@@ -234,6 +236,17 @@ def cmd_rank(conn, _args):
 
 # ── CLI ──────────────────────────────────────────────────────────────────────
 
+def _positive_int(value):
+    """驗證參數為正整數（> 0），供 argparse 使用。"""
+    try:
+        val = int(value)
+    except (ValueError, TypeError):
+        raise argparse.ArgumentTypeError("%r 不是有效整數" % value)
+    if val <= 0:
+        raise argparse.ArgumentTypeError("%r 必須為正整數（> 0）" % value)
+    return val
+
+
 def build_parser():
     parser = argparse.ArgumentParser(description="每日評分快照（未驗證）")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -241,12 +254,12 @@ def build_parser():
     sub.add_parser("run", help="抓日線並對觀察清單評分，寫入今日快照（source=live）")
 
     backfill_cmd = sub.add_parser("backfill", help="回補過去 N 個交易日的快照（source=backfill）")
-    backfill_cmd.add_argument("--days", type=int, default=60,
+    backfill_cmd.add_argument("--days", type=_positive_int, default=60,
                               metavar="N", help="回補交易日數，預設 60")
 
     trend_cmd = sub.add_parser("trend", help="逐日分數趨勢")
     trend_cmd.add_argument("ticker", help="股票代號")
-    trend_cmd.add_argument("--days", type=int, default=60, metavar="N",
+    trend_cmd.add_argument("--days", type=_positive_int, default=60, metavar="N",
                            help="顯示最近 N 個交易日，預設 60")
 
     sub.add_parser("rank", help="觀察清單排行（最新分數與 5/20 日 Δ）")
@@ -264,7 +277,7 @@ def main():
             "rank": cmd_rank,
         }
         dispatch[args.command](conn, args)
-    except RuntimeError as error:
+    except (RuntimeError, ValueError, KeyError) as error:
         print("錯誤：%s" % error, file=sys.stderr)
         sys.exit(1)
     finally:
