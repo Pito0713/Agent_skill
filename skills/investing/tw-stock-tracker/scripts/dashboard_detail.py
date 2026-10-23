@@ -5,6 +5,7 @@
 
 from html import escape
 
+from dashboard_scores import render_trend
 from dashboard_views import STYLE, _num, _pct_class, _table
 
 
@@ -102,7 +103,7 @@ def _refresh_banner(refreshed):
 def render_detail(detail):
     title = "%s %s" % (detail["ticker"], detail["name"] or "")
     missing = "".join("<li>%s</li>" % escape(m) for m in detail["missing"])
-    sections = [_price_card(detail), _flows_card(detail["flows_lots"]), _revenue_card(detail["revenue"]),
+    sections = [render_trend(detail.get("score_trend", [])), _price_card(detail), _flows_card(detail["flows_lots"]), _revenue_card(detail["revenue"]),
                 _financials_card(detail["financials"]), _conferences_card(detail["conferences"])]
     header = ('<p><a href="/">← 回儀表板</a></p><h1>%s</h1><p class=note>頁面產生於 %s｜基本面只顯示、不參與評分；'
               "新聞請在對話中用 detail.py 查詢（儀表板不發外部請求）</p>%s"

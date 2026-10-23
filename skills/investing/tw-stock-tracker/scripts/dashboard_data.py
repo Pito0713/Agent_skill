@@ -16,6 +16,7 @@ import backtest_report
 import backtest_stats
 import calibrate
 import db
+import daily_score
 import detail as stock_details
 import positions as holdings
 import score as scoring
@@ -195,3 +196,44 @@ def freshness(conn):
     return {"latest_quote": latest_quote, "latest_valuation": latest_valuation,
             "db_mb": os.path.getsize(path) / 1024 / 1024 if os.path.exists(path) else None,
             "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M")}
+
+
+def _has_daily_scores_table(conn: sqlite3.Connection) -> bool:
+    return bool(conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'daily_scores'"
+    ).fetchone())
+
+
+def score_rankings(conn: sqlite3.Connection) -> list[dict]:
+    """各檔最新快照；Δ 與 CLI 相同，依快照列數往前數。"""
+    if not _has_daily_scores_table(conn):
+        return []
+    rows = conn.execute(
+        "SELECT current.* FROM daily_scores current JOIN"
+        " (SELECT ticker, MAX(date) latest FROM daily_scores GROUP BY ticker) latest"
+        " ON current.ticker = latest.ticker AND current.date = latest.latest"
+        " ORDER BY current.score DESC, current.ticker"
+    ).fetchall()
+    # 只有跑過 --fetch 的個股才有詳情頁，其餘代號不給連結以免點到 404
+    detailed = {r["ticker"] for r in detail_views(conn)}
+    output = []
+    for row in rows:
+        item = {key: row[key] for key in ("ticker", "date", "score")}
+        item["name"] = scoring.lookup_name(conn, row["ticker"])
+        item["has_detail"] = row["ticker"] in detailed
+        for count in (5, 20):
+            previous = daily_score._score_n_rows_ago(conn, row["ticker"], row["date"], count)
+            item["delta_%d" % count] = row["score"] - previous if previous is not None else None
+        output.append(item)
+    return output
+
+
+def score_trend(conn: sqlite3.Connection, ticker: str) -> list[dict]:
+    """最近 60 筆，依日期由舊到新；舊 DB 缺表時回空清單。"""
+    if not _has_daily_scores_table(conn):
+        return []
+    rows = conn.execute(
+        "SELECT date, score, source FROM daily_scores WHERE ticker = ?"
+        " ORDER BY date DESC LIMIT 60", (ticker,)
+    ).fetchall()
+    return [dict(row) for row in reversed(rows)]
