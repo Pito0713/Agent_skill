@@ -271,6 +271,24 @@ CREATE TABLE IF NOT EXISTS detail_views (
     failed_steps  TEXT NOT NULL DEFAULT '[]'  -- JSON：該次更新失敗的資料來源
 );
 
+-- 每日評分快照：由 daily_score.py run 寫入。live 值以當天算出為準，不被 backfill 覆蓋
+CREATE TABLE IF NOT EXISTS daily_scores (
+    ticker      TEXT NOT NULL,
+    date        TEXT NOT NULL,           -- ISO yyyy-mm-dd（評分基準日，即最後一根日線日期）
+    score       INTEGER NOT NULL,        -- final_score（套用硬規則後）
+    s_trend     INTEGER NOT NULL,
+    s_bias      INTEGER NOT NULL,
+    s_support   INTEGER NOT NULL,
+    s_volume    INTEGER NOT NULL,
+    s_macd      INTEGER NOT NULL,
+    s_rsi       INTEGER NOT NULL,
+    signal      TEXT NOT NULL,
+    hard_rules  TEXT NOT NULL DEFAULT '[]',  -- JSON array
+    source      TEXT NOT NULL,           -- live | backfill
+    computed_at TEXT NOT NULL,           -- 本機 ISO 時間（yyyy-mm-dd HH:MM:SS）
+    PRIMARY KEY (ticker, date)
+);
+
 CREATE INDEX IF NOT EXISTS idx_pred_status ON predictions(status, ticker);
 """
 

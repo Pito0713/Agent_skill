@@ -52,6 +52,8 @@ run_step fetch_valuation.py backfill --years 0.25
 # 基本面（個股詳情用）：OpenAPI 只給最新一期，每天抓才能逐季累積財報；已抓過的月份走快取
 run_step fetch_fundamentals.py latest
 run_step fetch_fundamentals.py backfill --months 13
+# 每日評分快照：對觀察清單評分並存快照（source=live）；觀察清單日線在對帳步驟已更新
+run_step daily_score.py run
 
 # 清理失敗只記警告：舊 log 刪不掉不代表資料沒更新
 find "$LOG_DIR" -name 'update-*.log' -mtime +"$LOG_RETENTION_DAYS" -delete 2>> "$LOG" \
