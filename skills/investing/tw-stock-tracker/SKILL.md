@@ -1,11 +1,11 @@
 ---
 name: tw-stock-tracker
 description: |
-  台股盤後技術面六維量化評分（100 分）+ 預測 track record 追蹤 + 個股詳情。主要模式：分析（抓 TWSE／TPEx 真實日線→評分→進場區間與停損）、對帳（到期抓真實價算報酬與命中）、報告（命中率與按分數分層的校準度）、個股詳情（價量、法人、月營收、EPS、法說會、新聞彙整）。所有數字由 script 計算，LLM 只寫 thesis 與摘要。與 mentor-invest 的界線是操作層 vs 概念層。 觸發：進場點位、台股評分、幫我看 2330、這檔現在能不能進、技術面評分、跑對帳、我的判斷準不準、命中率、校準度、個股詳情、2330 的 EPS／營收／法說會／新聞、基本面、重新更新 2330（需帶台股代號或明確指向個股操作）
+  台股盤後技術面六維量化評分（100 分）+ 預測 track record 追蹤 + 個股詳情。主要模式：分析（抓 TWSE／TPEx 真實日線→評分→進場區間與停損）、對帳（到期抓真實價算報酬與命中）、報告（命中率與按分數分層的校準度）、個股詳情（價量、法人、月營收、EPS、法說會、新聞彙整）。所有數字由 script 計算，LLM 只寫 thesis 與摘要。與 mentor-invest 的界線是操作層 vs 概念層。 觸發：進場點位、台股評分、幫我看 2330、這檔現在能不能進、技術面評分、跑對帳、我的判斷準不準、命中率、校準度、個股詳情、2330 的 EPS／營收／法說會／新聞、基本面、重新更新 2330、每日評分、分數趨勢、評分排行（需帶台股代號或明確指向個股操作）
 metadata:
   trigger: 台股個股技術面評分／進場點位／預測對帳與校準
   version: "1.0"
-  last_updated: "2026-10-14"
+  last_updated: "2026-10-24"
 ---
 
 # 台股進場評分與 Track Record 追蹤
@@ -206,6 +206,32 @@ python3 detail.py <代號>             # 不更新資料，用 DB 現有的輸�
 
 ---
 
+## 模式 7：每日評分／分數趨勢（使用者問「每天的分數」「分數趨勢」「評分排行」「這檔分數在往上走嗎」）
+
+```bash
+python3 daily_score.py run                    # 觀察清單每檔抓日線 → 評最新交易日 → 存快照（source=live）；排程每日自動跑
+python3 daily_score.py backfill --days 60     # 用歷史日線回補過去 N 個交易日（source=backfill），不覆蓋 live
+python3 daily_score.py trend <代號> [--days 60]   # 單檔逐日總分與六分項，● live／○ backfill
+python3 daily_score.py rank                   # 觀察清單最新分數、5 日 Δ、20 日 Δ，依分數排序
+```
+
+**觀察清單自動累進**：predictions ∪ detail_views ∪ positions 的代號聯集——查過、記過預測、買過的都算，不需手動維護。
+快照存 `daily_scores`；**為什麼存快照而不事後重算**：`adj_close` 會被日後除權息往回調整、校準門檻也會變，
+事後重算的分數會和當天實際看到的不同。live 以當天算出為準，backfill 只補空缺、帶有回溯調整誤差。
+日線不足 60 根的檔略過、不寫半套分數；`run` 每檔重抓 7 個月日線，清單 25 檔約 10 分鐘。
+儀表板主頁有「評分排行」卡片，個股詳情頁有分數趨勢圖（兩處同一份 `daily_scores`），見「儀表板」一節。
+
+**解讀規則（定位：未驗證）**：
+- 分數趨勢與排行**未經驗證**，呈現時一定要說。單日總分已證實和運氣分不開（ADR-026、ADR-029），
+  畫成趨勢線不會自動變得有預測力
+- 「分數往上走」只能描述成技術面狀態在改善，不得說成「較可能上漲」「可以進場」；不得用買入／賣出字眼
+- Δ分數必然和近 4 週價格變化相關，看起來像訊號的東西很可能只是短期動能／反轉
+- 20 日 Δ 的預測力正在依預先登錄（`references/preregistration-20261022-score-trend.md`）檢驗；
+  **5 日 Δ 不在檢驗範圍，只供顯示**，即使檢驗通過也維持未驗證
+- 混有 backfill 與 live 的趨勢，要說明 backfill 點是事後回補、可能和當天實際值不同
+
+---
+
 ## 持股紀錄（使用者實際買進）
 
 ```bash
@@ -244,6 +270,8 @@ log 在 `~/.stock-tracker/logs/dashboard.log`。失敗會跳 macOS 通知，結�
 
 一頁看完：我的持股（見上節）、open 預測現況（依最新重算分數高到低）（中文名稱、到期日、以最新資料重算的分數、浮動報酬、進場區間、估值百分位）、
 對帳與校準進度、回測摘要（可成交平均、Rank IC、t 值判讀）、排程最近 7 天的執行結果。
+主頁最上方「評分排行」與個股頁「分數趨勢」圖來自模式 7 的 `daily_scores`（圖上 live 實心、backfill 空心虛線），
+兩處都標「未驗證」；還沒跑過 `daily_score.py` 時顯示「尚無評分快照」。排行只有查過詳情的代號可點。
 只綁 127.0.0.1、只開唯讀 DB、只回應 GET；每次重新整理重算，資料由排程或手動指令更新。
 數字全來自既有 script 的同一套計算，呈現時同樣適用上方各模式的解讀規則（評分是狀態描述、不是選股訊號）。
 
@@ -253,7 +281,8 @@ log 在 `~/.stock-tracker/logs/dashboard.log`。失敗會跳 macOS 通知，結�
 
 `scripts/scheduled_update.sh` 依序跑：`track.py reconcile`（對帳到期預測、更新 open 標的日線）→
 `fetch_valuation.py latest`（依 open 標的挑最近已公布估值的日子，寫入該日全市場估值）→ `fetch_valuation.py backfill --years 0.25`（近 13 週每週估值）→
-`fetch_fundamentals.py latest`（全市場最新月營收與最新一季財報）→ `fetch_fundamentals.py backfill --months 13`（只補缺的月份）。
+`fetch_fundamentals.py latest`（全市場最新月營收與最新一季財報）→ `fetch_fundamentals.py backfill --months 13`（只補缺的月份）→
+`daily_score.py run`（模式 7：觀察清單自行抓日線並存當日評分快照）。
 日線與對帳只動 open 預測標的；估值一律整天**全市場**寫入（估值表本就存全市場，一次請求成本相同），
 已抓過的週走快取、只補缺的週。只寫 tracker.db，**不含模式 5 的 market.db**——全市場篩選仍手動跑。
 由 launchd 在本機執行，**不需要 Claude session**；log 在 `~/.stock-tracker/logs/update-YYYYMMDD.log`（保留 60 天）。
