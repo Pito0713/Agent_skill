@@ -242,7 +242,7 @@
 | quarterly_financials(ticker, year, quarter, …) | 財報**年初至該季累計**：基本 EPS、營收、營業利益（金融業 NULL）、業外、稅後淨利、出表日期。來源 t187ap14_L／t187ap14_O，只有最新一季，靠排程逐季累積 |
 | investor_conferences(ticker, date, time, …) | 法說會：日期（多日活動取首日，`end_date` 為末日）、地點、擇要訊息原文、中英文簡報 PDF 網址（`mopsov…/nas/STR/<檔名>`）、公司網站。`detail.py --fetch` 時查今年與去年 |
 | detail_views(ticker, refreshed_at, failed_steps) | 使用者查過詳情的個股：最近一次 `detail.py --fetch` 完成時間與失敗的來源（JSON）。儀表板「個股詳情」區塊的清單來源 |
-| daily_scores(ticker, date, score, s_trend…s_rsi, signal, hard_rules, source, computed_at) | 每日評分快照（`daily_score.py`，PK ticker+date）。`score` 為套用硬規則後的總分；`source` = `live`（當天算出，不被覆蓋）或 `backfill`（事後回補，帶除權息回溯誤差）；`hard_rules` 為 JSON |
+| daily_scores(ticker, date, score, s_trend…s_rsi, signal, hard_rules, source, computed_at) | 每日評分快照（`daily_score.py`，PK ticker+date）。`score` 為套用硬規則後的總分；`source` = `live`（當天算出，不被 backfill 覆蓋；同日重跑 run 會更新）或 `backfill`（事後回補，帶除權息回溯誤差）；`hard_rules` 為 JSON |
 
 新聞（Google News RSS）不落庫。
 
