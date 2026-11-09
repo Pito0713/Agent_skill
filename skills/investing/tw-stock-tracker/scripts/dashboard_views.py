@@ -11,7 +11,7 @@ h1{font-size:20px;margin:4px 0}h2{font-size:16px;margin:0 0 8px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin:12px 0;overflow-x:auto}
 .note{color:var(--muted);font-size:12px}.banner{border-left:4px solid var(--warn)}
 table{border-collapse:collapse;width:100%}th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
-th{color:var(--muted);font-weight:500;font-size:12px}td.num{text-align:right;font-variant-numeric:tabular-nums}
+th{color:var(--muted);font-weight:500;font-size:12px}td.num{text-align:right;font-variant-numeric:tabular-nums}td.num.start{text-align:left}
 a,a:visited{color:inherit;font-weight:600;text-decoration:underline;text-decoration-color:var(--muted);text-underline-offset:3px}
 a:hover{text-decoration-color:var(--text)}
 .up{color:var(--up)}.down{color:var(--down)}.warn{color:var(--warn)}.grid{display:flex;gap:24px;flex-wrap:wrap}
@@ -129,14 +129,19 @@ def render_detail_views(items):
                STALE_DETAIL_DAYS))
 
 
+def _entry_text(now):
+    if now["entry_blocked"]:
+        return "封鎖"
+    return "%s–%s（%s）" % (_num(now["entry_low"]), _num(now["entry_high"]), escape(now["entry_status"]))
+
+
 def _prediction_row(item):
     now = item["now"]
     ticker = "%s %s" % (escape(item["ticker"]), escape(item["name"] or ""))
     if now is None:
         return "<tr><td>–</td><td>%s</td><td colspan=8 class=warn>%s</td></tr>" % (ticker, escape(item["error"]))
     valuation = now.get("valuation") or {}
-    entry = ("封鎖" if now["entry_blocked"]
-             else "%s–%s（%s）" % (_num(now["entry_low"]), _num(now["entry_high"]), escape(now["entry_status"])))
+    entry = _entry_text(now)
     unrealized = item.get("unrealized")
     cells = [
         "<b>%d %s</b>" % (now["final_score"], escape(now["signal"])),

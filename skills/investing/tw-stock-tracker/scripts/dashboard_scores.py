@@ -2,7 +2,7 @@
 
 from html import escape
 
-from dashboard_views import _num, _table, _ticker_link
+from dashboard_views import _entry_text, _num, _table, _ticker_link
 
 EMPTY_MESSAGE = "尚無評分快照（執行 daily_score.py run / backfill 後出現）"
 DISCLAIMER = '<p class="warn"><strong>未驗證：分數趨勢與排行未經驗證，不代表進出場建議。</strong></p>'
@@ -16,12 +16,13 @@ def render_rankings(items: list[dict]) -> str:
         numbers = [_num(item["score"], "%.0f")]
         numbers += ["—" if item[key] is None else _num(item[key], "%.0f", True)
                     for key in ("delta_5", "delta_20")]
-        rows.append("<tr><td>%s</td><td>%s</td>%s</tr>" % (
-            ticker, escape(item["date"]), "".join('<td class="num">%s</td>' % n for n in numbers)))
-    body = (_table(["代號", "最新日期", "分數", "5 日 Δ", "20 日 Δ"], rows)
+        entry = _entry_text(item["entry"]) if item.get("entry") else "—"
+        rows.append("<tr><td>%s</td><td>%s</td>%s<td>%s</td></tr>" % (
+            ticker, escape(item["date"]), "".join('<td class="num start">%s</td>' % n for n in numbers), entry))
+    body = (_table(["代號", "最新日期", "分數", "5 日 Δ", "20 日 Δ", "進場區間（狀態）"], rows)
             if rows else '<p class="note">%s</p>' % EMPTY_MESSAGE)
     return ('<section class="card banner"><h2>評分排行</h2>%s%s'
-            '<p class="note">各檔採最新快照；Δ 依快照交易日列數計，資料不足顯示 —。</p></section>'
+            '<p class="note">各檔採最新快照；Δ 依快照交易日列數計，資料不足顯示 —。進場區間以最新日線重算，只是技術位置，不是買進建議。</p></section>'
             % (DISCLAIMER, body))
 
 

@@ -104,6 +104,25 @@ class DashboardScoresTest(unittest.TestCase):
         self.assertIn('href="/stock/5425"', page)
         self.assertNotIn('href="/stock/2330"', page)
 
+    def test_ranking_entry_zone_and_left_aligned_numbers(self):
+        base = {"date": "2026-10-22", "score": 60, "delta_5": 3, "delta_20": None, "name": None,
+                "has_detail": False}
+        zone = {"entry_blocked": False, "entry_low": 100.0, "entry_high": 105.5, "entry_status": "<區間內>"}
+        page = dashboard_scores.render_rankings([
+            dict(base, ticker="2330", entry=zone),
+            dict(base, ticker="2317", entry=dict(zone, entry_blocked=True)),
+            dict(base, ticker="2454", entry=None)])
+        self.assertIn("進場區間（狀態）", page)
+        self.assertIn("100.00–105.50（&lt;區間內&gt;）", page)
+        self.assertIn("<td>封鎖</td>", page)
+        self.assertIn("<td>—</td></tr>", page)
+        self.assertIn('<td class="num start">60</td>', page)
+        self.assertNotIn('<td class="num">', page)
+
+    def test_ranking_entry_missing_when_no_daily_prices(self):
+        self.insert_scores('2330', [50, 55])
+        self.assertIsNone(dashboard_data.score_rankings(self.connection)[0]["entry"])
+
     def test_svg_escape_and_axis_endpoints(self):
         items = [{'date': '<script>alert(1)</script>', 'score': 0, 'source': '<script>'},
                  {'date': '2026-01-02', 'score': 100, 'source': 'live'}]

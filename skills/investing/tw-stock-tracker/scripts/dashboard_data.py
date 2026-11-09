@@ -11,6 +11,7 @@ import re
 import sqlite3
 from datetime import date, datetime, timedelta
 from pathlib import Path
+from typing import Optional
 
 import backtest_report
 import backtest_stats
@@ -221,11 +222,21 @@ def score_rankings(conn: sqlite3.Connection) -> list[dict]:
         item = {key: row[key] for key in ("ticker", "date", "score")}
         item["name"] = scoring.lookup_name(conn, row["ticker"])
         item["has_detail"] = row["ticker"] in detailed
+        item["entry"] = _latest_entry(conn, row["ticker"])
         for count in (5, 20):
             previous = daily_score._score_n_rows_ago(conn, row["ticker"], row["date"], count)
             item["delta_%d" % count] = row["score"] - previous if previous is not None else None
         output.append(item)
     return output
+
+
+def _latest_entry(conn: sqlite3.Connection, ticker: str) -> Optional[dict]:
+    """以最新日線重算的進場區間；日線不足算不出來就回 None，排行照樣顯示分數。"""
+    try:
+        now = scoring.evaluate(conn, ticker)
+    except RuntimeError:
+        return None
+    return {key: now[key] for key in ("entry_blocked", "entry_low", "entry_high", "entry_status")}
 
 
 def score_trend(conn: sqlite3.Connection, ticker: str) -> list[dict]:
