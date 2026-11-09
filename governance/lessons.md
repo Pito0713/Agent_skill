@@ -340,3 +340,33 @@
 - 修正：解析去掉尾端註記；長任務用 `caffeinate -i` 包住。
 - 規則：**背景長任務完成時讀 log 末尾的實際結果，不信外層包裝的 exit code**；跑數小時的任務先用
   `caffeinate` 防睡眠。外部資料的日期欄寫入前要確認格式，不能假設一定乾淨。
+
+## 2026-10-23 全螢幕 TUI 不能在 Claude Code 的 `!` 裡驗證
+- 情境：SwarmTide（rich Live 全螢幕動畫）。agent 叫使用者「在終端機跑」，使用者用 `! python3 ...` 在 Claude Code 內執行。
+- 錯誤/風險：`!` 走的是非互動 shell，不是 TTY，畫面完全不出現；程式無限迴圈，120 秒後被移到背景常駐，使用者以為壞掉。同一 session 發生兩次。
+- 修正：TaskStop 停掉背景程序；README 註明 `!` 看不到動畫；agent 驗證一律用 `--snapshot` 印單張畫面。
+- 規則：**交付全螢幕／互動式 TUI 時，明說「要在另一個終端機視窗執行，不要用 `!`」**，並提供不需 TTY 的驗證模式（snapshot / 單幀輸出）；使用者回報「看沒出來」先查是否在非 TTY 環境跑。
+
+## 2026-10-23 PreToolUse hook 的 `defer` 不是「不表態」，會讓背景 subagent 卡死
+- 情境：WakaWaka 的 `pretooluse.mjs` 在 Claude Code auto mode 下，想把呼叫交給 classifier 審，回了 `permissionDecision: "defer"`。SwarmTide session 通報背景 subagent 一碰工具就結束。
+- 錯誤/風險：主 session 收到 `defer` 會落回正常權限流程，看起來完全正常；背景 subagent 收到則把呼叫掛起等 resume，Agent tool 不會 resume，subagent 沒有 tool_result 也沒有回報就結束。本機 transcript：主 session 約 2,000 次全數正常，subagent 16 次全數掛起。問題存在超過一個月才被發現。
+- 修正：要「交還 Claude Code」時 exit 0、stdout 不輸出任何東西（WakaWaka `dbf9613`）。
+- 規則：**hook 不表態就什麼都不輸出，不要回 `defer`**；改了 hook 的決策行為，除了主 session，也要在背景 subagent 裡實測一次（transcript 出現 `hook_deferred_tool` 就是被掛起）。
+
+## 2026-10-24 TUI 回報「沒更新 / 沒看到」，先查程序啟動時間、暫停與捲動狀態
+- 情境：SwarmTide（rich Live 全螢幕儀表板）一天內三次被回報「畫面沒即時更新 / 沒看到新功能」。
+- 錯誤/風險：三次原因都不是資料讀取——(1) 使用者在 Terminal.app 用觸控板往上捲，全螢幕畫面中滾輪捲的是一般畫面的緩衝區，上方露出 shell 舊內容、畫面像凍住；(2) 誤按空白鍵，暫停連帶停掉真實資料輪詢；(3) 程式碼改了，但使用者還在跑改版前啟動的程序。另外 rich Live 期間 `sys.stdout` 被換成代理，直接寫跳脫序列（開滑鼠回報）會被吃掉。
+- 修正：開滑鼠回報（1000+1006）接管滾輪、序列寫 `sys.__stdout__`；暫停只作用在模擬；請使用者 `q` 重開。
+- 規則：**收到「TUI 沒更新」先 `ps -o lstart` 比對程序啟動時間與最後 commit 時間**，再看截圖 / 錄影的 HUD（PAUSED？）與畫面是否被捲動；全螢幕 TUI 要接管滾輪，資料輪詢不要掛在使用者可暫停的時鐘上。
+
+## 2026-10-31 「重算全部」會順便套用使用者沒打算套用的舊設定變更
+- 情境：shopee 專案為 margin 定價加入進口稅後，打 `POST /api/products/recalc-all` 讓新公式生效。
+- 錯誤/風險：使用者 10/18 把進貨匯率 4.55 → 4.9 後刻意沒重算（legacy 售價已通知客人），recalc-all 卻把 324 個 legacy 商品也重算成 4.9；當下回報時才從前後對比發現，已從備份還原。
+- 修正：寫入前做 `.backup`，重算後逐欄比對 before/after，把超出本次授權範圍的列從備份還原。
+- 規則：**批次重算 / 回填前，先 diff「目前存的值 vs 依現行設定算出的值」**；有本次變更以外造成的差異（舊設定沒套用）就先問使用者，不要讓一次重算夾帶多個變更。
+
+## 2026-10-31 zsh 不會對未加引號的變數做 word splitting
+- 情境：Bash tool（zsh）裡用 `j='-H Content-Type:application/json'; curl $j ...` 送 API 寫入。
+- 錯誤/風險：zsh 把 `$j` 當成單一參數，header 沒送出，7 個 POST/PATCH 全部無聲失敗（`curl -s` 也沒有輸出），差點誤以為已寫入。
+- 修正：改用 shell function 並直接寫出 `-H 'Content-Type: application/json'`，加 `-w '%{http_code}'` 確認狀態碼。
+- 規則：**zsh 下不要把多個參數塞進一個變數**（要拆就用 array `${=var}` 或 function）；寫入型 curl 一律帶 `-sS -w '%{http_code}'`，寫完再查 DB 確認。
