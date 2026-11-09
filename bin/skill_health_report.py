@@ -199,7 +199,11 @@ def render_problem_report(heading, summary_line, results, comparison, note, revi
 
 
 def render_green_report(heading, counts, comparison, review) -> str:
-    line = "%s — ✅ 全部通過（A 層 ✅ %d · B 層 %s）" % (heading, counts["ok"], review_summary(review))
+    if review["status"] == "crash":  # B 層 💥 時不得宣稱「全部通過」，只能說 A 層通過
+        line = "%s — A 層全部通過（A 層 ✅ %d · B 層 %s）· 💥 B 層審查未完成，不可視為全部通過" % (
+            heading, counts["ok"], review_summary(review))
+    else:
+        line = "%s — ✅ 全部通過（A 層 ✅ %d · B 層 %s）" % (heading, counts["ok"], review_summary(review))
     if comparison and comparison["resolved"]:
         line += " · 已解決：" + "、".join(comparison["resolved"])
     if review["status"] != "skip":  # 全綠單行之後附 B 層段落，避免 B 層結果被吞掉

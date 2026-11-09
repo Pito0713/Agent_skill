@@ -126,6 +126,31 @@ test_other_checks_flag_problems() {
   assert_contains "skills/demo/long.py（301）" "A8 列出檔案與行數"
 }
 
+test_empty_data_not_false_green() {
+  echo "[A4/A5/A8 空資料與工具失敗不得誤判通過]"
+  new_world a4missing; rm "$FAKE_REPO/GEMINI.md"; run_health 2026-11-10
+  assert_contains "💥 檢查失敗 A4" "A4：缺 GEMINI.md → 💥"
+  assert_contains "💥 檢查失敗 A5" "A5：缺 GEMINI.md → 💥"
+  new_world a4section; sed -i.bak '/^## 核心鐵律/,/^---$/d' "$FAKE_REPO/AGENTS.md" "$FAKE_REPO/GEMINI.md"; run_health 2026-11-10
+  assert_contains "❌ A4" "A4：兩檔都缺「核心鐵律」→ ❌（不因兩邊相同而通過）"
+  assert_contains "AGENTS.md 缺「核心鐵律」" "A4：列出 AGENTS.md 缺哪段"
+  assert_contains "GEMINI.md 缺「核心鐵律」" "A4：列出 GEMINI.md 缺哪段"
+  new_world a4one; sed -i.bak '/^## 溝通規範/,/^---$/d' "$FAKE_REPO/GEMINI.md"; run_health 2026-11-10
+  assert_contains "GEMINI.md 缺「溝通規範」" "A4：只有一檔缺段 → ❌ 並列出"
+  new_world a5zero; sed -i.bak '/Agent_skill\/governance/d' "$FAKE_REPO/AGENTS.md" "$FAKE_REPO/GEMINI.md"; run_health 2026-11-10
+  assert_contains "💥 檢查失敗 A5" "A5：0 個路由 → 💥"
+  new_world a8find; rm -rf "$FAKE_REPO/skills"; run_health 2026-11-10
+  assert_contains "💥 檢查失敗 A8" "A8：find 失敗 → 💥"
+}
+
+test_a1_traceback_is_crash() {
+  echo "[A1：Python 例外 exit 1 不得標 ❌]"
+  new_world a1trace
+  printf 'raise RuntimeError("boom")\n' >"$FAKE_REPO/bin/validate-skill-index.py"; run_health 2026-11-10
+  assert_contains "💥 檢查失敗 A1" "A1：exit 1 含 Traceback → 💥"
+  assert_not_contains "❌ A1" "A1：不標 ❌"
+}
+
 test_comparison() {
   echo "[與上次相比：新增／已解決／連續次數]"
   new_world compare
@@ -213,6 +238,8 @@ test_all_green
 test_single_failure
 test_single_crash
 test_other_checks_flag_problems
+test_empty_data_not_false_green
+test_a1_traceback_is_crash
 test_comparison
 test_previous_report_unusable
 test_retention

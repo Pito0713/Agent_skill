@@ -221,6 +221,8 @@ bash bin/skill-health.sh --with-review    # A 層 + B 層（呼叫 claude -p，�
 | `SKILL_HEALTH_KEEP` | `26` | 保留份數 |
 | `SKILL_HEALTH_CLAUDE_CMD` | `claude` | B 層（與安裝腳本解析路徑）用的 claude 指令 |
 | `SKILL_HEALTH_REVIEW_TIMEOUT` | `600` | B 層逾時秒數 |
+| `SKILL_HEALTH_CONTEXT_TIMEOUT` | `60` | B 層 prompt 建構（git diff、skill-usage）逾時秒數 |
+| `SKILL_HEALTH_USAGE_CMD` | 未設（用 `bin/skill-usage.py`） | 取代 skill-usage 指令，以 `--days 28` 呼叫（測試用） |
 | `SKILL_HEALTH_LAUNCH_AGENTS_DIR` | `~/Library/LaunchAgents` | 安裝腳本的 plist 目錄（測試用） |
 | `SKILL_HEALTH_LAUNCHCTL` | `launchctl` | 安裝腳本的 launchctl 指令（測試用） |
 

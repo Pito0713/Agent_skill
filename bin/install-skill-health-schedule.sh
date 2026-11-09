@@ -82,6 +82,8 @@ print_plist() {
   <dict>
     <key>PATH</key>
     <string>$path_value</string>
+    <key>PYTHONDONTWRITEBYTECODE</key>
+    <string>1</string>
   </dict>
   <key>StandardOutPath</key>
   <string>$log_path</string>

@@ -21,11 +21,15 @@
 #   SKILL_HEALTH_KEEP            保留份數（預設 26）
 #   SKILL_HEALTH_CLAUDE_CMD      B 層用的 claude 指令（預設 claude）
 #   SKILL_HEALTH_REVIEW_TIMEOUT  B 層逾時秒數（預設 600）
+#   SKILL_HEALTH_CONTEXT_TIMEOUT B 層 prompt 建構（git diff、skill-usage）逾時秒數（預設 60）
+#   SKILL_HEALTH_USAGE_CMD       取代 bin/skill-usage.py 的指令（以 --days 28 呼叫；測試用）
 #
 # 檢查函式慣例（在 set -e 子 shell 內跑）：stdout 首行 = 摘要、其餘 = 明細；
 # return 0 = ✅、10 = ⚠️、11 = ❌；任何其他結果（含未預期失敗）= 💥 檢查失敗。
 
 set -u
+# import 本地 python 模組（skill_health_checks.py 等）時不在 repo 寫 __pycache__，守住「只讀」
+export PYTHONDONTWRITEBYTECODE=1
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="${SKILL_HEALTH_REPO:-$(cd "$SCRIPT_DIR/.." && pwd)}"
@@ -53,6 +57,10 @@ check_a1_index_consistency() {
   output=$(python3 "$tool" 2>&1) && rc=0 || rc=$?
   if [[ $rc -eq 0 ]]; then echo "validate-skill-index.py 通過"; return 0; fi
   if [[ $rc -ne 1 ]]; then echo "validate-skill-index.py 非預期 exit ${rc}：$output" >&2; return 70; fi
+  # exit 1 也是 Python 未捕捉例外的 exit code：有 Traceback 代表工具自己壞了，不是索引不一致
+  if [[ "$output" == *"Traceback (most recent call last)"* ]]; then
+    echo "validate-skill-index.py 例外終止（exit 1 含 Traceback）：$output" >&2; return 70
+  fi
   echo "validate-skill-index.py exit 1（索引不一致）"
   printf '%s\n' "$output" | limit_lines 30
   return 11
@@ -88,15 +96,31 @@ check_a3_global_symlinks() {
 
 extract_inline_section() { sed -n "/^## $1/,/^---\$/p" "$2"; }
 
+# 回傳 0 = 四段在兩檔皆存在；否則把缺哪檔哪段印到 stdout 並回 1
+find_missing_sections() {
+  local section file missing=""
+  for file in AGENTS.md GEMINI.md; do
+    for section in "${INLINE_SECTIONS[@]}"; do
+      grep -q "^## $section" "$REPO/$file" || missing="${missing}${file} 缺「${section}」；"
+    done
+  done
+  [[ -z "$missing" ]] || { printf '%s' "$missing"; return 1; }
+}
+
 check_a4_inline_sections() {
-  local section drifted="" detail=""
+  local section file drifted="" detail="" missing agents_text gemini_text
+  for file in AGENTS.md GEMINI.md; do
+    [[ -f "$REPO/$file" ]] || { echo "缺檔：$REPO/$file" >&2; return 70; }
+  done
+  # 兩邊都缺同一段時 diff 會「相同」而誤判通過，所以先確認標題都在
+  missing=$(find_missing_sections) || { echo "inline 段落標題缺失：$missing"; return 11; }
   for section in "${INLINE_SECTIONS[@]}"; do
-    if ! diff <(extract_inline_section "$section" "$REPO/AGENTS.md") \
-              <(extract_inline_section "$section" "$REPO/GEMINI.md") >/dev/null; then
+    agents_text=$(extract_inline_section "$section" "$REPO/AGENTS.md") || return 70
+    gemini_text=$(extract_inline_section "$section" "$REPO/GEMINI.md") || return 70
+    if [[ "$agents_text" != "$gemini_text" ]]; then
       drifted="${drifted}「${section}」"
       detail="$detail--- 段落「${section}」diff（AGENTS.md < > GEMINI.md）"$'\n'
-      detail="$detail$(diff <(extract_inline_section "$section" "$REPO/AGENTS.md") \
-                            <(extract_inline_section "$section" "$REPO/GEMINI.md") | limit_lines 20 || true)"$'\n'
+      detail="$detail$(diff <(printf '%s\n' "$agents_text") <(printf '%s\n' "$gemini_text") | limit_lines 20 || true)"$'\n'
     fi
   done
   if [[ -z "$drifted" ]]; then echo "四個 inline 段逐字相同"; return 0; fi
@@ -106,13 +130,19 @@ check_a4_inline_sections() {
 }
 
 check_a5_routes_exist() {
-  local route missing="" total=0
+  local route missing="" total=0 routes grep_rc=0 file
+  for file in AGENTS.md GEMINI.md; do
+    [[ -f "$REPO/$file" ]] || { echo "缺檔：$REPO/$file" >&2; return 70; }
+  done
+  # grep 無命中（exit 1）或出錯都不可能是正常狀態：0 個路由代表索引被清空或格式變了
+  routes=$(grep -ohE '~/Agent_skill/[a-zA-Z0-9/_.-]+\.(md|txt)' "$REPO/AGENTS.md" "$REPO/GEMINI.md") || grep_rc=$?
+  [[ $grep_rc -eq 0 ]] || { echo "AGENTS.md / GEMINI.md 找不到任何路由（0 個；grep exit ${grep_rc}）" >&2; return 70; }
   # 路由寫 ~/Agent_skill/...，對應到被檢查的 repo 根（worktree 或假 repo 也能檢查）
   while IFS= read -r route; do
     [[ -n "$route" ]] || continue
     total=$((total + 1))
     [[ -e "$REPO/${route#\~/Agent_skill/}" ]] || missing="$missing$route"$'\n'
-  done < <(grep -ohE '~/Agent_skill/[a-zA-Z0-9/_.-]+\.(md|txt)' "$REPO/AGENTS.md" "$REPO/GEMINI.md" | sort -u)
+  done < <(printf '%s\n' "$routes" | sort -u)
   if [[ -z "$missing" ]]; then echo "路由 OK（$total 個檔案皆存在）"; return 0; fi
   echo "路由指向的檔案缺失"
   printf '%s' "$missing"
@@ -139,13 +169,16 @@ check_a7_downstream_farms() {
 }
 
 check_a8_long_code_files() {
-  local file lines count=0 listing=""
+  local file lines count=0 listing="" found_list="$RESULTS_DIR/A8.find"
   cd "$REPO"
+  # find 先存檔再讀：process substitution 內 find 失敗不會讓迴圈知道，會被誤判成「無超長檔」
+  find skills bin -type f \( -name '*.py' -o -name '*.sh' -o -name '*.js' -o -name '*.ts' -o -name '*.tsx' \) \
+    -not -path '*/node_modules/*' -not -path '*/__pycache__/*' -not -path '*/.venv/*' -print0 >"$found_list" \
+    || { echo "find skills bin 失敗" >&2; return 70; }
   while IFS= read -r -d '' file; do
     lines=$(wc -l <"$file" | tr -d ' ')
     if [[ $lines -gt $CODE_LINE_LIMIT ]]; then count=$((count + 1)); listing="$listing${file}（${lines}）"$'\n'; fi
-  done < <(find skills bin -type f \( -name '*.py' -o -name '*.sh' -o -name '*.js' -o -name '*.ts' -o -name '*.tsx' \) \
-             -not -path '*/node_modules/*' -not -path '*/__pycache__/*' -not -path '*/.venv/*' -print0)
+  done <"$found_list"
   if [[ $count -eq 0 ]]; then echo "skills/ 與 bin/ 無超過 ${CODE_LINE_LIMIT} 行的程式檔"; return 0; fi
   echo "$count 個程式檔超過 ${CODE_LINE_LIMIT} 行"
   printf '%s' "$listing" | sort
@@ -156,10 +189,12 @@ check_a9_skill_path_references() {
   python3 "$SCRIPT_DIR/skill_health_checks.py" paths "$REPO"
 }
 
-# A10 只陳述不判定；只用 git status -sb（不 fetch，不寫 .git）
+# A10 只陳述不判定；只用 git status -sb（不 fetch）。
+# 加 --no-optional-locks：status 預設會順手刷新 .git/index（寫入），此旗標讓這類唯讀呼叫不取 optional lock、不刷新 index。
+# 這是降低寫入而非保證零寫入（其他 git 內部行為不在此旗標涵蓋範圍）。
 check_a10_repo_state() {
   local status branch_line changes
-  status=$(git -C "$REPO" status -sb)
+  status=$(git --no-optional-locks -C "$REPO" status -sb)
   branch_line=$(printf '%s\n' "$status" | sed -n 1p)
   changes=$(printf '%s\n' "$status" | tail -n +2 | grep -c . || true)
   echo "$branch_line · 未 commit 變更 $changes 項"
