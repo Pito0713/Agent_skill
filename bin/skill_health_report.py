@@ -31,7 +31,7 @@ JSON_COMMENT = re.compile(r"<!-- skill-health-json: (.*?) -->", re.S)
 STREAK_ALERT_THRESHOLD = 3
 MAX_DETAIL_LINES = 40
 B_LAYER_SUMMARY = "略過（未啟用 --with-review）"
-# 下一張工單（B 層）從這裡插入其章節
+# 有執行 B 層時由 B 層章節取代；沒執行則保留
 B_LAYER_MARKER = "<!-- B-LAYER-INSERTION-POINT -->"
 
 
@@ -111,9 +111,39 @@ def count_symbols(results: dict) -> dict:
     return {s: sum(1 for r in results.values() if r["status"] == s) for s in STATUS_ORDER}
 
 
-def build_summary_line(commit: str, counts: dict) -> str:
+def load_review(results_dir: str) -> dict:
+    """B 層結果：B.status 不存在 = 未啟用；ok = 已執行；其他一律當失敗（不得當通過）。"""
+    status = read_text(os.path.join(results_dir, "B.status")).strip()
+    if not status:
+        return {"status": "skip", "output": "", "reason": ""}
+    reason = read_text(os.path.join(results_dir, "B.err")).strip()
+    if status != "ok":
+        status, reason = "crash", reason or "B 層未記錄失敗原因"
+    # 模型輸出可能含 HTML 註解開頭，避免干擾報告末尾的機器可讀註解
+    output = read_text(os.path.join(results_dir, "B.out")).strip().replace("<!--", "&lt;!--")
+    return {"status": status, "output": output, "reason": reason}
+
+
+def review_summary(review: dict) -> str:
+    if review["status"] == "skip":
+        return B_LAYER_SUMMARY
+    if review["status"] == "ok":
+        return "已執行"
+    return "💥 檢查失敗（%s）" % review["reason"].splitlines()[0]
+
+
+def render_review_section(review: dict) -> list:
+    if review["status"] == "ok":
+        return ["## B 層模型審查", "> 以下是模型給的線索，不是結論；每條附證據與信心，請自行核對。", "",
+                review["output"]]
+    lines = ["## B 層模型審查", "- 💥 檢查失敗 B：" + review["reason"].splitlines()[0]]
+    extra = review["reason"].splitlines()[1:]
+    return lines + (["```"] + extra + ["```"] if extra else [])
+
+
+def build_summary_line(commit: str, counts: dict, review_text: str) -> str:
     layer_a = " / ".join("%s %d" % (SYMBOLS[s], counts[s]) for s in STATUS_ORDER)
-    return "基準 commit：%s · A 層 %s · B 層 %s" % (commit, layer_a, B_LAYER_SUMMARY)
+    return "基準 commit：%s · A 層 %s · B 層 %s" % (commit, layer_a, review_text)
 
 
 def describe(check_id: str, result: dict) -> str:
@@ -150,12 +180,13 @@ def render_comparison(results: dict, comparison, note: str) -> list:
     return lines
 
 
-def render_problem_report(heading, summary_line, results, comparison, note) -> str:
+def render_problem_report(heading, summary_line, results, comparison, note, review) -> str:
     lines = [heading, "> " + summary_line, "", "## 需要處理"]
     for check_id, _title in CHECKS:
         if results[check_id]["status"] != "ok":
             lines.append("- " + describe(check_id, results[check_id]))
-    lines += ["", B_LAYER_MARKER, ""]
+    # 有執行 B 層就取代插入點；沒有則保留插入點
+    lines += ["", B_LAYER_MARKER if review["status"] == "skip" else "\n".join(render_review_section(review)), ""]
     lines += render_comparison(results, comparison, note)
     lines += ["", "## 全部檢查明細"]
     for check_id, _title in CHECKS:
@@ -167,35 +198,37 @@ def render_problem_report(heading, summary_line, results, comparison, note) -> s
     return "\n".join(lines)
 
 
-def render_green_report(heading, counts, comparison) -> str:
-    line = "%s — ✅ 全部通過（A 層 ✅ %d · B 層 %s）" % (heading, counts["ok"], B_LAYER_SUMMARY)
+def render_green_report(heading, counts, comparison, review) -> str:
+    line = "%s — ✅ 全部通過（A 層 ✅ %d · B 層 %s）" % (heading, counts["ok"], review_summary(review))
     if comparison and comparison["resolved"]:
         line += " · 已解決：" + "、".join(comparison["resolved"])
+    if review["status"] != "skip":  # 全綠單行之後附 B 層段落，避免 B 層結果被吞掉
+        line += "\n\n" + "\n".join(render_review_section(review))
     return line
 
 
-def render_machine_json(date: str, commit: str, results: dict) -> str:
+def render_machine_json(date: str, commit: str, results: dict, review_status: str) -> str:
     checks = {cid: {"status": r["status"], "summary": r["summary"], "streak": r["streak"]}
               for cid, r in results.items()}
-    payload = json.dumps({"version": 1, "date": date, "commit": commit, "checks": checks},
-                         ensure_ascii=False)
+    payload = json.dumps({"version": 1, "date": date, "commit": commit, "checks": checks,
+                          "review": review_status}, ensure_ascii=False)
     # 避免內容含 "--" 提早結束 HTML 註解
     return "<!-- skill-health-json: %s -->" % payload.replace("--", "\\u002d\\u002d")
 
 
-def build_report(args, results: dict) -> tuple:
+def build_report(args, results: dict, review: dict) -> tuple:
     today = datetime.date.fromisoformat(args.date)
     heading = "# Skill 體檢 %s（%s）" % (args.date, WEEKDAYS[today.weekday()])
     previous, note = load_previous(args.report_dir, args.date + ".md")
     apply_streaks(results, previous)
     comparison = compare_with_previous(results, previous) if previous is not None else None
     counts = count_symbols(results)
-    summary_line = build_summary_line(args.commit, counts)
+    summary_line = build_summary_line(args.commit, counts, review_summary(review))
     if counts["ok"] == len(CHECKS):
-        body = render_green_report(heading, counts, comparison)
+        body = render_green_report(heading, counts, comparison, review)
     else:
-        body = render_problem_report(heading, summary_line, results, comparison, note)
-    machine = render_machine_json(args.date, args.commit, results)
+        body = render_problem_report(heading, summary_line, results, comparison, note, review)
+    machine = render_machine_json(args.date, args.commit, results, review["status"])
     return body + "\n" + machine + "\n", summary_line
 
 
@@ -219,7 +252,7 @@ def parse_args(argv: list):
 def main(argv: list) -> int:
     args = parse_args(argv)
     os.makedirs(args.report_dir, exist_ok=True)
-    report, summary_line = build_report(args, load_results(args.results))
+    report, summary_line = build_report(args, load_results(args.results), load_review(args.results))
     write_atomically(os.path.join(args.report_dir, args.date + ".md"), report)
     write_atomically(args.summary_out, summary_line + "\n")
     return 0

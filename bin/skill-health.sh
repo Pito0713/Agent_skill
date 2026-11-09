@@ -6,7 +6,8 @@
 #   第 2 查 = 三條全域 symlink；第 3 查 = 四個 inline 段；第 4 查 = 路由檔案存在
 # 之後改 §7（例如新增第 5 查）要同步改本檔。規格：plans/skill-health-check.md §2、§3、§4 T1/T3。
 #
-# 用法：bash bin/skill-health.sh
+# 用法：bash bin/skill-health.sh [--with-review]
+#   --with-review  追加 B 層：以 claude -p（只給 Read/Grep/Glob）做模型審查，邏輯在 skill_health_review.sh
 # 只讀：不改 repo、不 fetch；唯一的寫入是報告目錄。體檢發現問題仍 exit 0（只出報告）。
 #
 # 環境變數（皆可選）：
@@ -18,6 +19,8 @@
 #   SKILL_HEALTH_NOTIFY          設為 off 停用通知
 #   SKILL_HEALTH_NOTIFY_CMD      取代 osascript 的通知指令，以「標題 內容」兩個參數呼叫
 #   SKILL_HEALTH_KEEP            保留份數（預設 26）
+#   SKILL_HEALTH_CLAUDE_CMD      B 層用的 claude 指令（預設 claude）
+#   SKILL_HEALTH_REVIEW_TIMEOUT  B 層逾時秒數（預設 600）
 #
 # 檢查函式慣例（在 set -e 子 shell 內跑）：stdout 首行 = 摘要、其餘 = 明細；
 # return 0 = ✅、10 = ⚠️、11 = ❌；任何其他結果（含未預期失敗）= 💥 檢查失敗。
@@ -37,6 +40,9 @@ INLINE_SECTIONS=("常駐核心規則" "核心鐵律" "記憶與交接" "溝通�
 CHECK_IDS=(A1 A2 A3 A4 A5 A6 A7 A8 A9 A10)
 
 log_message() { printf 'skill-health: %s\n' "$*" >&2; }
+
+# shellcheck source=skill_health_review.sh
+source "$SCRIPT_DIR/skill_health_review.sh"
 
 # 把工具輸出限制在合理行數，避免報告被單一工具洗版
 limit_lines() { awk -v limit="${1:-20}" 'NR <= limit'; }
@@ -212,14 +218,21 @@ send_notification() {
 }
 
 main() {
-  local commit summary_file report_path
-  [[ $# -eq 0 ]] || { log_message "未知參數：$1（本版僅 A 層，無旗標）"; return 64; }
+  local commit summary_file report_path with_review=0
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --with-review) with_review=1 ;;
+      *) log_message "未知參數：$1（支援：--with-review）"; return 64 ;;
+    esac
+    shift
+  done
   RESULTS_DIR=$(mktemp -d "${TMPDIR:-/tmp}/skill-health.XXXXXX") || return 1
   trap 'rm -rf "$RESULTS_DIR"' EXIT
   mkdir -p "$REPORT_DIR" || { log_message "無法建立報告目錄：$REPORT_DIR"; return 1; }
 
   commit=$(git -C "$REPO" rev-parse --short HEAD 2>/dev/null || echo unknown)
   run_all_checks
+  [[ $with_review -eq 0 ]] || run_review_layer
   summary_file="$RESULTS_DIR/summary.txt"
   report_path="$REPORT_DIR/$REPORT_DATE.md"
   python3 "$SCRIPT_DIR/skill_health_report.py" --results "$RESULTS_DIR" --report-dir "$REPORT_DIR" \

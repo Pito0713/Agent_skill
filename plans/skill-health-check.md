@@ -179,3 +179,62 @@ B 層模型的工具權限限定 `Read`、`Grep`、`Glob`，**不給 `Edit`、`W
 | 3 | 排程安裝 | **先不安裝**：T4 寫好安裝腳本但不執行，裝在哪台機器之後再決定 |
 | 4 | 出報告後要不要通知 | **要**：macOS 通知（`osascript`），內容只放摘要那一行（✅／⚠️／❌ 數量）與報告路徑；不寄信 |
 | 5 | 報告位置 `~/.agent-reports/skill-health/` | **OK** |
+
+---
+
+## 8. 使用方式
+
+以下指令都在 repo 根目錄執行。
+
+### 手動跑一次
+
+```bash
+bash bin/skill-health.sh                  # 只跑 A 層（零 token）
+bash bin/skill-health.sh --with-review    # A 層 + B 層（呼叫 claude -p，花 token，最長 10 分鐘）
+```
+
+- 唯讀：不改 repo、不 fetch；唯一的寫入是報告目錄。發現問題仍 exit 0，只出報告。
+- 完成時發 macOS 通知（標題「Skill 體檢」，內容為摘要行與報告路徑）。
+- B 層模型只有 `Read`、`Grep`、`Glob`；`git diff` 與 `skill-usage.py --days 28` 由外層先算好放進 prompt。
+  prompt 在 `bin/skill-health-review.md`。
+- B 層失敗（`claude` 不在 PATH、非 0 exit、逾時、輸出為空）→ 報告標 `💥 檢查失敗` 與原因，摘要行 B 層欄位也會反映；A 層照常出報告。
+
+### 看報告
+
+- 位置：`~/.agent-reports/skill-health/YYYY-MM-DD.md`（保留最近 26 份）；stdout 也會印出同一份。
+- 全綠 = 標題單行；有問題 = 「需要處理」「B 層模型審查」「與上次相比」「全部檢查明細」。
+  有跑 B 層而 A 層全綠時，單行後會附 B 層段落。
+- B 層輸出是線索不是結論，每條附證據（檔案:行）與信心，請自行核對。
+- 通知的發送記錄與失敗訊息在 `~/.agent-reports/skill-health/notify.log`。
+
+### 環境變數（皆可選）
+
+| 變數 | 預設 | 用途 |
+|------|------|------|
+| `SKILL_HEALTH_REPO` | 本腳本所在 repo | 要檢查的 repo 根 |
+| `SKILL_HEALTH_HOME` | `$HOME` | A3 symlink 與 A7 下游掃描用的 HOME |
+| `SKILL_HEALTH_REPORT_DIR` | `$HOME/.agent-reports/skill-health` | 報告目錄 |
+| `SKILL_HEALTH_DATE` | 今天 | 報告日期 `YYYY-MM-DD`（測試用） |
+| `SKILL_HEALTH_SKIP_DOWNSTREAM` | 未設 | 設為 `1` 略過 A7 |
+| `SKILL_HEALTH_NOTIFY` | `on` | 設為 `off` 停用通知 |
+| `SKILL_HEALTH_NOTIFY_CMD` | `osascript` | 取代通知指令，以「標題 內容」呼叫 |
+| `SKILL_HEALTH_KEEP` | `26` | 保留份數 |
+| `SKILL_HEALTH_CLAUDE_CMD` | `claude` | B 層（與安裝腳本解析路徑）用的 claude 指令 |
+| `SKILL_HEALTH_REVIEW_TIMEOUT` | `600` | B 層逾時秒數 |
+| `SKILL_HEALTH_LAUNCH_AGENTS_DIR` | `~/Library/LaunchAgents` | 安裝腳本的 plist 目錄（測試用） |
+| `SKILL_HEALTH_LAUNCHCTL` | `launchctl` | 安裝腳本的 launchctl 指令（測試用） |
+
+### 安裝／移除排程
+
+```bash
+bash bin/install-skill-health-schedule.sh --dry-run    # 只印 plist，不寫檔、不 load（可另存後 plutil -lint）
+bash bin/install-skill-health-schedule.sh              # 寫 ~/Library/LaunchAgents/local.agent-skill.health.plist 並 launchctl load
+bash bin/install-skill-health-schedule.sh --uninstall  # launchctl unload 並刪除 plist
+launchctl list | grep agent-skill.health               # 確認已載入
+```
+
+- 排程：每週二、週五 10:00，執行 `/bin/bash <repo>/bin/skill-health.sh --with-review`；睡眠中錯過會在喚醒後補跑一次。
+- 安裝時以 `command -v claude` 解析 `claude` 所在目錄並寫進 plist 的 `PATH`；找不到 `claude` 會報錯、不安裝。
+- launchd 的 stdout／stderr 寫到 `~/.agent-reports/skill-health/launchd.log`。
+- 只在一台機器安裝（見 §6）。更新 repo 位置後要重裝，因為 plist 內是絕對路徑。
+- 測試：`bash bin/test-skill-health.sh`（含 `bin/test-skill-health-b.sh`，全用假 claude／假 launchctl）。

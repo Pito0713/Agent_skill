@@ -219,6 +219,9 @@ test_retention
 test_notification
 test_read_only
 
+# B 層與排程安裝腳本的測試（沿用上面的 helper）
+source "$SCRIPT_DIR/test-skill-health-b.sh"
+
 echo
 echo "結果：$PASS_COUNT passed, $FAIL_COUNT failed"
 [[ $FAIL_COUNT -eq 0 ]]
