@@ -370,3 +370,15 @@
 - 錯誤/風險：zsh 把 `$j` 當成單一參數，header 沒送出，7 個 POST/PATCH 全部無聲失敗（`curl -s` 也沒有輸出），差點誤以為已寫入。
 - 修正：改用 shell function 並直接寫出 `-H 'Content-Type: application/json'`，加 `-w '%{http_code}'` 確認狀態碼。
 - 規則：**zsh 下不要把多個參數塞進一個變數**（要拆就用 array `${=var}` 或 function）；寫入型 curl 一律帶 `-sS -w '%{http_code}'`，寫完再查 DB 確認。
+
+## 2026-11-09 worktree 隔離的 subagent 不是從本地 HEAD 開分支
+- 情境：tech-lead-mode 派 Ticket B（`isolation: worktree`），本地 main 已 ff 到 Ticket A 的 `51d0ee8`（未 push）。
+- 錯誤/風險：executor 的 worktree 基底是 `a31b6df`（origin/main），沒有 A 層檔案；它依工單停下回報。之後用 SendMessage 授權 ff，但該 worktree 因「無變更」已被自動清掉，無處可做，只能重派。Round 2 也一樣是從 `a31b6df` 開始。
+- 修正：工單加「第 0 步」：`git log -1` 確認基底，不符就 `git merge --ff-only <sha>`（預先授權），再 `git diff --name-only` 核對帶進來的檔案。
+- 規則：**本地 main 領先 origin 時派 worktree executor，工單必含基底確認 + 預授權 ff**；executor 未改檔就停下時，worktree 會消失，補授權要重派，不要用 SendMessage 續跑。
+
+## 2026-11-09 `claude -p --allowedTools` 不限制可用工具
+- 情境：skill 體檢 B 層要求模型唯讀，實作用 `claude -p --allowedTools "Read,Grep,Glob"`。
+- 錯誤/風險：`--allowedTools` 只是把這些工具設為免核准，其他工具仍可用（再加上使用者 settings 的 allowlist / hooks 照常載入），唯讀沒有保證；測試用假 claude 只驗參數，抓不到。codex 冷啟動審查才指出。
+- 修正：改為 `--tools "Read,Grep,Glob"`（真正限制可用工具）+ `--allowedTools` 同清單 + `--no-session-persistence`；以 `claude --help` 查證。
+- 規則：**無頭 claude 要限制工具用 `--tools`，`--allowedTools` 只管核准**；需要更強隔離再看 `--restricted`。寫 CLI 權限旗標前先讀 `--help`，不憑名稱推斷語意。
