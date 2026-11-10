@@ -382,3 +382,9 @@
 - 錯誤/風險：`--allowedTools` 只是把這些工具設為免核准，其他工具仍可用（再加上使用者 settings 的 allowlist / hooks 照常載入），唯讀沒有保證；測試用假 claude 只驗參數，抓不到。codex 冷啟動審查才指出。
 - 修正：改為 `--tools "Read,Grep,Glob"`（真正限制可用工具）+ `--allowedTools` 同清單 + `--no-session-persistence`；以 `claude --help` 查證。
 - 規則：**無頭 claude 要限制工具用 `--tools`，`--allowedTools` 只管核准**；需要更強隔離再看 `--restricted`。寫 CLI 權限旗標前先讀 `--help`，不憑名稱推斷語意。
+
+## 2026-11-10 worktree 快照跑測試，依賴自身絕對路徑的測試會誤報
+- 情境：project-review L1 在 HEAD 的 git worktree 快照跑檢查；冒煙測試拿 Agent_skill 跑 `bin/test-skill-usage.sh`。
+- 錯誤/風險：原地跑通過、快照裡失敗 3 項——測試讀真實 `~/.codex/skills` farm，symlink 指回 `~/Agent_skill`，換到快照路徑就對不上。沙盒測試全綠也抓不到，只有對真實 repo 實跑才現形。
+- 修正：試點專案避開此類測試（使用者選 a）；Floating `swift test` 在快照實跑 390 tests 全過才登記。
+- 規則：**把專案登記進 project-review 前，先用 scratchpad 的登記表與報告目錄在快照上實跑一次**；原地過、快照不過 = 測試不 hermetic，不是專案壞了。

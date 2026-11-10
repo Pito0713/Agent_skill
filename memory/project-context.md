@@ -989,3 +989,21 @@ ADR-026（v1 總分）、029（多頭回檔）、030（分數趨勢）三次檢�
 台股證據未查證）；改預測波動或回撤（使用者未選，可另案）。
 
 **未來風險**：成本換算用的報酬離散度 7% 是假設值，只用來看量級；ADR-026 的總分 IC 未記錄，該次的偵測力無法估。
+
+## ADR-032：專案定期 review 依檢查性質分層，結果寫獨立狀態檔、不碰交接檔（2026-11-10）
+
+**背景**：使用者想每天排程讓 agent review 專案（架構優化 + 測試驗證）。每天全量 review 的問題：多數天沒變更、
+LLM 幾乎每次都會「找到可改進處」造成 alert fatigue 與 scope creep、架構債以週為單位累積。
+
+**決策**：
+1. 分層：L0 閘門（無新 commit 即結束）→ L1 test/lint/typecheck（script、0 token、跑在 HEAD 的 worktree 快照）
+   → L2 diff review（P2）→ L3 架構 review（P3，每週一判斷，≥7 天且累積 diff ≥300 行，主題輪替）
+2. 結果寫 `~/.agent-reports/project-review/<專案>/status.json`（`overall`：fail/crash/warn/ok/idle），供 Floating 卡片讀；
+   **不寫 `~/.agent-sessions/*/latest.md`**——交接檔只能由使用者觸發寫入（ADR-015），狀態檔每次整份覆蓋
+3. 無新 commit 時沿用上次 L1 結果（失敗不被藏成 idle）；crash 不推進基準 commit
+4. 分階段上線：P1 試點 Floating（11/11–11/17，過關條件：無誤報 🔴）→ P1.5 Floating 卡片 → P2 L2 → P3 L3
+
+**否決的選項**：每天全量 agent review（效果遞減）；review 結果寫進交接檔（違反 ADR-015、混淆主觀進度與客觀量測）；
+L1 原地跑（會吃到其他 session 未 commit 的變更）；參數化 skill 體檢 installer（第二處重複，依「第三次才抽」先複製）。
+
+**未來風險**：依賴自身絕對路徑的測試在快照中誤報（Agent_skill 的 `test-skill-usage.sh` 已實證），登記專案前要先用 scratchpad 設定實跑一次。
