@@ -19,6 +19,14 @@ PATH_PATTERN = re.compile(
 HOME_PREFIX = "~/Agent_skill/"
 # 路徑後緊接這些字元代表是 glob / 佔位符，抽到的只是前半段
 PLACEHOLDER_FOLLOWERS = "*<{$[…"
+# 有新原始文件才會建立的工作目錄（convert-skill 的收件匣），不存在是正常狀態
+EXCLUDED_REFERENCE_DIRS = ("skills/_inbox",)
+
+
+def is_excluded_reference(path: str) -> bool:
+    normalized = path.rstrip("/")
+    return any(normalized == excluded or normalized.startswith(excluded + "/")
+               for excluded in EXCLUDED_REFERENCE_DIRS)
 
 
 def classify_budget(report: dict) -> tuple:
@@ -79,6 +87,8 @@ def find_missing_references(repo_root: str) -> tuple:
         with open(skill_file, encoding="utf-8") as handle:
             text = handle.read()
         for path in extract_repo_paths(text):
+            if is_excluded_reference(path):
+                continue
             if not os.path.exists(os.path.join(repo_root, path)):
                 missing.append((os.path.relpath(skill_file, repo_root), path))
     return len(skill_files), missing

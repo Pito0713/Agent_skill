@@ -126,6 +126,20 @@ test_other_checks_flag_problems() {
   assert_contains "skills/demo/long.py（301）" "A8 列出檔案與行數"
 }
 
+test_a9_excludes_inbox() {
+  echo "[A9 排除 skills/_inbox/ 收件匣]"
+  new_world inbox
+  printf '讀取 skills/_inbox/ 中的檔案\nmv skills/_inbox/new.md skills/_inbox\n' >>"$FAKE_REPO/skills/demo/SKILL.md"
+  run_health 2026-11-10
+  assert_contains '"A9": {"status": "ok"' "引用不存在的 skills/_inbox/ 不算缺檔"
+  new_world inbox-mixed
+  printf '讀取 skills/_inbox/ 中的檔案\n見 skills/ghost/SKILL.md\n' >>"$FAKE_REPO/skills/demo/SKILL.md"
+  run_health 2026-11-10
+  assert_contains "⚠️ A9" "_inbox 以外的缺檔仍標 ⚠️"
+  assert_contains "引用 skills/ghost/SKILL.md" "_inbox 以外的缺檔仍列出"
+  assert_not_contains "引用 skills/_inbox" "_inbox 不列入缺檔清單"
+}
+
 test_empty_data_not_false_green() {
   echo "[A4/A5/A8 空資料與工具失敗不得誤判通過]"
   new_world a4missing; rm "$FAKE_REPO/GEMINI.md"; run_health 2026-11-10
@@ -238,6 +252,7 @@ test_all_green
 test_single_failure
 test_single_crash
 test_other_checks_flag_problems
+test_a9_excludes_inbox
 test_empty_data_not_false_green
 test_a1_traceback_is_crash
 test_comparison
