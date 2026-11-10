@@ -1002,9 +1002,11 @@ LLM 幾乎每次都會「找到可改進處」造成 alert fatigue 與 scope cre
    **不寫 `~/.agent-sessions/*/latest.md`**——交接檔只能由使用者觸發寫入（ADR-015），狀態檔每次整份覆蓋
 3. 無新 commit 時沿用上次 L1 結果（失敗不被藏成 idle）；crash 不推進基準 commit
 4. 分階段上線：P1 試點 Floating（11/11–11/17，過關條件：無誤報 🔴）→ P1.5 Floating 卡片 → P2 L2 → P3 L3
-5. Floating 卡片（使用者 2026-11-10 經 Floating session 決定）：review 狀態**獨立一行**，卡片 `fixedHeight` 90 → 約 106pt
-   （明確推翻 2026-09-29 的 90pt 決定；選項說明已標示此點）；過期門檻 **36 小時**（`ranAt` 超過即顯示 ⏳）。
-   P1.5（11/23 起、schema 定案後）才動工，連同 `ProjectCardHeightTests` 與 snapshot 一起改
+5. Floating 卡片（使用者 2026-11-10 經 Floating session 決定，**已提前實作**，原訂 P1.5）：review 狀態為進度條下方獨立一行，
+   過期門檻 **36 小時**。同時重排面板：專案不再輪播、全部攤開、卡片不固定高度——先前議定的「加高到約 106pt」作廢。
+   讀取端 `~/Floating/Sources/FloatingAgenda/Data/ReviewStatus.swift`（唯讀；用 overall、ranAt、l1.result/failed/carried、
+   l2/l3.newFindings、handoff.lagCommits、reportPath、errors[0]；不認得的 overall 或解析不了的 ranAt → 不顯示；目前不檢查 schema 欄位）。
+   **改 status.json schema 時必須同步改 ReviewStatus.swift**
 
 **否決的選項**：每天全量 agent review（效果遞減）；review 結果寫進交接檔（違反 ADR-015、混淆主觀進度與客觀量測）；
 L1 原地跑（會吃到其他 session 未 commit 的變更）；參數化 skill 體檢 installer（第二處重複，依「第三次才抽」先複製）。

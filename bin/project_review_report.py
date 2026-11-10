@@ -11,6 +11,7 @@ from typing import Optional
 
 from project_review_checks import tail_of
 
+# 讀取端：~/Floating/Sources/FloatingAgenda/Data/ReviewStatus.swift——改欄位或 overall 值域時要同步改那邊（ADR-032）
 STATUS_SCHEMA_VERSION = 1
 RESULT_LABELS = {"pass": "✅ 通過", "flaky": "⚠️ flaky（重跑才過）", "fail": "🔴 失敗",
                  "crash": "💥 執行錯誤", "none": "— 未設定檢查", "skipped": "💤 無變更，沿用上次"}
