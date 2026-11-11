@@ -271,6 +271,15 @@ CREATE TABLE IF NOT EXISTS detail_views (
     failed_steps  TEXT NOT NULL DEFAULT '[]'  -- JSON：該次更新失敗的資料來源
 );
 
+-- 使用者不想看的個股：從觀察清單（每日評分）、儀表板評分排行與個股詳情區塊排除。
+-- 只影響顯示與抓取，不刪任何歷史資料；predictions 照常對帳、positions 照常顯示
+CREATE TABLE IF NOT EXISTS hidden_tickers (
+    ticker     TEXT PRIMARY KEY,
+    hidden_at  TEXT NOT NULL,            -- 本機時間 yyyy-mm-dd HH:MM
+    reason     TEXT NOT NULL,            -- manual | auto_bearish（連續 5 個交易日低於偏空門檻）
+    note       TEXT
+);
+
 -- 每日評分快照：由 daily_score.py run 寫入。live 值以當天算出為準，不被 backfill 覆蓋
 CREATE TABLE IF NOT EXISTS daily_scores (
     ticker      TEXT NOT NULL,

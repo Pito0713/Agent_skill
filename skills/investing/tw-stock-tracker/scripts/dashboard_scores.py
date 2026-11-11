@@ -1,6 +1,7 @@
 """每日評分快照的唯讀呈現；SVG 不依賴外部資源。"""
 
 from html import escape
+from typing import Optional
 
 from dashboard_views import _entry_text, _num, _table, _ticker_link
 
@@ -8,7 +9,20 @@ EMPTY_MESSAGE = "尚無評分快照（執行 daily_score.py run / backfill 後�
 DISCLAIMER = '<p class="warn"><strong>未驗證：分數趨勢與排行未經驗證，不代表進出場建議。</strong></p>'
 
 
-def render_rankings(items: list[dict]) -> str:
+HIDDEN_REASON_LABELS = {"manual": "手動", "auto_bearish": "連續一週偏空"}
+
+
+def render_hidden(hidden: list[dict]) -> str:
+    if not hidden:
+        return ""
+    entries = "、".join("%s %s（%s，%s）" % (escape(item["ticker"]), escape(item.get("name") or ""),
+                                          escape(HIDDEN_REASON_LABELS.get(item["reason"], item["reason"])),
+                                          escape(item["hidden_at"][:10])) for item in hidden)
+    return ('<p class="note">已隱藏 %d 檔，不列入排行與每日評分：%s。恢復：<code>watchlist.py unhide &lt;代號&gt;</code></p>'
+            % (len(hidden), entries))
+
+
+def render_rankings(items: list[dict], hidden: Optional[list] = None) -> str:
     rows = []
     for item in items:
         ticker = (_ticker_link(item["ticker"], item["name"]) if item.get("has_detail")
@@ -22,8 +36,8 @@ def render_rankings(items: list[dict]) -> str:
     body = (_table(["代號", "最新日期", "分數", "5 日 Δ", "20 日 Δ", "進場區間（狀態）"], rows)
             if rows else '<p class="note">%s</p>' % EMPTY_MESSAGE)
     return ('<section class="card banner"><h2>評分排行</h2>%s%s'
-            '<p class="note">各檔採最新快照；Δ 依快照交易日列數計，資料不足顯示 —。進場區間以最新日線重算，只是技術位置，不是買進建議。</p></section>'
-            % (DISCLAIMER, body))
+            '<p class="note">各檔採最新快照；Δ 依快照交易日列數計，資料不足顯示 —。進場區間以最新日線重算，只是技術位置，不是買進建議。</p>%s</section>'
+            % (DISCLAIMER, body, render_hidden(hidden or [])))
 
 
 def _render_point(item: dict, coordinates: tuple[float, float]) -> str:

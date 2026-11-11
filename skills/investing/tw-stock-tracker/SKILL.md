@@ -217,7 +217,23 @@ python3 daily_score.py trend <代號> [--days 60]   # 單檔逐日總分與六�
 python3 daily_score.py rank                   # 觀察清單最新分數、5 日 Δ、20 日 Δ，依分數排序
 ```
 
-**觀察清單自動累進**：predictions ∪ detail_views ∪ positions 的代號聯集——查過、記過預測、買過的都算，不需手動維護。
+**觀察清單自動累進**：predictions ∪ detail_views ∪ positions 的代號聯集——查過、記過預測、買過的都算，不需手動維護；
+扣掉 `hidden_tickers` 中已隱藏的代號。
+
+**隱藏個股**（使用者說「2330 不要看了」「恢復 2330」「隱藏了哪些」時用；寫入指令只在資料主機跑）：
+
+```bash
+python3 watchlist.py hide <代號> [--note ...]   # 手動隱藏
+python3 watchlist.py unhide <代號>              # 恢復
+python3 watchlist.py list                       # 已隱藏清單與原因
+python3 watchlist.py auto [--dry-run]           # 套用自動隱藏（daily_score.py run 結束時會自動跑）
+```
+
+- **自動隱藏**（使用者 2026-11-11 決定）：最近 5 個交易日每天都有快照、且每天分數都低於當天生效的偏空門檻
+  （隨校準變動，預設 45）；漏跑缺一天就不算。**有未平倉持股的永不自動隱藏**；有未到期預測的照樣隱藏
+- 隱藏後：從儀表板評分排行與個股詳情區塊消失（排行卡片下方列出已隱藏清單）、每日評分不再抓它；
+  不會自動恢復，重新查詢個股詳情也不恢復（只在 stderr 提醒）。predictions 照常對帳、持股照常顯示，歷史資料不刪
+- 隱藏是顯示偏好，不是判斷：分數未經驗證（ADR-031），不得說成「這檔會跌所以移除」
 快照存 `daily_scores`；**為什麼存快照而不事後重算**：`adj_close` 會被日後除權息往回調整、校準門檻也會變，
 事後重算的分數會和當天實際看到的不同。live 以當天算出為準、不被 backfill 覆蓋（同日重跑 run 會以新算出的值更新 live）；backfill 只寫沒有 live 的日子、帶有回溯調整誤差。
 日線不足 60 根的檔略過、不寫半套分數；`run` 每檔重抓 7 個月日線，清單 25 檔約 10 分鐘。

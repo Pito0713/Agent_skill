@@ -24,6 +24,7 @@ import fetch_valuation
 import score as scoring
 import track
 import valuation as valuations
+import watchlist
 
 RETURN_WINDOWS = (1, 5, 20, 60)
 FLOW_WINDOWS = (5, 20)
@@ -228,6 +229,10 @@ def main():
     try:
         if args.fetch:
             refresh(conn, args.ticker)
+        if args.ticker in watchlist.hidden_tickers(conn):
+            # 重新查詢不自動恢復（使用者 2026-11-11 決定），只提醒
+            print("提醒：%s 已隱藏，儀表板評分排行、個股詳情區塊與每日評分都不含此檔；"
+                  "要恢復跑 watchlist.py unhide %s" % (args.ticker, args.ticker), file=sys.stderr)
         print(json.dumps(build(conn, args.ticker, include_news=not args.no_news), ensure_ascii=False, indent=2))
     finally:
         conn.close()

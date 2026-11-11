@@ -241,7 +241,7 @@ def render_page(data):
                  escape(fresh["latest_valuation"] or "–"), _num(fresh["db_mb"], "%.1f")))
     banner = ('<section class="card banner"><b>評分是技術面狀態描述，不是選股訊號。</b>'
               "兩組 3 年回測顯示總分沒有可證實的預測力（ADR-026）；本頁不構成投資建議。</section>")
-    sections = [render_rankings(data.get("score_rankings", [])), render_positions(data.get("positions", [])), render_closed_positions(data.get("closed_positions", [])),
+    sections = [render_rankings(data.get("score_rankings", []), data.get("hidden", [])), render_positions(data.get("positions", [])), render_closed_positions(data.get("closed_positions", [])),
                 render_predictions(data["predictions"]),
                 render_resolved(data["resolved"]), render_backtests(data["backtests"]), render_schedule(data["schedule"]),
                 render_detail_views(data.get("detail_views", []))]

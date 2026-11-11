@@ -25,6 +25,7 @@ def build_page(backtest_cache):
     conn = dashboard_data.connect_readonly()
     try:
         data = {"score_rankings": dashboard_data.score_rankings(conn),
+                "hidden": dashboard_data.hidden_list(conn),
                 "positions": dashboard_data.open_positions(conn),
                 "closed_positions": dashboard_data.closed_positions(conn),
                 "detail_views": dashboard_data.detail_views(conn),

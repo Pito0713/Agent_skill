@@ -96,8 +96,11 @@ def detail_views(conn):
     if not exists:
         return []
     output = []
+    hidden = hidden_tickers(conn)
     for row in conn.execute("SELECT * FROM detail_views ORDER BY refreshed_at DESC, ticker"):
         ticker = row["ticker"]
+        if ticker in hidden:
+            continue
         financial = conn.execute("SELECT year, quarter FROM quarterly_financials WHERE ticker = ?"
                                  " ORDER BY year DESC, quarter DESC LIMIT 1", (ticker,)).fetchone()
         output.append({
@@ -199,6 +202,25 @@ def freshness(conn):
             "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M")}
 
 
+def _has_table(conn: sqlite3.Connection, name: str) -> bool:
+    return bool(conn.execute("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?", (name,)).fetchone())
+
+
+def hidden_tickers(conn: sqlite3.Connection) -> set:
+    """已隱藏的代號；唯讀連線可能開到還沒建表的舊 DB，缺表視為沒有隱藏。"""
+    if not _has_table(conn, "hidden_tickers"):
+        return set()
+    return {row["ticker"] for row in conn.execute("SELECT ticker FROM hidden_tickers")}
+
+
+def hidden_list(conn: sqlite3.Connection) -> list[dict]:
+    """評分排行卡片下方列出已隱藏的個股，讓「消失」看得見、知道怎麼恢復。"""
+    if not _has_table(conn, "hidden_tickers"):
+        return []
+    rows = conn.execute("SELECT * FROM hidden_tickers ORDER BY hidden_at DESC, ticker").fetchall()
+    return [dict(row, name=scoring.lookup_name(conn, row["ticker"])) for row in rows]
+
+
 def _has_daily_scores_table(conn: sqlite3.Connection) -> bool:
     return bool(conn.execute(
         "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'daily_scores'"
@@ -217,8 +239,11 @@ def score_rankings(conn: sqlite3.Connection) -> list[dict]:
     ).fetchall()
     # 只有跑過 --fetch 的個股才有詳情頁，其餘代號不給連結以免點到 404
     detailed = {r["ticker"] for r in detail_views(conn)}
+    hidden = hidden_tickers(conn)
     output = []
     for row in rows:
+        if row["ticker"] in hidden:
+            continue
         item = {key: row[key] for key in ("ticker", "date", "score")}
         item["name"] = scoring.lookup_name(conn, row["ticker"])
         item["has_detail"] = row["ticker"] in detailed

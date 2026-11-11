@@ -17,6 +17,7 @@ from datetime import datetime
 import db
 import fetch_twse
 import score as scoring
+import watchlist
 
 # ── 常數 ────────────────────────────────────────────────────────────────────
 
@@ -28,14 +29,15 @@ SOURCE_BACKFILL = "backfill"
 # ── 觀察清單 ─────────────────────────────────────────────────────────────────
 
 def load_watchlist(conn):
-    """取 predictions ∪ detail_views ∪ positions 的 ticker 聯集，排序後回傳。"""
+    """取 predictions ∪ detail_views ∪ positions 的 ticker 聯集，扣掉已隱藏的，排序後回傳。"""
     rows = conn.execute(
         "SELECT ticker FROM predictions"
         " UNION SELECT ticker FROM detail_views"
         " UNION SELECT ticker FROM positions"
         " ORDER BY ticker"
     ).fetchall()
-    return [r["ticker"] for r in rows]
+    hidden = watchlist.hidden_tickers(conn)
+    return [r["ticker"] for r in rows if r["ticker"] not in hidden]
 
 
 # ── DB 操作 ──────────────────────────────────────────────────────────────────
@@ -101,6 +103,11 @@ def cmd_run(conn, _args):
 
     print("完成：成功 %d、資料不足略過 %d、失敗 %d" % (
         success_count, skip_count, len(fail_tickers)))
+    # 放在失敗退出之前：單檔抓取失敗不該讓其他檔的自動隱藏停擺（失敗那檔缺快照，本來就不會被隱藏）
+    auto_hidden = watchlist.apply_auto_hide(conn, tickers)
+    if auto_hidden:
+        print("自動隱藏 %d 檔（連續 %d 個交易日低於偏空門檻）：%s；恢復用 watchlist.py unhide <代號>"
+              % (len(auto_hidden), watchlist.STREAK_DAYS, ", ".join(auto_hidden)))
     if fail_tickers:
         print("失敗清單：%s" % ", ".join(fail_tickers), file=sys.stderr)
         sys.exit(1)
