@@ -65,6 +65,8 @@ test_review_prompt_content() {
   assert_contains "只讀" "prompt 明寫只讀"
   assert_contains "不得修改、建立、刪除任何檔案" "prompt 明寫不修改任何檔案"
   assert_contains "嚴禁" "prompt 禁止退場類結論"
+  assert_contains "**下沉軸**" "B2：prompt 要求判斷下沉軸"
+  assert_contains "建議形式：" "B2：下沉發現要附建議形式"
   assert_contains "發現：" "prompt 要求輸出格式（發現／證據／信心）"
   assert_contains "$(cat "$WORLD/sha.txt")" "B2：上份報告的 commit 進 prompt"
   assert_contains "+## 新教訓 ZZZ-LESSON" "B2：lessons.md 的 git diff 進 prompt"

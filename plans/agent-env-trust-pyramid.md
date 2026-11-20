@@ -4,7 +4,7 @@
 > **建立**：2026-11-20
 > **發起人**：使用者（wits）
 > **基準 commit**：`04ad83e`（main，工作區乾淨）
-> **狀態**：T1 完成（`feeb3e7`）、T2 完成（2026-11-20）；T3–T6 未開工
+> **狀態**：T1 完成（`feeb3e7`）、T2 完成（2026-11-20）、T3 完成（2026-11-20）；T4–T6 未開工
 > **參照來源**：Lauren Tan（poteto, SpaceXSI）〈All Code Is Slop (Except Mine)〉AI Engineer CODE 2026、pstack。觀念取自二手筆記，未看原影片
 
 ---
@@ -80,6 +80,12 @@
 - **改**：`bin/skill-health-review.md` B2 第 3 步改為三分：已寫回 / 未寫回 / **可下沉成檢查**（附建議形式）
 - **驗收**：`bash bin/test-skill-health-b.sh` 通過；手動跑一次 B 層，報告中出現 B2 下沉判斷欄
 - **依賴**：T1（格式定案後才知道要比對什麼）
+
+- **執行結果（2026-11-20）**：使用者裁決改為**兩軸**（寫回軸／下沉軸互不排除——已寫回文字的教訓仍可能該下沉），不用三分。
+  下沉軸依教訓「下沉」欄分三情況：填形式 → 查 `bin/` `hooks/` 有無實作；填「不能」→ 審理由；舊格式無欄 → 自判、信心上限「中」。
+  `test-skill-health.sh` 153/153 通過（新增 2 條 prompt assert）。真模型 B 層跑一次（報告寫 scratchpad，未動正式報告目錄）：
+  B2 出 5 條，4 條帶「建議形式」。抽查：pre-push email 未實作 ✅ 屬實；09-30「已接 gate」為誤讀（候選是通用比對檢查，非 token-budget）；
+  07-31 regex 檢查被標成 `cop`，應為 `script`。另：T2 大量刪除使 diff 超過 300 行上限被截斷，模型有自行註明
 
 ### T4　Phase 4 要求看得到的結果　🟡（常駐 skill，三 harness 每 session 載入）
 
