@@ -10,7 +10,7 @@
 
 | 動作 | 規則 |
 |------|------|
-| 往 `governance/lessons.md` **append** 新教訓 | 只加不改不刪，照第 3 節格式 |
+| 往 `governance/lessons.md` **append** 新教訓 | 只加不改不刪，照第 3 節格式。**能下沉的不准只寫 lesson**（順序見 `enforcement-layers.md` §3b）|
 | 修正確定的**事實錯誤**（路徑打錯、檔名改了、工具已停服）| 含 governance/ 下的檔案——事實錯誤修正優先於 🟡 的檔案範圍限制。修正前先用 `ls` / `command -v` 驗證新事實，diff 只准動錯的那幾行 |
 | 新增 skill 時更新 `skills/index.json` 與 `skills/llms.txt` | 照 `skills/convert-skill/SKILL.md` 流程並跑 validator；**禁止**同時往任何入口檔（CLAUDE.md / AGENTS.md / GEMINI.md）的路由表加列 |
 
@@ -50,9 +50,14 @@
 - 錯誤/風險：<實際發生或差點發生什麼>
 - 修正：<當下怎麼處理的>
 - 規則：<一句話，可執行的預防守則>
+- 下沉：<架構 | script | test | cop | 不能（理由）>
 ```
 
 寫教訓的門檻：**這個坑下次還會有人踩** 才寫。一次性的手滑不寫。
+
+**「下沉」欄為必填**（2026-11-20 起，ADR-033；之前的舊條目不回補）：
+- 填 `架構` / `script` / `test` / `cop` = 建議的下沉形式，並寫出具體檢查方式（regex、指令或測試名）；實作另開工作，不阻擋 lesson 寫入
+- 填 `不能` 必須附理由，說明為什麼 `enforcement-layers.md` §3b 前幾層都做不到——空白理由或「難寫」不算理由
 
 ---
 

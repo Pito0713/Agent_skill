@@ -1012,3 +1012,20 @@ LLM 幾乎每次都會「找到可改進處」造成 alert fatigue 與 scope cre
 L1 原地跑（會吃到其他 session 未 commit 的變更）；參數化 skill 體檢 installer（第二處重複，依「第三次才抽」先複製）。
 
 **未來風險**：依賴自身絕對路徑的測試在快照中誤報（Agent_skill 的 `test-skill-usage.sh` 已實證），登記專案前要先用 scratchpad 設定實跑一次。
+
+## ADR-033：犯錯後的修正順序——先下沉到架構與檢查，文字規則排最後（2026-11-20）
+
+**背景**：參照 Lauren Tan 的 inverse trust pyramid（計劃書 `plans/agent-env-trust-pyramid.md` T1）。
+`enforcement-layers.md` §3 已有「機械可判定 → L2」判準，但只用在新規則；agent 犯錯後的預設反射仍是
+「補一條 lesson」，`lessons.md` 已累積 41 條、全部是文字。
+
+**決策**：
+1. `enforcement-layers.md` 新增 §3b：架構 → script / test / lint（L2）→ cop（L3）→ 文字規則（L1）→ 人工讀 diff。
+   往下一層走前必須寫出「為什麼上一層做不到」
+2. `maintenance-protocol.md` §3 教訓格式加必填「下沉」欄（架構 | script | test | cop | 不能（理由））；
+   §1 🟢 lessons 列加「能下沉的不准只寫 lesson」。舊條目不回補，盤點交給計劃書 T2
+3. 「下沉」欄只要求寫出建議形式與具體檢查方式，**不要求當下實作**——避免寫教訓的成本高到讓人乾脆不寫
+
+**否決的選項**：刪除已下沉規則的 L1 文字（違反 §1 鐵則，Codex / agy 會裸奔）；要求寫 lesson 時同步實作檢查（門檻過高）。
+
+**未來風險**：模型為省事一律填「不能」。防線是計劃書 T3（skill 體檢 B2 抽查下沉判斷）；T3 未上線前沒有機械防線。

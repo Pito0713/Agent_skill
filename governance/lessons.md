@@ -388,3 +388,17 @@
 - 錯誤/風險：原地跑通過、快照裡失敗 3 項——測試讀真實 `~/.codex/skills` farm，symlink 指回 `~/Agent_skill`，換到快照路徑就對不上。沙盒測試全綠也抓不到，只有對真實 repo 實跑才現形。
 - 修正：試點專案避開此類測試（使用者選 a）；Floating `swift test` 在快照實跑 390 tests 全過才登記。
 - 規則：**把專案登記進 project-review 前，先用 scratchpad 的登記表與報告目錄在快照上實跑一次**；原地過、快照不過 = 測試不 hermetic，不是專案壞了。
+
+## 2026-11-20 push 到公開 repo 前沒檢查 commit author email
+- 情境：使用者建好 GitHub 空 repo 要求搬入專案，直接 commit + push；事後使用者問「有沒有私人資料」才掃描。
+- 錯誤/風險：檔案內容乾淨，但 commit author/committer 帶全域 git config 的個人 Gmail，已 push 到 public repo；要清除只能改寫歷史 + force push。
+- 修正：回報使用者，提供「改 noreply + 改寫歷史」選項，未經同意不動。
+- 規則：**第一次 push 到新 remote 前，先查 repo 是否 public，並跑 `git log --format='%ae %ce' @{u}..HEAD`（或全歷史）確認不是個人信箱；不是 noreply 就先問使用者。**
+- 下沉：script——pre-push 檢查：`git log --format='%ae%n%ce' <range> | grep -v 'users.noreply.github.com\|noreply@anthropic.com'` 有輸出就警告並要求確認
+
+## 2026-11-20 AppKit 選單列 App 沒有主選單時 ⌘V 無效
+- 情境：SwiftPM 手刻的 accessory（LSUIElement）App，SwiftUI TextField 無法貼上。
+- 錯誤/風險：⌘C/⌘V/⌘A/⌘Z 是靠主選單 Edit 項目的 key equivalent 送進 responder chain；沒設 `NSApp.mainMenu` 就全部失效，編譯與基本測試都抓不到。
+- 修正：補 Edit 主選單（cut/copy/paste/selectAll/undo/redo）。
+- 規則：**不用 Xcode 範本自建 AppKit App 時，啟動就裝 Edit 主選單**；驗收要實際測貼上。
+- 下沉：架構——之後的 menu-bar App 範本內建 `installEditMenu()`；驗收清單加「⌘V 貼上」一項
