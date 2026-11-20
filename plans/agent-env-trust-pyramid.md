@@ -4,7 +4,7 @@
 > **建立**：2026-11-20
 > **發起人**：使用者（wits）
 > **基準 commit**：`04ad83e`（main，工作區乾淨）
-> **狀態**：草案，§6 待裁決，所有工單未開工
+> **狀態**：T1 完成（`feeb3e7`）、T2 完成（2026-11-20）；T3–T6 未開工
 > **參照來源**：Lauren Tan（poteto, SpaceXSI）〈All Code Is Slop (Except Mine)〉AI Engineer CODE 2026、pstack。觀念取自二手筆記，未看原影片
 
 ---
@@ -56,10 +56,24 @@
 
 ### T2　lessons.md 精簡＋下沉盤點　🟡（刪除 lessons 條目）
 
-- **做**：41 條逐條分類為 ① 可下沉成 script / test ② 歸納進 `judgment-rubrics.md` ③ 保留
+- **做**：41 條逐條分類為 ① 可下沉成 script / test ② 歸納進 `judgment-rubrics.md`，或該規則被用到的那個檔案（派工 → `delegation-templates.md`、交接 → handoff skill；2026-11-20 使用者核准）③ 保留
 - **產出**：分類表先給使用者裁決，**同意後**才動（§4 規約：歸納後註明來源日期）
 - **不做**：本工單不實作任何下沉腳本，只產出候選清單 → 實作另開工單
 - **驗收**：分類表每條附 `lessons.md:行號`；①類每條寫出具體檢查方式（regex / 指令 / 測試名）
+
+- **執行結果（2026-11-20）**：43 條（含當日新增 2 條）→ 移除 29、保留 14；新增 R7、R8，明細見 `lessons.md` 檔頭第二張歸納表。
+  ① 候選（本 repo，實作另開工單）：
+
+  | lessons 條目 | 檢查方式 |
+  |---|---|
+  | 07-22 skill 改名 | validator 已擋 name／path；補「舊名仍出現在 skills/ governance/ inject.sh 活引用」檢查 |
+  | 07-31 `${VAR}` | pre-commit 警告：staged `*.sh` 跑 `grep -nP '\$[A-Za-z_][A-Za-z0-9_]*(?=[^\x00-\x7F])'` |
+  | 09-30 必跑沒接 gate | 抽出「必跑」後的指令，比對 hooks/ 與 `bin/test-*` 有無呼叫（啟發式，警告級） |
+  | 11-09 worktree 基底 | 派工前比對 `git rev-parse main origin/main`，不一致自動補第 0 步 |
+  | 11-10 快照誤報 | project-review 登記前在 scratchpad 快照實跑，不過拒絕登記 |
+  | 11-20 push email | pre-push：`git log --format='%ae%n%ce' <range>` 過濾 noreply 後有輸出就警告 |
+
+  下游 2 條（10-23 hook defer、11-20 AppKit）原文保留，依使用者裁決不另開 TODO。
 
 ### T3　gardener 加一問：能否下沉　🟡（bin/ 下的審查 prompt，影響定期體檢）
 

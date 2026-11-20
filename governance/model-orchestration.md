@@ -41,6 +41,8 @@
 
 **注意**：本制度 repo（`~/Agent_skill`）的 `agents/` 目錄下的檔案（api-architect、backend-engineer 等）是**委派用的 prompt 定義檔**，不是任何 harness 的 subagent 類型。用法：把該檔內容放進全工具 subagent 的 prompt，**不要**填進類型參數（會報錯）。
 
+**executor 寫權（比能力更硬的邊界）**：委派前確認 executor 對「它要寫入的路徑」有寫權。`codex exec` 的 sandbox 保護 `.codex/`，`ln` 會 `Operation not permitted`——凡任務要寫某 harness 的自我保護目錄（farm 安裝、接線類），該 harness 不可當 executor，改派 Claude 或由 orchestrator 收口（來源：lessons 2026-07-27）。
+
 **外部 CLI**：agy 可用（PATH：`~/.local/bin/agy`）。gemini CLI 已停服，**任何流程檔看到 gemini CLI 都視為過時內容**。
 
 ---

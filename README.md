@@ -60,7 +60,7 @@ preflight，全數通過才進 install，任一失敗即零寫入中止（ADR-01
 ├── governance/                        # 制度層（v4.5）：調度守則、判斷 rubrics、派工模板、維護協議
 │   ├── harness-diagnosis.md           # 診斷依據（為什麼這樣設計）
 │   ├── model-orchestration.md         # 模型調度守則（指揮官不下場、派工三件套、升降級）
-│   ├── judgment-rubrics.md            # 判斷力外化（R1-R6，附正反例）
+│   ├── judgment-rubrics.md            # 判斷力外化（R1-R8，附正反例）
 │   ├── delegation-templates.md        # 五種任務型態派工模板
 │   ├── maintenance-protocol.md        # 制度檔修改權限分級（🟢🟡🔴）
 │   ├── lessons.md                     # 踩坑教訓日誌（append-only）

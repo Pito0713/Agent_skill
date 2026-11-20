@@ -22,21 +22,27 @@
 ≠ 斷言行為）雖已進 R2，但前半（中文訊息裡 shell 變數一律寫 `${VAR}`）在 `rules/`
 沒有任何落地處——移除會讓規則消失，故整條保留。
 
+## 已歸納移除的條目（2026-11-20，第二次精簡，計劃書 T2，使用者同意）
+
+43 條移除 29 條。分類依據 `enforcement-layers.md` §3b：先看是否已下沉成檢查，再歸納到規則
+**被用到的那個檔案**（不一律塞進 rubrics）。全文同樣用 `git log -p governance/lessons.md` 取回。
+
+| 群 | 移除的條目日期 | 現在在哪 |
+|----|--------------|---------|
+| 已下沉成檢查 | 07-03（索引重複）、07-07 ×2（個人路徑）、08-08（diff 內文 ≠ 作用目標）、08-25（停用 skill）、08-25（regex 漏 `$`）、11-09（`--allowedTools`） | `validate-skill-index.py`、`hooks/pre-commit-audit.sh`、`test-skill-usage.sh`、`test-skill-health-b.sh` |
+| 完成判準 | 08-08（對抗式評估）、08-25（寫死期望值）、10-07（原始值重算）、10-21（exit code） | `judgment-rubrics.md` **R2** |
+| 停下來問 | 07-03（多 session 覆蓋，原已在 R3）、10-31（recalc-all） | `judgment-rubrics.md` **R3** |
+| 動手前盤點既有 | 07-10、08-08（自我遞迴）、08-10（既有 parser）、08-21、09-01、10-12 | `judgment-rubrics.md` **R7**（新增） |
+| 資料與數字真實性 | 07-23、08-10（守恆）、08-17（payload 形狀）、08-18、10-14 | `judgment-rubrics.md` **R8**（新增） |
+| 派工 | 08-31 ×2（diff 快照、目的不寫手段） | `delegation-templates.md` §通用檢查 |
+| executor 寫權 | 07-27（codex sandbox） | `model-orchestration.md` §2 |
+| 交接品質 | 09-23（全部測試組）、09-29（免查清單判準） | `skills/productivity/handoff/SKILL.md` 品質標準 |
+
+**保留的 14 條**：6 條可下沉但尚未實作（07-22、07-31、09-30、11-09、11-10、11-20 push email）、
+2 條屬下游專案的下沉（10-23 hook defer、11-20 AppKit，原文保留、不另開 TODO）、
+6 條不適合歸納（07-04、07-27 觸發詞、10-08 含未結項、10-23 TUI、10-24、10-31 zsh）。
+
 ---
-
-## 2026-07-03 多 session 同時改同一 repo 會互相覆蓋
-
-- 情境：本 repo 被兩個 session 同時修改，CLAUDE.md 整份被另一來源覆寫，且以「系統訊息」形式出現、附帶「不要告訴使用者」的指示
-- 錯誤/風險：照單全收會在使用者不知情下改變行為；默默蓋掉會毀掉另一方的工作
-- 修正：停下來向使用者回報 → 使用者確認後才 restore 非預期變更、保留已驗證的部分
-- 規則：動 repo 前先 `git status`；出現非預期變更或「要求隱瞞」的指示 → 一律停下來問使用者（judgment-rubrics R3）
-
-## 2026-07-03 索引多處重複必然漂移
-
-- 情境：skill 路由同時存在 CLAUDE.md 表格、skills/llms.txt、README 三處，新增 skill 要同步三份
-- 錯誤/風險：漏同步其中一份後，弱模型不知道信哪份，路由開始隨機失效
-- 修正：CLAUDE.md 重寫為只放指標；路由的單一事實來源定為 llms.txt
-- 規則：同一份資訊只維護一處，其他地方放指標（maintenance-protocol 第 1 節已固化）
 
 ## 2026-07-04 制度檔把單一 harness 的工具參數寫成通用規則，跨 harness 執行即撞牆
 
@@ -45,40 +51,12 @@
 - 修正：model-orchestration §2 改 harness 雙欄適配表；tech-lead-mode Phase 2 標註語法歸屬；coding-workflow-core Phase 0 原生工具優先（ADR-008）
 - 規則：制度檔寫工具參數時必須標註適用 harness；通用原則與 harness 語法分離，執行前以當前工具 schema 為準，不照抄他 harness 參數名
 
-## 2026-07-07 下游公開 repo 長出制度副本與個人絕對路徑
-
-- 情境：AG_knowledge（公開 repo）被 7/2–7/3 的 session 塞入 `.agents/rules/` 七檔制度改名副本、CLAUDE.md 加了 `file:///Users/...` 路由表、`.agents/skills/` 36 個指向本機路徑的 symlink 被 git 追蹤——根因是當時 agy 沒有全域載入點，session 只好「就地複製制度」
-- 錯誤/風險：副本內容凍在 7/3 必然漂移（索引漂移的真實案例）；公開 commit 會洩漏使用者名，絕對路徑對其他協作者全部斷鏈
-- 修正：副本先比對回寫再刪、CLAUDE.md 重跑 inject 回 `~` 路徑標準形、skills symlink 移出追蹤 + gitignore；inject.sh 新增 `audit_personal_paths`（注入完成後掃 `file:///` 與 `/Users/` 並警告）+ 修 `.git/hooks/` 目錄不存在時 cp 失敗的 bug
-- 規則：下游專案 **committed 的檔案禁止 `/Users/<name>` 與 `file:///` 絕對路徑**，制度/skill 引用一律 `~` 形式；發現制度副本 → 回寫獨有內容後刪除，改走全域索引路由正本
-
-## 2026-07-07 正本 repo 自己也寫死了機器特定絕對路徑
-
-- 情境：審查下游洩漏後回頭掃正本（本 repo 亦是公開 repo），發現 governance/ 三檔 + 備份共 6 處含 `/Users/<使用者名>` 真實值（agy 的 PATH 實測記錄 ×2、`<專案>` 定義的舉例 ×1、及其歷史備份 ×3），且已隨 v4.5–v5.0 push 進公開歷史
-- 錯誤/風險：洩漏使用者名（已成事實，修 live 檔是止血非抹除）；更實際的傷害是**跨機器不可攜**——其他機器照抄這條 PATH 會直接錯
-- 修正：live 三處改 `~` 形式（`~/.local/bin/agy`、`~/Agent_skill`）；backups/ 不動（備份的意義是忠實快照，且歷史已公開）；未來下游由 inject.sh 的 `audit_personal_paths` 把關
-- 規則：制度檔寫路徑**一律 `~` 形式，連「舉例」也不用真實使用者名**（用 `~` 或 `<name>` 占位）；寫下環境實測記錄前先問「這行被別台機器 / 公開讀者看到還成立嗎」
-
-## 2026-07-10 設計新 hook 前未盤點既有 harness 設施
-
-- 情境：enforcement-layers 設計稿第一批含新建 PreToolUse 攔截腳本；使用者指出 `~/.claude/settings.json` 已掛全域 PreToolUse hook（cost-aware-approval），再建即疊床架屋
-- 錯誤/風險：同一 hook 事件掛兩支腳本，行為疊加難追蹤；同類攔截規則散在兩處必然漂移
-- 修正：移除 PreToolUse 項（設計改為「攔截規則日後擴充進既有 hook」）；enforcement-layers.md §2 加「既有設施盤點」註記
-- 規則：新增執行層設施（hook / agent / 自動化）前，先實查 harness 既有設定（`~/.claude/settings.json`、專案 `.claude/`）——同一事件層只允許一個歸屬，擴充優先於新建
-
 ## 2026-07-22 skill 改名只改了 name 欄，檔名與 30 處引用全留舊名
 
 - 情境：`gemini-assist.md` 的底層工具早已從 gemini CLI 換成 agy，某次把 frontmatter `name` 改成 `agy-assist` 就收手，但檔名、`llms.txt` path、inject.sh、CLAUDE.md 路由、10 個 skill 的委派表共約 30 處仍是 gemini-assist——放了數週沒人發現，直到這次批量升 frontmatter 才撞出 name 與檔名不一致
 - 錯誤/風險：不完整改名 = 懸空引用未爆彈（llms.txt path 指向的檔名與 name 不一致，靠檔名對應 name 的流程會斷）；且改名時若無腦全域 sed，會連 README 版本表 / memory ADR / handoff 這些**歷史紀錄**一起竄改，違反「不改史」
 - 修正：先 `grep -rn` 全 repo 盤點所有引用，切成「活引用（路由指標 / 委派表 / skill 名標籤 → 改）」與「dated 歷史敘述（README changelog / memory ADR / handoff / 診斷快照 → 保留）」兩類分別處理；改完跑 §7 索引防漂移四查確認路由 resolve
 - 規則：改 skill / 工具名是**原子操作**——`name` 欄、檔名、`llms.txt`(name+path)、所有活引用必須同一次全改；動手前先 `grep -rn` 全 repo 盤點，並區分活引用（改）vs 歷史紀錄（不改史，保留）
-
-## 2026-07-23 遷移腳本只覆蓋「當下看得到的」路徑，漏掉註解與舊名
-
-- 情境：寫 `bin/migrate-downstream-paths.sh` 時，改寫規則是照我自己驗證案例裡的常駐 6 條逐條列舉。實際跑第一個真實專案（WakaWaka）才發現：還有 14 條被 `#` 註解掉的按需載入路徑、以及一條 ADR-011 改名前的舊名 `gemini-assist`（且未被註解、是啟用中的）。真實專案共 21 條需改寫，我只處理 5 條
-- 錯誤/風險：① 用「逐條列舉」而非「通用規則」處理結構性改名，覆蓋率取決於樣本而非規則 ② 把註解掉的引用當成不存在——使用者取消註解那天才會發現斷鏈，且一樣是靜默失敗 ③ 只拿自己造的 fixture 測，沒先掃真實資料的全部變體
-- 修正：改成通用 regex（`<category>/<name>.md` → `<name>/SKILL.md`，rules/governance 白名單排除）＋ 舊名映射；並加「改寫後逐條驗證新路徑真的存在，否則不寫入」的防呆
-- 規則：寫批次改寫腳本前，先 `grep -oE ... | sort -u` 掃出真實資料的**所有變體**再設計規則；改寫結果一律用「目標是否真的存在」驗證，不能只看 diff 好不好看。註解掉的引用要照改——它是待啟用狀態，不是不存在
 
 ## 2026-07-27 「收工必寫」定義太鬆，latest.md 在 session 中途被過度觸發
 
@@ -87,185 +65,12 @@
 - 修正：ADR-014 把觸發收緊為「只由使用者明確『收工/交接』指令觸發」，寫進 4 份索引鐵律 + maintenance-protocol §6；停用 Stop hook（settings.json 移除掛載，hook 檔留 dormant）；version-log 與 latest.md 解耦
 - 規則：制度裡凡是「必做 X」配上主觀觸發詞（收工、告一段落、完成、差不多好了），要嘛把觸發詞換成客觀可判定的條件，要嘛把觸發權收回給使用者明確指令。不要用強制語氣（必寫/必做）去約束一個模型會自行擴大解釋的模糊邊界——那只會保證它過度執行
 
-## 2026-07-27 codex exec 的 sandbox 擋 .codex 寫入，Codex 不能當 farm 安裝類 executor
-
-- 情境：把「WakaWaka farm dangling 修復」派給 Codex（`codex exec`，sandbox=workspace-write）。Codex 跑 `inject.sh`，Claude farm 成功，但 Codex farm 在建 `.codex/skills/*` symlink 時 `ln: Operation not permitted` 中止——codex exec 的 sandbox 保護自己的 `.codex/` 目錄、禁止寫入。同一路徑我（Claude Code）手動建 symlink 成功，證明是 codex sandbox 專屬限制、非 FS 問題
-- 錯誤/風險：多 CLI 委派時只問「executor 會不會做這件事」，沒問「它對要寫的路徑有沒有權」。farm 安裝本質要寫 `.codex/`（全域 `~/.codex/skills` 或下游 `.codex/skills`），Codex 結構性永遠做不到；盲派會派出一個註定失敗的工單
-- 修正：FIX-1 的 `.codex` 半邊改由 orchestrator（Claude）直接跑 inject.sh 補完。探針策略生效——先派最低風險的 FIX-1 試水，撞牆立刻換手，沒有三份盲派
-- 規則：委派前先確認 executor 對「它要寫入的路徑」有無寫權；sandbox/自我保護目錄（`.codex/`、可能還有各 harness 的 config 目錄）是比「能力」更硬的結構性邊界。凡任務會寫到某 harness 的自我保護目錄，該 harness 一律標「不可當此類 executor」，farm/接線類任務只能派 Claude 或由 orchestrator 收口
-
 ## 2026-07-31 bash 變數後接全形標點會被吃進變數名，配 set -u 直接崩
 
 - 情境：`bin/install-git-hooks.sh` 寫 `echo "...core.hooksPath=$hp，.git/hooks 不會被執行..."`。`$hp` 後面緊接全形逗號「，」，bash 把多位元組字元一起當成變數名的一部分，`set -u` 判定 unbound variable，腳本當場非零退出——警告沒印出來，而且整個 preflight 失敗
 - 錯誤/風險：**這條路徑平常跑不到**（只有 repo 設了 `core.hooksPath` 才進），所以不寫測試就永遠不會發現。更陰險的是它會讓測試「假通過」：另一處同類寫法（`$CANON_ABS（需 chmod +x）`）在「preflight 應該失敗」的測試裡回傳 exit 1，剛好符合預期——**測試綠燈，但失敗原因是崩潰而非預期的檢查邏輯**
 - 修正：改用 `${hp}` / `${CANON_ABS}` 大括號。並用 `grep -rnP '\$[A-Za-z_][A-Za-z0-9_]*(?=[^\x00-\x7F])'` 掃全 repo 找同類寫法（另兩處在註解、一處是跳脫的字面 `\$HOME`，無害）。測試補上「訊息內容正確」的斷言，不只斷言 exit code
 - 規則：**中文訊息裡的 shell 變數一律寫 `${VAR}`**，不要裸 `$VAR`——中文標點緊跟變數是這個 codebase 的常態。另：**斷言 exit code 不等於斷言行為**，預期失敗的測試要一併斷言錯誤訊息內容，否則崩潰與正常失敗無法區分
-
-## 2026-08-08 對抗式評估「大部分是對的」正是最危險的時候——證據要自己重跑
-
-- 情境：WakaWaka 活躍 agent 面板計劃書 v1 送 `codex exec` 做對抗式評估，回收 12 條（2 BLOCKER / 6 HIGH / 4 MEDIUM）。兩條 BLOCKER 都成立，而且比它說的更嚴重（實測 99 個 Codex rollout 有 51 個以未閉合 turn 結尾，最舊 4.9 天；Claude 側 400 檔抽樣 825 筆候選中 397 筆是 `isMeta`，48% 誤判率）。但逐條重跑驗證時發現：第 7 條稱 `~/.codex/sessions` 有 1,152 檔 / 148 MB，實測是 99 檔 / 41 MB——那個量級是 `~/.claude/projects`（1,054 檔 / 108 MB），它把兩棵樹的統計搞混；第 2 條把 slash command 列為會打破 human-message 判定的情況，實測 `isMeta ∩ slash-command = 0`，零重疊，slash command 本來就該算回合邊界
-- 錯誤/風險：**評審的高嚴重度發現全中，會產生「這份評估很可靠」的月暈效應，讓人對剩下的條目降低查核標準**。錯誤的那兩條都帶著具體數字與檔案行號，外觀與正確的那十條完全一致——可信度無法從形式判斷。若照單全收，錯誤的成本估算會導致架構被過度削減（第 7 條），正確的邊界規則會被改壞（第 2 條）
-- 修正：對每一條的關鍵證據都自己重跑一次（`find`/`du` 現算檔數與容量、python 掃 JSONL 現算欄位分布），在計劃書的回應表格裡逐條標「成立／方向成立數據錯誤／部分不同意」並附我自己的實測數字。推翻的兩處連同理由寫進交接文件，避免下一個 agent 又改回去
-- 規則：**委派出去的審查／評估，回收後要驗證的是它的證據不是它的結論**——尤其在它大部分講對的時候。帶數字的斷言一律現算一次（檔數、容量、命中率這類最容易張冠李戴）；帶「這樣會出錯」的斷言一律找一個真實反例或正例驗證。在回應文件裡明確區分「全採納／採納結論但修正證據／部分不同意」三種處置，並把不同意的理由留給下游，否則下一輪會被改回去
-
-## 2026-08-08 監控工具自己會呼叫被監控的 agent——裝 lifecycle hook 前先查自我遞迴
-
-- 情境：WakaWaka（監控 Claude Code / Codex 的 menu bar app）規劃改用 lifecycle hook heartbeat 來偵測活躍 agent，SessionStart 建 registry、SessionEnd 刪除。寫計劃書時 grep 自家程式碼才發現 `ParserRunner.swift:138` 每 ~10 分鐘會執行 `claude -p "/usage"` 抓額度——裝上 SessionStart hook 之後，**WakaWaka 每 10 分鐘會把自己註冊成一個活躍 agent**，面板上閃一個不存在的 Claude session
-- 錯誤/風險：這類自我遞迴在設計階段完全看不出來，因為 hook 設計與 app 的資料抓取邏輯在兩個心智模型裡。實作完才會發現，而且症狀（面板偶爾多一列、10 分鐘一次）容易被誤判成 registry 清理邏輯有 bug，往錯的方向除錯。同源風險還有：若 heartbeat 觸發 UI 更新、UI 更新又觸發資料抓取，會形成穩定的自激迴圈
-- 修正：計劃書 §3.4 明列此坑，解法是 `ParserRunner.buildEnv()` 注入 `WAKAWAKA_INTERNAL=1`，所有 heartbeat hook 偵測到該變數直接 no-op，並列為測試第 2 條。**狀態：已寫進規格與測試清單，尚未實作**
-- 規則：**幫某個 agent 裝 lifecycle hook 之前，先 grep 自己的程式碼有沒有在呼叫那個 agent 的 CLI**。凡是「觀測 X 的工具」同時「會呼叫 X」，就必須有一條明確的自我識別通道（env 變數最簡單，比對 pid / 命令列參數都比較脆）。這條檢查要放在設計階段，不是等實作完看到鬼影才回頭找
-
-## 2026-08-08 路徑出現在 diff 內文 ≠ 那個檔案被動過——挖 log 統計要抓「作用目標」不是「字串命中」
-
-- 情境：實作 `bin/skill-usage.py`（挖 Claude transcript / Codex rollout 統計 skill 使用次數）。第一版對 tool call 的 arguments 全文抓 `SKILL.md` 路徑，跑出來 12 個 mentor-* 這類幾乎沒動過的 skill 全都顯示 `edit=3`
-- 錯誤/風險：查下去發現那三筆是 `apply_patch` 在改 `WakaWaka/AGENTS.md`、`shopee/CLAUDE.md`、`skills/index.json`——**patch 的內文列出了 18 / 21 / 38 條 SKILL.md 路徑**，一次就假造出數十個「編輯事件」。若沒查證直接採信，之後的冷熱分層會建立在幻影資料上，而且錯得很像真的（數字整齊、分佈合理）
-- 修正：改為只從 `*** Update/Add/Delete File:` 標頭取作用目標，patch 內文一律視為內容不是目標；補一條回歸測試（patch 改別的檔但內文引用兩個 skill → 該兩個 skill 必須 0）。修正後幻影 edit 全部歸零
-- 規則：**從 log／transcript 挖行為統計時，先問「這個字串是這次操作的作用目標，還是只是被順帶提到」**。寫入類操作只認宣告目標的欄位（patch 標頭、`file_path`），讀取類要防的是內文引用與工具自身的分析輸出。統計出來的數字若在「不可能常被動的項目」上呈現整齊分佈，優先假設是計數口徑錯了，不是使用習慣特別
-
-## 2026-08-10 把「我發現的坑」寫進計劃書之前，先查同一份資料源的既有 parser 怎麼處理
-
-- 情境：規劃 WakaWaka token 活動分佈時，原型踩到 Claude transcript 的 requestId 去重問題（一次 API 回應拆成多筆記錄、streaming 時 usage 遞增），我把它當成新發現寫進計劃書 §1，還斷言「不能直接照抄 `usage-calculator.ts`」。送 Codex 評估後才發現：`usage-calculator.ts:82` 的去重鍵早就是 `` `${requestId}|${message.id}` ``，註解明寫「keeps the LAST occurrence (latest state of a streaming response is the most complete)」，`daily-usage.test.ts` 甚至有一條測試叫 `same requestId|msgId deduped, last-write-wins (streaming)`，用的正是 100→150→200 的情境
-- 錯誤/風險：不只是白做工。我的原型取**第一筆** usage（既有實作取最後一筆），實測會系統性低估 1.62% 的 output，而且計劃書叫下一個 agent「不要照抄既有實作」——等於主動把一個已經被正確解決的問題重新引入。同一個 codebase 裡出現兩套對同一份資料的不同解讀，之後兩張報表的數字對不起來，除錯時沒人會想到根因在去重鍵
-- 修正：v2 §1 改為「去重鍵與 last-write-wins 必須重用既有實作，只有 content 聯集是新的」，並把「既有 codebase 早就解決了」寫進修訂摘要，避免下一個 agent 又繞回去
-- 規則：**動手處理某份資料源之前，先 grep 既有程式碼有沒有人處理過同一份資料**（`grep -rn "requestId\|dedup\|last-write"`）。尤其當你在原型階段「發現」一個資料格式的陷阱時——那種陷阱通常不是第一次有人踩，既有實作的註解與測試名稱就是最好的文件。把「這個既有模組怎麼處理同一份輸入」列進計劃書的必讀清單，而不是等審查者來指出
-
-## 2026-08-10 原型用寬鬆比對 + 沒有守恆檢查，會產出討喜的假數字並被寫進規格
-
-- 情境：同一份計劃書的分類原型，Bash 指令分類用 `'ls' in command` 這種 substring 比對。得到「理解 21.1% / 開發 44.5% / 驗證 11.4%」看起來很合理的分佈，我把它當成可行性證據寫進 v1，還拿來論證「主指標該用 output token」。Codex 指出四個桶只加到 88.7% 不守恆後重算，改成嚴格 `startswith` 並補上守恆檢查，同一份資料變成「理解 **2.7%** / 其他 **41.6%**」——`'ls'` 命中的是 `tools`、`false` 這類字
-- 錯誤/風險：寬鬆比對的誤判**永遠是把東西塞進某個具名分類**，不會塞進「未分類」，所以它的偏誤方向固定是「看起來分類得很好」。少了守恆檢查（各桶總和是否等於全體），這個偏誤沒有任何自動訊號會揭露。結果是拿一組討喜的假數字去支撐架構決策，而且那些數字已經進了要交給下一個 agent 執行的規格文件
-- 修正：v2 把「五桶總和 == segment total、excluded 不計入任何桶」列為必須有測試的 invariant，並把完成判準寫成「未分類率須降到 25% 以下，否則停下來重新檢視分類法」。真實數字（other 41.6%）誠實寫進計劃書，連帶揭露分類法本身需要 shell chain 解析與 MCP mapping 才可用——那是 v1 沒認清的範圍
-- 規則：**任何分類/歸因原型，第一件事是加守恆檢查（各類總和 == 全體），第二件事是看「未分類」桶有多大**。未分類率是分類器品質的唯一誠實訊號；一個未分類率為 0 的分類器不是完美，是它在亂塞。另：原型用的比對規則若比正式實作寬鬆，它產出的數字不得當成可行性證據寫進規格——要嘛原型就用正式規則，要嘛在文件標明「此為寬鬆比對上界」
-
-## 2026-08-17 從防禦性程式碼反推外部 payload 形狀，推出來的是作者的不確定性不是事實
-- 情境：同上。判斷 Codex 的 hook payload 長什麼樣，依據是同 repo 的 `permissionrequest-codex.mjs` 寫著 `input?.session_id ?? input?.sessionId`。
-- 錯誤/風險：我據此斷定「Codex 送 camelCase `sessionId`」，寫了修法、寫了測試、還把這個「原因」寫進交接與說明。真實 payload 抓下來是 snake_case `session_id`——那個 `??` 只是原作者的防禦性寫法。更關鍵的是真相完全不同：Codex payload **沒有任何欄位表明自己是 Codex**，所以舊邏輯不是「認不出欄位」而是「把 Codex 歸成 claude-code」。錯的診斷會導出錯的修法（見上一條，那個修法還會把 hook 全關掉）。
-- 修正：在 hook 最前面裝 5 行臨時探針把 payload 原封不動 append 到 scratchpad，跑一次真實 `codex exec`，拿到 ground truth 後重寫判別邏輯與測試，並把測試 fixture 換成抓到的真實 payload。探針用完立刻移除並 grep 確認無殘留。
-- 規則：**外部程式送進來的資料形狀，只有攔截到的真實樣本算數**。`a ?? b` 這種相容寫法是作者不確定，不是規格；從它反推等於把別人的猜測當事實。抓一份真的比推論便宜——本例是 5 行探針 + 一次 30 秒的執行。
-
-## 2026-08-18 「結構重複」不等於「token 可省」——抽取的淨值會被參數化成本吃掉大半
-- 情境：五個 `mentor-*` skill 有七個段落逐字重複，抽出共用骨架。我先估「每份省 350–400 tok」，向使用者報「每個能砍 1,000+」。
-- 錯誤/風險：實測只有 −123～−228／份（合計 −969）。原因是重複的段落各自帶著**不可合併的參數**——五個 domain 的關係詞、箭頭標籤、迷思符號、文獻來源全都不同，要保住這些，取代用的摘要就要價約 300 tok，把刪掉的 450–500 抵掉大半。第一次的「1,000+」還多算了一層：那是 SKILL.md 的體積縮減，不是淨 token 節省，若採「執行時讀共用檔」的引用式做法，單次呼叫幾乎不省。
-- 修正：實測後立刻在共用檔、ADR-022、README 版本列三處都改成實測值並寫明落差原因，不留樂觀估計。
-- 規則：**估重構收益要先估「替代物的成本」，不要只算刪掉多少行。** 判斷式：重複段落裡每有一個隨情境變動的參數，就有一份參數化成本要付回；參數多到摘要壓不下去時，收益主要是「消除重複、建立模板」而非省 token——這時要照實說，不要用體積縮減的數字冒充執行成本節省。另：抽出的共用檔若不是 SKILL.md，`bin/token-budget.sh` 不會統計它，維護 inventory 會少算。
-
-## 2026-08-21 舊分析記下的待辦清單，執行前必須重掃一次實際檔案
-- 情境：執行 `_shared/mentor-protocol.md` §10 三天前記下的「兩段冗餘」待辦（ADR-023）。
-- 錯誤/風險：照清單刪完才發現冗餘是**三段**——§10 寫的「與其他 mentor 的根本差異表」在
-  【角色定位】段，而我先刪的是【觸發條件】段裡另一張講同一件事的路由表。差一點只做半套，
-  而且會在 ADR 裡把處置對象寫錯（第一版 §10 改寫確實寫錯了，量測前還先填了估計數字）。
-- 修正：重新 grep 五份實際檔案，補刪【角色定位】的五張表，§10／ADR 改為記錄「三段」並附實測值。
-- 規則：待辦清單是**當時的觀察**不是規格。動手前先對實際檔案重跑一次掃描，確認範圍與清單一致；
-  數字一律先量測再寫進文件，不准先寫估計值等回填。
-
-## 2026-08-25 停用 skill 必須移出索引，加 lifecycle 標記等於沒停用
-- 情境：依使用統計停用 7 個 skill、合併 5 個（ADR-025）。第一直覺是在 `skills/` 下開
-  `_deprecated/` 子目錄並標 `lifecycle: deprecated`。
-- 錯誤/風險：兩層都不成立。① `bin/validate-skill-index.py` 用 `(repo/"skills").rglob("SKILL.md")`
-  比對 index，`skills/` 底下任何一份 SKILL.md 不在 index 就直接 FAIL；② 就算加進 index 標
-  lifecycle，`bin/lib-skill-farm.sh` 照樣把它 symlink 進 `~/.claude/skills/`，模型仍然掃得到——
-  **標記改變不了可見性**。
-- 修正：停用資料夾放 repo 根目錄 `deprecated/`（在 `skills/` 樹外），同時從 index.json 與
-  llms.txt 移除該筆；`bash setup.sh` 的 `prune_orphan_entries` 會清掉兩個 farm 的舊 symlink。
-- 規則：**判斷「某個東西還會不會被讀到」，看的是索引與 symlink，不是檔案裡的標記。**
-  停用前先 `grep -rn "<name>" skills/` 掃現存委派點，決定內聯或移除；改完必跑
-  `validate-skill-index.py` + `token-budget.sh --strict` + `setup.sh`，三者缺一都留得下殘骸。
-
-## 2026-08-25 寫死期望值的守門測試，會在「數量下降」時才暴露
-- 情境：同一批停用作業連續打爆三處寫死的斷言——`test-skill-usage.sh` 的 `38`、
-  該檔用已停用 skill 當 fixture、`test-token-budget.sh` 的 waiver 清單與 `5000` bytes padding。
-- 錯誤/風險：這些斷言在「只增不減」的期間全部安靜通過（新增 skill 時 38→39 才紅一次），
-  真正的失效模式是**移除**：fixture 指向的檔案消失、padding 不再足以越過門檻——後者尤其危險，
-  它讓「超標是勸告不是硬牆」這條測試變成永遠測不到那個分支，卻不會報錯。
-- 修正：能導出的一律改導出（skill 數從 index.json 讀、padding 由 `30000 - subtotal + 1000` 算）；
-  真正要當守門的（waiver 清單、成本 baseline）保留寫死，但同步換上新 baseline 並在 ADR 記明。
-- 規則：測試裡的常數分兩種——**「描述現況」的要導出**（數量、路徑、fixture 名稱），
-  **「守門檻」的才寫死**（預算 baseline、核准清單）。寫死前先問：這個數字變了，我是想被擋下來，
-  還是只是懶得算？後者一律改導出。
-
-## 2026-08-25 正規表達式的字元類漏一個 `$`，把絕對路徑降級成相對路徑
-- 情境：`bin/skill-usage.py` 的 unresolved 桶長期有 `HOME/.codex/skills/<name>/SKILL.md` 三筆，
-  看起來像「外部 skill」，實際是本 repo 的 `coding-workflow-core` / `code-review` / `cli-delegate`。
-- 錯誤/風險：`SKILL_PATH_PATTERN` 的字元類 `[\w./~-]` 不含 `$`，所以 `$HOME/...` 的比對**從
-  第二個字元開始**，抓到的 `HOME/...` 沒有前導斜線 → `is_absolute()` 為 False → 被接到 workdir
-  後面變成不存在的路徑 → 靜默進 unresolved。三個 skill 的真實用量因此被系統性低估，
-  而報表看起來完全正常——**沒有任何錯誤訊息**，只是數字偏小。
-- 修正：把 `$HOME` / `${HOME}` 提成明確的前綴群組（不污染主體字元類），resolve 時只展開 HOME
-  一個變數（展開任意環境變數等於用掃描器的環境冒充當時 session 的環境）；補 fixture 測試並
-  **實測「移除修正後測試會紅」**，確認不是空轉的斷言。
-- 規則：**統計工具的「無法歸類」桶要定期看內容，不是只看總數。** 一筆本該歸戶的資料掉進
-  unresolved 不會報錯，只會讓結論偏一點——這種偏差正是靠人工掃一次桶內清單才抓得到。
-  另：寫路徑比對的 regex 前，先列出真實輸入裡可能出現的前綴形式（`~`、`$HOME`、`${HOME}`、
-  相對路徑），字元類漏一個就是靜默降級。
-
-## 2026-08-31 共享 worktree 下複驗，先歸屬作者再判越界
-- 情境：兩輪委派 codex 改 WakaWaka 的 Codex 額度顯示。第二輪複驗時 `git status` 冒出
-  工單外的 `SettingsService.swift` + 一個新測試檔，第一反應是「codex 越界，該 revert」。
-- 錯誤/風險：那份改動移除了 auto 模式的 30 分鐘到期，看起來像安全退步，**差一步就把
-  使用者另一個 session 正在做的需求砍掉**。委派的 codex 完全無辜——它的報告沒提這兩個檔，
-  因為它根本沒動過。共享 worktree 下，「我沒做過的改動」與「受託者越界」是兩件事，
-  而 `git status` 分不出來。
-- 修正：三段證據鏈定案——(1) 檔案 mtime `11:30:00` 早於本輪 codex 動工的 `11:37:48`；
-  (2) 委派前的 diff 快照已含該檔，且與受託者產出逐位元組相同；(3) `~/.codex/sessions/`
-  當天的 rollout 檔裡搜到那個 session 的第一則使用者訊息，內容正是該需求。確認後不動它，
-  改為驗收功能（hook 契約 + 高風險閘門）再與本輪拆成兩個 commit。
-- 規則：**委派前先 `git diff > 快照`，複驗時比對的是「受託者 vs 快照」，不是「工作區 vs HEAD」。**
-  出現工單外的改動時，順序永遠是 mtime → 快照比對 → 翻對方 session 檔找指令，
-  三者指向同一結論才動手；任何一步對不上就停下問使用者。revert 別人的在製品是不可逆的。
-
-## 2026-08-31 工單寫死「一律加參數以便測試」，會換來用不到的參數
-- 情境：同一批委派，工單要求所有新函式帶 `now: Date = Date()` 好寫確定性測試。
-  codex 照辦，連只格式化 `fetchedAt` 的 `snapshotText(now:)` 也加了——那個參數從頭到尾沒被讀。
-- 錯誤/風險：Swift 不對未使用的**函式參數**發警告，編譯器與測試都不會抓；
-  而測試寫成 `snapshotText(now: now)` 之後，反而讓人誤以為它是相對時間。
-  受託者照字面執行沒有錯，是工單把「手段」寫成了「一律」。
-- 修正：複驗時移除該參數，並把「只驗非空」的弱斷言換成 `hasPrefix("Snapshot ")`。
-  另一處同源問題：工單寫「兩條 bar 都要標 stale」，但那一列左邊本來就有 stale 標記，
-  照辦的結果是同一列講兩遍。
-- 規則：**工單寫目的（「要能寫出不依賴系統時間的測試」），不寫一律套用的手段（「都加 now 參數」）。**
-  凡是句子裡出現「一律 / 全部 / 每個」，先問一次：有沒有本來就不需要的個案？
-  受託者不會替你判斷例外，它會照字面做完。
-
-## 2026-09-01 「所有顯示這份資料的地方都加一列」忽略了介面本來就分層
-- 情境：Codex 額度補上第二個窗口時，工單寫「三個 view 各多一列」，三個 view 照辦。
-  結果 menubar footer 從兩條 bar 變三條，使用者第一時間問「為什麼多一個」。
-- 錯誤/風險：那三個 view 的定位根本不同——`PopoverFooter` 的檔頭第一段就寫明它只放
-  at-a-glance、「anything that belongs to detailed inspection now lives in the standalone
-  usage dashboard」，而同一個 repo 的 Claude 早就照這條線分好：5h 在 footer、weekly 在
-  dashboard。既有分層寫在程式碼註解裡，我卻用「三個都加」一句話跨過去，等於當場破壞一致性。
-- 修正：footer 只留 primary 窗口，第二個窗口留在 dashboard，與 Claude weekly 同層；
-  順手修掉檔頭那句早已過時的 `Row 3 — Codex 7d quota bar`。多做了一輪才退回來。
-- 規則：**派工前先問「這份資料該落在哪一層」，而不是「哪些檔案會顯示它」。**
-  同一個資料出現在多個 view 時，先找同類資料的既有先例（這裡是 Claude 的 5h/weekly 拆法）
-  照抄那條線；找不到先例才自己定。檔頭註解常常就寫著答案，讀一次比重做一輪便宜。
-
-## 2026-09-23 交接只記「跑過的測試組」，等於把沒跑的那組的紅燈藏起來
-- 情境：WakaWaka 有三組測試（hooks / parser / Swift app）。9/1 的交接寫「146 tests +
-  hook 端 121 tests 全過」，看起來是全綠收工。實際上 parser 那組從頭到尾沒跑，而同一天
-  前後的 commit 才剛把 `pricing.json` 的 Codex 價格換成促銷價。
-- 錯誤/風險：那組裡有一個把舊價格寫死的測試當場轉紅，紅了將近一個月沒人看到——直到
-  9/15 另一件事順手跑了全部測試才發現。交接檔的「全過」在下一個 session 眼裡就是事實，
-  它不會去分辨那是「三組都過」還是「跑過的兩組都過」，於是紅燈被交接檔本身蓋住。
-- 修正：收工前三組全跑；真的沒跑就在交接裡明寫「parser 組未跑」，不要只寫跑過的那幾組
-  的數字。順帶把兩個寫死價格的測試改成從 `pricing.json` 取值。
-- 規則：**交接寫測試結果時，主詞是「全部測試組」而不是「我跑過的測試組」。**
-  報 X 個通過之前先問「這個專案總共有幾組測試」，數量對不上就補跑或明寫沒跑。
-  沒跑的那組不會因為沒被提到就變成綠的，只會變成下一個人要付的利息。
-
-## 2026-09-29 交接裡的「已知行為，別再查」寫錯一條，就讓 bug 對調查免疫
-- 情境：WakaWaka 的 Codex 額度條長期顯示 `stale` / `Snapshot expired`。9/23 的交接把它
-  列進「已知行為（不是 bug，別再查一次）」，理由寫「代表這台機器超過 11 分鐘沒跑 Codex」。
-  實際根因是 `CodexUsageService` 有一條 50MB 檔案上限，而事件最多的 session 同時是最大的
-  檔案（當時 87MB），也是唯一還在寫入 quota snapshot 的那個——掃描永遠落到一個已結束
-  session 的舊讀數，任何 refresh 都得到同一個答案。
-- 錯誤/風險：那條註記本身是半對的（閒置確實也會 stale），所以看起來很有說服力。但它被歸進
-  「不是 bug」，等於發給每一個後續 session 一張不用查這裡的通行證。使用者自己回報「刷新
-  都不會動作」之前，沒有任何 session 去掀它——不是因為難查（十分鐘內就定位了），是因為
-  交接檔說過不用查。錯的免查清單比沒有清單更貴。
-- 修正：拿掉檔案上限（那條上限本來也買不到東西：掃描早就只讀檔尾 4MB，成本與檔案大小無關），
-  把鎖住錯誤行為的測試反轉，並在新交接裡明寫上一輪那條註記是錯的、正確判讀是什麼。
-- 規則：**寫進「已知行為／不用再查」的每一條，都要附一個可否證的判準，不能只給結論。**
-  這裡該寫的是「先比對 `~/.codex/sessions` 最新 jsonl 的 mtime：檔案在動而 UI 不動就是 bug」，
-  而不是「stale 代表閒置」。給不出判準的，就不該放進免查清單，只能寫成「尚未查證的推測」。
 
 ## 2026-09-30 寫了「必跑」卻沒接上 gate 的檢查，等於沒有檢查
 - 情境：`maintenance-protocol.md` §8.6 寫明新增或修改 skill 時必跑 `token-budget.sh --strict`，
@@ -284,19 +89,6 @@
   接不上就改寫成「建議跑」並記 TODO——不要讓文件承諾一個沒人執行的 gate。**
   導出常數時，導出來源必須獨立於被驗證的值；用受測值自己算期望值的斷言恆真，比寫死更糟。
 
-## 2026-10-07 存的是「被規則處理過的值」，換規則重算時不能拿它當原料
-- 情境：tw-stock-tracker 新增訊號門檻校準，要用新門檻重判歷史預測的訊號。第一版 `resignal`
-  直接讀 `predictions.score`，但那欄存的是硬規則壓制後的分數（超買時壓到「偏多門檻 − 1」）。
-- 錯誤/風險：壓制上限本身隨門檻移動。舊門檻偏低時，原始 80 分會被存成 49；換回較高門檻
-  重判就變成「偏空」，而 `score.evaluate` 實際會給「中性」——校準拿實際不會產生的訊號
-  去挑門檻。預設門檻下壓到 59 恰好不出錯，所以自己寫的測試全綠，是 codex 對抗式審查才抓到。
-  同輪另一條：「前段挑、後段驗」的測試前後段資料相同，誤用全部資料去挑也會通過。
-- 修正：重判改用六維分項加總（壓制前原始分），再照新門檻重套硬規則；後段資料反轉並放大
-  5 倍，用變異測試（把 `search_best(train)` 改成 `search_best(rows)`）確認該測試會轉紅。
-- 規則：**欄位若是「原始值 × 當時規則」的產物，任何要換規則重算的流程都必須回到原始值。**
-  寫入時就問一句「這個值之後會不會在別的規則下重算」，會的話原始值要一起存。
-  宣稱「測試驗到了 X」之前，先把 X 弄壞一次，確認測試真的會紅。
-
 ## 2026-10-08 交易所的標記符號要讀官方註解，不要用直覺解讀
 - 情境：tw-stock-tracker 全市場日線把上市 `MI_INDEX`「漲跌(+/-)」欄的 X 當成除權息標記
   （逐檔流程也這樣用），上櫃則以「漲跌」欄數字反推除權息金額。
@@ -309,37 +101,6 @@
 - 規則：**解析外部資料的代碼、符號、特殊值前，先讀回應裡的 notes／欄位說明並抽查幾筆原始列；
   fixture 要用實際抓到的原始資料，不要用自己對格式的想像。** 數字異常大（如未知事件上千筆）
   時先懷疑解讀，不要先懷疑資料源。逐檔流程 `fetch_twse.py` 的 X 判讀可能有同樣問題，尚未處理。
-
-## 2026-10-12 提議「把沒用到的欄位顯示出來」前，先看真實資料的值分佈
-- 情境：WakaWaka 上一份交接把「Codex `credits` / `plan_type` 解析完就丟棄」列成候選，
-  使用者選了這項，我照字面規劃了解析＋dashboard 顯示＋測試的完整計劃。
-- 錯誤/風險：寫計劃時順手 `grep | sort | uniq -c` 才發現 30 天 1497 筆 `credits` 全是
-  `balance:"0"`、`plan_type` 全是 `plus`——做完畫面只多一個使用者本來就知道的方案名。
-  使用者一句「這改動有實質幫助嗎」就讓整個計劃作廢。交接那句描述也不精確：Swift 端
-  根本沒解析這兩欄，候選清單是沒驗證過的推論被當成事實傳下去。
-- 修正：計劃階段改為建議不做，寫下「何時才值得做」的觸發條件進交接，避免下一輪再列成候選。
-- 規則：**評估「顯示／使用某個欄位」的需求，第一步是抽查真實資料的值有沒有變化，**
-  全是常數或空值就先回報、不出實作計劃。交接裡的候選項要附「為什麼值得做」，
-  不能只寫「X 沒用到」——沒用到不等於有用。
-
-## 2026-10-14 新資料源要用「多種類型的真實標的」跑端到端，fixture 抓不到怪異之處
-- 情境：tw-stock-tracker 個股詳情接 MOPS 月營收、法說會、Google News。單元測試用自己寫的 fixture 全過，
-  拿 2330、5425、4958（KY）、2881（金控）、0050（ETF）實跑才陸續暴露問題。
-- 錯誤/風險：MOPS 年增率欄是大寫 `<Td>`，regex 少抓一欄；KY 股只在國外公司 `_1` 頁，歷史營收整段漏掉；
-  金控月營收可能為負，拿負數當分母算出無意義的年增率；ETF 沒有中文名稱，只用代號查到的新聞幾乎全部無關。
-  四個都是「程式沒報錯、數字看起來正常」的靜默錯誤。
-- 修正：regex 改不分大小寫；backfill 抓國內與國外兩頁，任一頁 404 不記完成；基期 ≤ 0 不給成長率；沒有名稱不查新聞。
-- 規則：**接新資料源時，挑涵蓋上市、上櫃、KY、金融、ETF 的真實標的各跑一次端到端，逐欄看輸出是否合理**，
-  再寫單元測試；fixture 要從實際抓到的回應裁剪（延續 2026-10-08 那條）。
-
-## 2026-10-21 背景長任務要讀真正的 exit code；TPEx 日期會附註記號
-- 情境：tw-stock-tracker 預先登錄回測，背景執行 `backtest.py ... > log; echo "exit=$?" >> log`，耗時十多小時。
-- 錯誤/風險：任務通知顯示 exit 0（其實是 `echo` 的結果），log 末尾才是 `exit=1`——評分在第 24 檔崩潰。
-  原因是 TPEx 部分日期附 `*`（`114/10/20*`），`roc_to_iso` 原樣寫進 DB，到回測 `strptime` 才炸。
-  另外：Mac 睡眠讓背景任務整夜幾乎停擺，上櫃股先試 TWSE 也使每檔多花約 2 分鐘。
-- 修正：解析去掉尾端註記；長任務用 `caffeinate -i` 包住。
-- 規則：**背景長任務完成時讀 log 末尾的實際結果，不信外層包裝的 exit code**；跑數小時的任務先用
-  `caffeinate` 防睡眠。外部資料的日期欄寫入前要確認格式，不能假設一定乾淨。
 
 ## 2026-10-23 全螢幕 TUI 不能在 Claude Code 的 `!` 裡驗證
 - 情境：SwarmTide（rich Live 全螢幕動畫）。agent 叫使用者「在終端機跑」，使用者用 `! python3 ...` 在 Claude Code 內執行。
@@ -359,12 +120,6 @@
 - 修正：開滑鼠回報（1000+1006）接管滾輪、序列寫 `sys.__stdout__`；暫停只作用在模擬；請使用者 `q` 重開。
 - 規則：**收到「TUI 沒更新」先 `ps -o lstart` 比對程序啟動時間與最後 commit 時間**，再看截圖 / 錄影的 HUD（PAUSED？）與畫面是否被捲動；全螢幕 TUI 要接管滾輪，資料輪詢不要掛在使用者可暫停的時鐘上。
 
-## 2026-10-31 「重算全部」會順便套用使用者沒打算套用的舊設定變更
-- 情境：shopee 專案為 margin 定價加入進口稅後，打 `POST /api/products/recalc-all` 讓新公式生效。
-- 錯誤/風險：使用者 10/18 把進貨匯率 4.55 → 4.9 後刻意沒重算（legacy 售價已通知客人），recalc-all 卻把 324 個 legacy 商品也重算成 4.9；當下回報時才從前後對比發現，已從備份還原。
-- 修正：寫入前做 `.backup`，重算後逐欄比對 before/after，把超出本次授權範圍的列從備份還原。
-- 規則：**批次重算 / 回填前，先 diff「目前存的值 vs 依現行設定算出的值」**；有本次變更以外造成的差異（舊設定沒套用）就先問使用者，不要讓一次重算夾帶多個變更。
-
 ## 2026-10-31 zsh 不會對未加引號的變數做 word splitting
 - 情境：Bash tool（zsh）裡用 `j='-H Content-Type:application/json'; curl $j ...` 送 API 寫入。
 - 錯誤/風險：zsh 把 `$j` 當成單一參數，header 沒送出，7 個 POST/PATCH 全部無聲失敗（`curl -s` 也沒有輸出），差點誤以為已寫入。
@@ -376,12 +131,6 @@
 - 錯誤/風險：executor 的 worktree 基底是 `a31b6df`（origin/main），沒有 A 層檔案；它依工單停下回報。之後用 SendMessage 授權 ff，但該 worktree 因「無變更」已被自動清掉，無處可做，只能重派。Round 2 也一樣是從 `a31b6df` 開始。
 - 修正：工單加「第 0 步」：`git log -1` 確認基底，不符就 `git merge --ff-only <sha>`（預先授權），再 `git diff --name-only` 核對帶進來的檔案。
 - 規則：**本地 main 領先 origin 時派 worktree executor，工單必含基底確認 + 預授權 ff**；executor 未改檔就停下時，worktree 會消失，補授權要重派，不要用 SendMessage 續跑。
-
-## 2026-11-09 `claude -p --allowedTools` 不限制可用工具
-- 情境：skill 體檢 B 層要求模型唯讀，實作用 `claude -p --allowedTools "Read,Grep,Glob"`。
-- 錯誤/風險：`--allowedTools` 只是把這些工具設為免核准，其他工具仍可用（再加上使用者 settings 的 allowlist / hooks 照常載入），唯讀沒有保證；測試用假 claude 只驗參數，抓不到。codex 冷啟動審查才指出。
-- 修正：改為 `--tools "Read,Grep,Glob"`（真正限制可用工具）+ `--allowedTools` 同清單 + `--no-session-persistence`；以 `claude --help` 查證。
-- 規則：**無頭 claude 要限制工具用 `--tools`，`--allowedTools` 只管核准**；需要更強隔離再看 `--restricted`。寫 CLI 權限旗標前先讀 `--help`，不憑名稱推斷語意。
 
 ## 2026-11-10 worktree 快照跑測試，依賴自身絕對路徑的測試會誤報
 - 情境：project-review L1 在 HEAD 的 git worktree 快照跑檢查；冒煙測試拿 Agent_skill 跑 `bin/test-skill-usage.sh`。
