@@ -104,6 +104,7 @@ try {
 
 - 解釋**為什麼**，不解釋**是什麼**（程式碼本身說明 what）
 - TODO 格式：`// TODO(name): description`
+- agent 不得以 TODO 代替完成：要延後就記進專案待辦並告知使用者（pre-commit 會提醒）
 - 移除所有過時的 commented-out code，用 git 追蹤歷史
 
 ```ts

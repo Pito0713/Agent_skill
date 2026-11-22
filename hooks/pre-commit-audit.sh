@@ -62,6 +62,34 @@ if [[ -n "$HITS" ]]; then
   exit 1
 fi
 
+# ── 延後註解提醒（警告級，不擋；計劃書 agent-env-trust-pyramid T5）──────────
+#
+# 為什麼需要它：agent 常以延後註解代替完成就回報「做完了」，與 judgment-rubrics R2
+# 衝突。關鍵字可 regex 判定，git hook 三 harness 皆生效。
+#
+# 為什麼只警告：文件與字串常數裡的同字樣會誤報。觀察兩週誤報率再決定是否升為攔截。
+# 位置：必須在下方「僅本 repo」閘門之前，否則下游 repo 跑不到。
+# 旁路：同上，該行加獨立的 audit-ok 標記。
+
+DEFERRED=$(printf '%s\n' "$DIFF" | awk '
+  /^\+\+\+ "?b\// { sub(/^\+\+\+ "?b\//, ""); sub(/"$/, ""); file = $0; next }
+  /^\+/ && !/^\+\+\+/ {
+    line = substr($0, 2)
+    if (line ~ /(^|[^A-Za-z0-9_-])audit-ok([^A-Za-z0-9_-]|$)/) next
+    if (line ~ /(^|[^A-Za-z])(TODO|FIXME)([^A-Za-z]|$)/ || line ~ /之後補|暫時/ || tolower(line) ~ /for now/) {  # audit-ok
+      printf "  %s: %s\n", file, substr(line, 1, 100)
+    }
+  }
+')
+
+if [[ -n "$DEFERRED" ]]; then
+  echo "" >&2
+  echo "${YELLOW}⚠ pre-commit 提醒（不擋）：staged 新增行含延後註解${NC}" >&2
+  printf '%s\n' "$DEFERRED" >&2
+  echo "  延後不等於完成：要延後就記進專案待辦並告知使用者；誤報可在該行加 audit-ok 標記。" >&2
+  echo "" >&2
+fi
+
 # ── skill index 三向同步（僅 Agent_skill 本身，計劃書目標 D'）──────────────
 #
 # 為什麼可以用 L2 攔截：三向逐字比對是**機械可判定、零誤報**，與上面的路徑 lint
