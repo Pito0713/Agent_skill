@@ -73,6 +73,8 @@
   | 11-10 快照誤報 | project-review 登記前在 scratchpad 快照實跑，不過拒絕登記 |
   | 11-20 push email | pre-push：`git log --format='%ae%n%ce' <range>` 過濾 noreply 後有輸出就警告 |
 
+  → 已開工單：`plans/sink-candidates-t2.md`（W1–W6，2026-11-22）
+
   下游 2 條（10-23 hook defer、11-20 AppKit）原文保留，依使用者裁決不另開 TODO。
 
 ### T3　gardener 加一問：能否下沉　🟡（bin/ 下的審查 prompt，影響定期體檢）
