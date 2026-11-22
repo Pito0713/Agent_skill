@@ -4,7 +4,7 @@
 > **建立**：2026-11-20
 > **發起人**：使用者（wits）
 > **基準 commit**：`04ad83e`（main，工作區乾淨）
-> **狀態**：T1 完成（`feeb3e7`）、T2 完成（2026-11-20）、T3 完成（2026-11-20）、T4 完成（2026-11-22）；T5–T6 未開工
+> **狀態**：T1 完成（`feeb3e7`）、T2 完成（2026-11-20）、T3 完成（2026-11-20）、T4 完成（2026-11-22）、T5 完成（2026-11-22，觀察至 12-06）、T6 完成（2026-11-22，候選清單待裁決）
 > **參照來源**：Lauren Tan（poteto, SpaceXSI）〈All Code Is Slop (Except Mine)〉AI Engineer CODE 2026、pstack。觀念取自二手筆記，未看原影片
 
 ---
@@ -111,12 +111,27 @@
 - **驗收**：目前 `pre-commit-audit.sh` **沒有專屬測試**（2026-11-20 實勘），本工單一併新增 `bin/test-pre-commit-audit.sh`：
   既有路徑洩漏規則的回歸案例 + 新規則案例 ≥3（命中 / 不命中 / `audit-ok` 旁路），fixture 放 `mktemp -d` 臨時 repo
 - **風險**：誤報（字串常數、文件裡的 TODO）→ 所以先警告不攔截
+- **執行結果（2026-11-22）**：警告段放在路徑 lint 之後、「僅本 repo」閘門之前（否則下游跑不到），輸出到 stderr、exit 0；
+  新增 `bin/test-pre-commit-audit.sh` 10 案例全過（路徑 lint 回歸 3 + 新規則 7，含字界與 audit-ok 旁路）。
+  本 repo 實 stage 跑 hook：第一版誤報 5 條（4 條是測試 fixture 自身 → 改用變數組字串消除；1 條是 coding-standards 規則文字本身提到 TODO → 屬預期的文件誤報，保留）。
+  常駐成本 coding-standards 2,815 → 2,928（+113）。**兩週觀察至 2026-12-06** 再決定是否升攔截；測試尚未接自動執行（屬 W3）
 
 ### T6　skill 指令抽出到 bin/　🟢→🟡（視動到哪個 skill）
 
 - **做**：盤點各 SKILL.md 內嵌的 bash 區塊，列出「可抽成 bin/ script」候選（如 `coding-workflow-core` Phase 0 fallback）
 - **產出**：候選清單給使用者，不直接改
 - **驗收**：清單附檔名:行號與預估省下的 bytes（用 `bin/token-budget.sh` 量）
+- **執行結果（2026-11-22）**：29 份 SKILL.md 共 54 個 bash 區塊、16,058 bytes。已是 script 呼叫的（tw-stock-tracker、cooking-flow、version-log、handoff）與留給 LLM 判斷的（obsidian-save 分類規則）不列。候選 5 項：
+
+  | # | 候選 | 出處 | 現況 bytes → 預估 | 理由 |
+  |---|---|---|---|---|
+  | C1 | `bin/vault-env.sh`：讀 `.env`、驗 `OBSIDIAN_VAULT_PATH`、印 vault 路徑或錯誤 | `obsidian-save/SKILL.md:20-52`、`knowledge-search/SKILL.md:37-57` | 1,537 → ~240 | 兩處同邏輯已分歧（錯誤訊息詳略不同），確定性 |
+  | C2 | `bin/knowledge-grep.sh --source <s> 關鍵字…`：多關鍵字命中計數排序取前 5 | `knowledge-search/SKILL.md:78-96` | 679 → ~150 | **現有 bug**：`UNIQUE_FILES=($(…))` 與 `awk '{print $2}'` 遇空格檔名切斷（scratchpad 實測 `My Note.md` → `ks/My`）；Obsidian 檔名常含空格 |
+  | C3 | `bin/project-dashboard.sh`：解析各 `latest.md` 欄位 + 現跑 git，輸出總覽表 | `project-dashboard/SKILL.md:31-67` | 1,000 → ~150 | 純資料彙整，符合「數字由 script 算」 |
+  | C4 | `bin/codex-ro.sh`：固定帶 `-s read-only -c project_doc_max_bytes=0` 與 `</dev/null`（無 stdin 時），prompt 仍留在 skill | 8 份 SKILL.md 共 14 處 `codex exec` | 省 ~300 | 主要價值是**架構下沉**：安全旗標不可能漏帶；2026-11-22 實測背景 codex 未關 stdin 卡 40 分鐘 |
+  | C5 | `bin/detect-stack.sh`：Phase 0 fallback 偵測 | `coding-workflow-core/SKILL.md:38-43` | 285 → ~90（**常駐**，每 session 省） | 計劃書原例；常駐檔省下的才是每 session 成本 |
+
+  建議順序：C2（修 bug）→ C4（安全）→ C1 → C3 → C5。實作另開工單，本單不動 skill
 
 ---
 
