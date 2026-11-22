@@ -104,7 +104,7 @@ find . -maxdepth 2 -name "*.test.*" -o -name "jest.config.*" -o -name "pytest.in
 
 ```
 [ ] 執行相關測試
-[ ] 手動測試主要 flow
+[ ] 實際執行主要 flow（啟動 app / 跑 CLI / 打 API），貼輸出或截圖；跑不起來要明說原因，不得以「邏輯上正確」代替
 [ ] 檢查 edge cases
 [ ] Review 自己的 diff（git diff）
 ```

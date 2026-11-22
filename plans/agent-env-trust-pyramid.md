@@ -4,7 +4,7 @@
 > **建立**：2026-11-20
 > **發起人**：使用者（wits）
 > **基準 commit**：`04ad83e`（main，工作區乾淨）
-> **狀態**：T1 完成（`feeb3e7`）、T2 完成（2026-11-20）、T3 完成（2026-11-20）；T4–T6 未開工
+> **狀態**：T1 完成（`feeb3e7`）、T2 完成（2026-11-20）、T3 完成（2026-11-20）、T4 完成（2026-11-22）；T5–T6 未開工
 > **參照來源**：Lauren Tan（poteto, SpaceXSI）〈All Code Is Slop (Except Mine)〉AI Engineer CODE 2026、pstack。觀念取自二手筆記，未看原影片
 
 ---
@@ -100,6 +100,7 @@
 - **選做**（見 §6 Q2）：專案層 verification recipe——`~/.agent-sessions/<專案>/` 或專案內一份「怎麼驗證本專案」的檔，Phase 4 先讀它
 - **驗收**：`bash bin/token-budget.sh --strict` 通過（常駐成本增量寫進 commit message，§8.4）；
   AGENTS.md / GEMINI.md inline 段若有摘要 Phase 4，跟改並跑 §7 四查
+- **執行結果（2026-11-22）**：Phase 4 checklist 一行改寫；常駐成本 3,764 → 3,890 bytes（+126），`--strict` 通過、validator 29/29。AGENTS.md / GEMINI.md inline 段無 Phase 4 摘要，不需跟改。選做的 verification recipe 依 Q2 先不做，兩週後（約 12-06）看 Phase 4 證據品質再決定
 
 ### T5　pre-commit 擴充：擋 agent 的延後註解　🟡（hook 影響所有下游）
 
