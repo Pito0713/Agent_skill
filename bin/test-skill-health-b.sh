@@ -67,6 +67,8 @@ test_review_prompt_content() {
   assert_contains "嚴禁" "prompt 禁止退場類結論"
   assert_contains "**下沉軸**" "B2：prompt 要求判斷下沉軸"
   assert_contains "建議形式：" "B2：下沉發現要附建議形式"
+  assert_contains "**格式違規**" "B2：新格式缺下沉欄／不能缺理由要抓"
+  assert_contains "接上了會自動執行它的地方" "B2：已實作須確認有接上自動執行"
   assert_contains "發現：" "prompt 要求輸出格式（發現／證據／信心）"
   assert_contains "$(cat "$WORLD/sha.txt")" "B2：上份報告的 commit 進 prompt"
   assert_contains "+## 新教訓 ZZZ-LESSON" "B2：lessons.md 的 git diff 進 prompt"
