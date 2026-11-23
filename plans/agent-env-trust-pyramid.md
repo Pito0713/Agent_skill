@@ -4,7 +4,7 @@
 > **建立**：2026-11-20
 > **發起人**：使用者（wits）
 > **基準 commit**：`04ad83e`（main，工作區乾淨）
-> **狀態**：T1 完成（`feeb3e7`）、T2 完成（2026-11-20）、T3 完成（2026-11-20）、T4 完成（2026-11-22）、T5 完成（2026-11-22，觀察至 12-06）、T6 完成（2026-11-22，候選清單待裁決）
+> **狀態**：T1 完成（`feeb3e7`）、T2 完成（2026-11-20）、T3 完成（2026-11-20）、T4 完成（2026-11-22）、T5 完成（2026-11-22，觀察至 12-06）、T6 完成（2026-11-22，候選清單待裁決）；2026-11-23 codex 四路結案審查，缺口已補（見 §5）
 > **參照來源**：Lauren Tan（poteto, SpaceXSI）〈All Code Is Slop (Except Mine)〉AI Engineer CODE 2026、pstack。觀念取自二手筆記，未看原影片
 
 ---
@@ -80,7 +80,7 @@
 ### T3　gardener 加一問：能否下沉　🟡（bin/ 下的審查 prompt，影響定期體檢）
 
 - **改**：`bin/skill-health-review.md` B2 第 3 步改為三分：已寫回 / 未寫回 / **可下沉成檢查**（附建議形式）
-- **驗收**：`bash bin/test-skill-health-b.sh` 通過；手動跑一次 B 層，報告中出現 B2 下沉判斷欄
+- **驗收**：`bash bin/test-skill-health.sh` 通過（`-b.sh` 由它 source、不能單獨執行；原寫法有誤，2026-11-23 補正）；手動跑一次 B 層，報告中出現 B2 下沉判斷欄
 - **依賴**：T1（格式定案後才知道要比對什麼）
 
 - **執行結果（2026-11-20）**：使用者裁決改為**兩軸**（寫回軸／下沉軸互不排除——已寫回文字的教訓仍可能該下沉），不用三分。
@@ -91,7 +91,7 @@
 - **codex 三路交叉驗證後修補（2026-11-22）**：採納 6 項——「不能」依 §3b 逐層審（含架構／cop）、≥11-20 條目缺欄或缺理由算格式違規、
   截斷時回原檔讀完整條目、實作搜全 repo、已實作須確認接上自動執行、`lint` 視同 `script`；不採納「建議形式須說明上層為何做不到」（gardener 只給線索）。
   測試 155/155。真模型二跑：有用 Read 補截斷 ✅；新抓到 `test-skill-usage.sh`／`test-skill-health.sh` 沒有任何自動執行入口（已核實）✅；
-  11-20 兩條皆有下沉欄，未誤報格式違規 ✅。一跑報的 07-22／07-31／11-09 舊條目這次沒評——它們在 diff 裡不是新增行，屬模型對範圍解讀的變異
+  11-20 兩條皆有下沉欄，未誤報格式違規 ✅。兩次 B2 原始輸出存 `plans/baselines/t3-b2-run{1-20261120,2-20261122}.md`。一跑報的 07-22／07-31／11-09 舊條目這次沒評——它們在 diff 裡不是新增行，屬模型對範圍解讀的變異
 
 ### T4　Phase 4 要求看得到的結果　🟡（常駐 skill，三 harness 每 session 載入）
 
@@ -128,10 +128,13 @@
   | C1 | `bin/vault-env.sh`：讀 `.env`、驗 `OBSIDIAN_VAULT_PATH`、印 vault 路徑或錯誤 | `obsidian-save/SKILL.md:20-52`、`knowledge-search/SKILL.md:37-57` | 1,537 → ~240 | 兩處同邏輯已分歧（錯誤訊息詳略不同），確定性 |
   | C2 | `bin/knowledge-grep.sh --source <s> 關鍵字…`：多關鍵字命中計數排序取前 5 | `knowledge-search/SKILL.md:78-96` | 679 → ~150 | **現有 bug**：`UNIQUE_FILES=($(…))` 與 `awk '{print $2}'` 遇空格檔名切斷（scratchpad 實測 `My Note.md` → `ks/My`）；Obsidian 檔名常含空格 |
   | C3 | `bin/project-dashboard.sh`：解析各 `latest.md` 欄位 + 現跑 git，輸出總覽表 | `project-dashboard/SKILL.md:31-67` | 1,000 → ~150 | 純資料彙整，符合「數字由 script 算」 |
-  | C4 | `bin/codex-ro.sh`：固定帶 `-s read-only -c project_doc_max_bytes=0` 與 `</dev/null`（無 stdin 時），prompt 仍留在 skill | 8 份 SKILL.md 共 14 處 `codex exec` | 省 ~300 | 主要價值是**架構下沉**：安全旗標不可能漏帶；2026-11-22 實測背景 codex 未關 stdin 卡 40 分鐘 |
+  | C4 | `bin/codex-ro.sh`：固定帶 `-s read-only -c project_doc_max_bytes=0` 與 `</dev/null`（無 stdin 時），prompt 仍留在 skill | 8 份 SKILL.md 共 14 處（見下方行號） | 省 ~300 | 主要價值是**架構下沉**：安全旗標不可能漏帶；2026-11-22 實測背景 codex 未關 stdin 卡 40 分鐘 |
   | C5 | `bin/detect-stack.sh`：Phase 0 fallback 偵測 | `coding-workflow-core/SKILL.md:38-43` | 285 → ~90（**常駐**，每 session 省） | 計劃書原例；常駐檔省下的才是每 session 成本 |
 
   建議順序：C2（修 bug）→ C4（安全）→ C1 → C3 → C5。實作另開工單，本單不動 skill
+  C4 行號（`skills/` 下各 `SKILL.md`）：ui-design-flow:125、debug-flow:58,130、code-review:141、cli-delegate:105,114,165,169,207,218、tech-lead-mode:118、deploy-prep:156、new-feature:165、onboarding:52。
+  bytes 量測口徑：區塊 bytes 由逐檔掃描 fenced bash 區塊實算；「→ 預估」是替換成單行呼叫的估值，非 `token-budget.sh` 量測（它只量常駐與 description，量不到 body 區塊；C5 常駐檔的實際增減待實作時用它量）。
+  **C2 已實作（2026-11-23，`3cb0f90`）**：`bin/knowledge-grep.sh` + 20 案例測試
 
 ---
 
@@ -173,3 +176,16 @@ T4、T5、T6 互相獨立，可在 T1 後任意順序
 | Q2 | T4 是否做專案層 verification recipe？放哪？ | 先不做，T4 主體上線兩週後看 Phase 4 證據品質再決定 |
 | Q3 | T5 是否先警告兩週再升攔截？ | 是 |
 | Q4 | T2 的 lessons 精簡是否本次就做（已超門檻）？ | 是，但只到「分類表給你裁決」為止 |
+
+---
+
+## 5. 結案審查（2026-11-23，codex 四路：R1 制度檔 / R2 T4+T5 / R3 C2 / R4 結案稽核）
+
+20 條發現，仲裁：採納 17、不採納 3、交使用者裁決 1。
+
+- **R1**：T2 精簡遺失 5 條規則片段（10-07 原始值重算、10-21 外部日期格式 → R8；08-25 停用前掃委派點、07-07 副本先回寫 → R7；10-12 交接候選附理由 → handoff skill）→ 已補回，`lessons.md` 歸納表下加補正註記
+- **裁決（使用者 2026-11-23）**：下沉欄填 `script` / `test` / `cop` 也須寫「為什麼前面的層做不到」，與 §3b 一致（`maintenance-protocol.md` §3、B2 格式違規同步；2026-11-23 起，不回補）
+- **R2 / R3**：UTF-8 截斷、測試 hermetic、`.env` 未 export、exit code 被 process substitution 吃掉、grep 錯誤被吞、`--top 00` → 已修（`3cb0f90`）
+- **R4 補正**：T3 驗收指令誤寫（已改）；T3 原始報告存 baselines；T4、T5 補進 ADR-033；T5 補跑 §7 四查（2026-11-23：行數 / symlink / inline 段 / 路由皆通過）；C4 補行號與 bytes 口徑
+- **T1 「3 條試填」**：當時僅 2 條新教訓採新格式，第三條無紀錄。鑑別力改以 T2 ① 候選表為證（43 條中 6 條判為可下沉，非全填「不能」）
+- **不採納**：T2 分類表未附行號（條目已刪、行號失效，分類表已經使用者裁決）；T5「TODO.md」改寫為「專案待辦」（刻意偏離——下游不一定有 TODO.md）；knowledge-grep 檔名含換行（實務不出現，已註明為已知限制）
