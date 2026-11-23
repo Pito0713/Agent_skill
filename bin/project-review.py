@@ -5,11 +5,16 @@
   python3 bin/project-review.py                  跑登記表中所有專案
   python3 bin/project-review.py --project NAME   只跑一個
   python3 bin/project-review.py --force          今天已跑過也重跑
+  python3 bin/project-review.py --preflight ENTRY.json
+                                                 **登記前必跑**：在 HEAD 快照上跑一次該專案的檢查，
+                                                 不過就不要登記（ENTRY.json = 登記表裡的一項）
 
 登記表（每台機器自己的設定，不進 repo）：~/.config/agent-review/projects.json
   {"projects": [{"name": "foo", "path": "~/foo", "setup": "npm ci",
                  "checks": {"test": "npm test", "lint": "npm run lint"}, "timeoutSeconds": 600}]}
   name 要等於 ~/.agent-sessions/ 下的目錄名，Floating 靠它把交接檔和狀態檔對起來。
+  新增專案前先跑 --preflight：原地測試通過、快照不過 = 測試不 hermetic（依賴自身絕對路徑等），
+  登記後每天都會誤報（lessons 2026-11-10，工單 W5）。
 
 產出：~/.agent-reports/project-review/<name>/{status.json, YYYY-MM-DD.md, logs/YYYY-MM-DD/}
 本程式只讀專案 repo（檢查跑在 worktree 快照），不寫 ~/.agent-sessions（ADR-015）。
@@ -24,11 +29,12 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from project_review_checks import run_checks
+from project_review_checks import run_checks, tail_of
 from project_review_report import build_status, read_json, render_report, write_json_atomically
 
 DEFAULT_TIMEOUT_SECONDS = 600
@@ -50,12 +56,47 @@ def load_projects(config_path: Path) -> list:
     if not isinstance(config, dict) or not isinstance(config.get("projects"), list):
         raise ConfigError(f"{config_path} 不是合法 JSON 或缺少 projects 陣列")
     for project in config["projects"]:
-        if not isinstance(project, dict) or not project.get("name") or not project.get("path"):
-            raise ConfigError(f"每個專案都要有 name 與 path：{project}")
-        if "/" in project["name"] or project["name"].startswith("."):
-            raise ConfigError(f"name 不能含 / 或以 . 開頭：{project['name']}")
-        project["path"] = os.path.expanduser(project["path"])
+        validate_project(project)
     return config["projects"]
+
+
+def validate_project(project: object) -> None:
+    if not isinstance(project, dict) or not project.get("name") or not project.get("path"):
+        raise ConfigError(f"每個專案都要有 name 與 path：{project}")
+    if "/" in project["name"] or project["name"].startswith("."):
+        raise ConfigError(f"name 不能含 / 或以 . 開頭：{project['name']}")
+    project["path"] = os.path.expanduser(project["path"])
+
+
+def run_preflight(entry_path: Path) -> int:
+    """登記前在 HEAD 快照跑一次檢查；全部第一次就過才回 0。flaky 也不算過——登記後會天天誤報。"""
+    entry = read_json(entry_path)
+    if entry is None:
+        raise ConfigError(f"preflight：讀不到 {entry_path} 或不是合法 JSON")
+    validate_project(entry)
+    if not entry.get("checks"):
+        raise ConfigError("preflight：沒有設定任何 checks，登記了也沒有東西可檢查")
+    commit = git_output(entry["path"], "rev-parse", "--short=12", "HEAD")
+    if commit is None:
+        raise ConfigError(f"preflight：{entry['path']} 不是可讀的 git repo")
+    timeout_seconds = int(entry.get("timeoutSeconds", DEFAULT_TIMEOUT_SECONDS))
+    with tempfile.TemporaryDirectory(prefix="project-review-preflight-") as log_dir:
+        result, checks, errors = run_checks(entry, commit, Path(log_dir), timeout_seconds)
+        for name, check_result in checks.items():
+            print(f"  {name}: {check_result}")
+            if check_result != "pass":
+                print("    " + tail_of(Path(log_dir) / f"{name}.log").replace("\n", "\n    "))
+        if not checks and (Path(log_dir) / "setup.log").exists():
+            # 暫存 log 目錄離開 with 就刪掉，setup 失敗的原因要在這裡印出來
+            print("  setup：\n    " + tail_of(Path(log_dir) / "setup.log").replace("\n", "\n    "))
+    for error in errors:
+        print(f"  錯誤：{error}")
+    if result == "pass":
+        print(f"preflight 通過（{entry['name']} @ {commit}）：可以登記")
+        return 0
+    print(f"preflight 不通過（{result}）：不要登記。原地跑得過、快照跑不過 = 測試不 hermetic"
+          "（例如依賴自身絕對路徑或 symlink），先修測試或從 checks 拿掉該項")
+    return 1
 
 
 def git_output(repo_path: str, *arguments: str) -> Optional[str]:
@@ -140,7 +181,14 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="專案定期 review（L0 + L1）")
     parser.add_argument("--project", help="只跑這個 name")
     parser.add_argument("--force", action="store_true", help="今天已跑過也重跑")
+    parser.add_argument("--preflight", type=Path, metavar="ENTRY_JSON", help="登記前在快照上試跑一個專案項目")
     arguments = parser.parse_args()
+    if arguments.preflight:
+        try:
+            return run_preflight(arguments.preflight)
+        except ConfigError as error:
+            print(f"project-review: {error}", file=sys.stderr)
+            return 1
     try:
         projects = load_projects(env_path("PROJECT_REVIEW_CONFIG", "~/.config/agent-review/projects.json"))
     except ConfigError as error:

@@ -138,7 +138,31 @@ rm -f "$CONFIG"
 run_review 2026-11-18
 assert_equals "$RC" "1" "找不到登記表 → exit 1"
 
-echo "== 10. installer dry-run =="
+echo "== 10. --preflight（登記前在快照試跑，工單 W5）=="
+ENTRY="$SANDBOX/entry.json"
+preflight() { printf '%s\n' "$1" >"$ENTRY"; OUT=$(python3 "$SCRIPT_DIR/project-review.py" --preflight "$ENTRY" 2>&1); RC=$?; }
+preflight "{\"name\":\"demo\",\"path\":\"$REPO\",\"checks\":{\"test\":\"test -f app.txt\"}}"
+assert_equals "$RC" 0 "preflight：hermetic 的檢查 → exit 0"
+assert_contains "可以登記" "preflight：通過時明講可以登記"
+# 依賴自身絕對路徑：原地跑會過（cwd 就是 REPO），快照裡 cwd 不同 → 不過
+(cd "$REPO" && test "$(pwd -P)" = "$(cd "$REPO" && pwd -P)") && pass "preflight：該檢查原地跑得過（前提）" || fail "preflight：該檢查原地跑得過（前提）"
+preflight "{\"name\":\"demo\",\"path\":\"$REPO\",\"checks\":{\"test\":\"test \\\"\$(pwd -P)\\\" = \\\"$(cd "$REPO" && pwd -P)\\\"\"}}"
+assert_equals "$RC" 1 "preflight：依賴自身絕對路徑 → 快照不過、exit 1"
+assert_contains "不 hermetic" "preflight：訊息指出可能不 hermetic"
+assert_contains "不要登記" "preflight：明講不要登記"
+preflight "{\"name\":\"demo\",\"path\":\"$REPO\",\"checks\":{}}"
+assert_equals "$RC" 1 "preflight：沒有 checks → exit 1"
+printf 'not json' >"$ENTRY"; OUT=$(python3 "$SCRIPT_DIR/project-review.py" --preflight "$ENTRY" 2>&1); RC=$?
+assert_equals "$RC" 1 "preflight：壞 JSON → exit 1"
+assert_contains "不是合法 JSON" "preflight：壞 JSON 訊息清楚"
+FLAG="$SANDBOX/flaky-flag"; rm -f "$FLAG"
+preflight "{\"name\":\"demo\",\"path\":\"$REPO\",\"checks\":{\"test\":\"if [ -f $FLAG ]; then exit 0; else touch $FLAG; exit 1; fi\"}}"
+assert_equals "$RC" 1 "preflight：flaky 也不算通過"
+preflight "{\"name\":\"demo\",\"path\":\"$REPO\",\"setup\":\"echo setup-broke >&2; exit 3\",\"checks\":{\"test\":\"true\"}}"
+assert_contains "setup-broke" "preflight：setup 失敗時印出 setup log（暫存目錄刪除前）"
+[[ ! -e "$REPORTS/demo/logs/preflight" ]] && pass "preflight：不寫報告目錄" || fail "preflight：不寫報告目錄"
+
+echo "== 11. installer dry-run =="
 OUT=$(PROJECT_REVIEW_LAUNCH_AGENTS_DIR="$SANDBOX/agents" bash "$SCRIPT_DIR/install-project-review-schedule.sh" --dry-run 2>&1); RC=$?
 assert_equals "$RC" "0" "dry-run exit 0"
 assert_contains "<string>local.agent-skill.project-review</string>" "label 正確"
