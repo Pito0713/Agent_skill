@@ -157,6 +157,11 @@ def validate_entries(repository: Path, skills: list[dict[str, str]]) -> list[str
             continue
         if frontmatter_name(skill_path) != entry["name"]:
             errors.append(f"frontmatter name mismatch: {entry['path']}")
+        # 改名是原子操作：只改 name 不改目錄，farm 的 symlink 名與 canonical 目錄會分歧（lessons 2026-07-22，工單 W1）
+        if skill_path.parent.name != entry["name"]:
+            errors.append(
+                f"package directory name mismatch: {entry['path']} (directory must be {entry['name']!r})"
+            )
     errors.extend(frontmatter_description_errors(repository, skills))
     canonical_paths = {
         path.relative_to(repository).as_posix()
