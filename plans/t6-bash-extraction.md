@@ -4,7 +4,7 @@
 > **建立**：2026-11-23
 > **發起人**：使用者
 > **基準 commit**：`2d5399e`（main，工作區乾淨，與 origin 同步至 `8176f5c`）
-> **狀態**：C4 / C1 / C3 / C5 未開工（C2 已於 `3cb0f90` 完成）
+> **狀態**：C1–C5 全部完成（2026-11-23）
 > **來源**：`plans/agent-env-trust-pyramid.md` T6 候選表；C4 同時是 `governance/lessons.md` 2026-11-22（codex stdin 卡住）的下沉形式
 
 ---
@@ -69,3 +69,17 @@
 ```
 C4（安全、架構下沉）→ C1 → C3 → C5（常駐，最後做、單獨 commit）
 ```
+
+---
+
+## 3. 執行結果（2026-11-23）
+
+| 單 | commit | 審查 | 結果 |
+|---|---|---|---|
+| C4 | `18e6cbc` | codex（3 條全採納） | `bin/codex-ro.sh` + 14 處改寫；HIGH：wrapper 吃掉 `--` 使 `-` 開頭 prompt 可注入旗標 → 傳給 codex 時 prompt 前固定加 `--`。24 案例，stdin 與 `--` 做變異驗證；真 codex 冒煙通過 |
+| C1 | `9ca9cbe` | Claude subagent（codex 用量滿；10 條採納 9） | `bin/vault-env.sh`；解析改為以真 `source` 當對照組逐案比對（行內註解、空白截斷、`$HOME`、跳脫等），`.env` 未定義時沿用環境變數。44 案例＋呼叫端 SKILL 契約檢查。不採納：`if`／`readonly` 非 dotenv 寫法 |
+| C3 | `49eadde` | Claude subagent（9 條全採納） | `bin/project-dashboard.py`（**偏離：寫成 Python 不是 .sh**）；只有日期 = 00:00、欄位留空不跨行、「無法…」是真 Blocker、落後算所有本機分支、git 關 fsmonitor + timeout。28 案例，真實 9 個專案實跑 |
+| C5 | `4358264` | **未審查** | `bin/detect-stack.sh`；常駐 3,890 → 3,716 bytes（-174）；補了 monorepo（`frontend/package.json`）偵測——舊版 fallback 只看根目錄會漏 react。18 案例含 script ↔ SKILL 表防漂移 |
+
+**待補**：C5 與 W1 / W2 / W4 / W5 尚無第二意見；C1 / C3 是同模型審查，codex 恢復後可再補一輪異模型審查。
+

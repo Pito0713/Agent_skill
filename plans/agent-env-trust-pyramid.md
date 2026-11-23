@@ -135,6 +135,7 @@
   C4 行號（`skills/` 下各 `SKILL.md`）：ui-design-flow:125、debug-flow:58,130、code-review:141、cli-delegate:105,114,165,169,207,218、tech-lead-mode:118、deploy-prep:156、new-feature:165、onboarding:52。
   bytes 量測口徑：區塊 bytes 由逐檔掃描 fenced bash 區塊實算；「→ 預估」是替換成單行呼叫的估值，非 `token-budget.sh` 量測（它只量常駐與 description，量不到 body 區塊；C5 常駐檔的實際增減待實作時用它量）。
   **C2 已實作（2026-11-23，`3cb0f90`）**：`bin/knowledge-grep.sh` + 20 案例測試
+  **C1 / C3 / C4 / C5 已實作（2026-11-23）**：見 `plans/t6-bash-extraction.md` §3
 
 ---
 
