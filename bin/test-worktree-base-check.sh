@@ -45,6 +45,10 @@ git -C "$WORK" fetch -q origin
 run
 check "與 upstream 分歧 → exit 2 不給第 0 步" "$RC:${OUT}" "2:"
 
+git -C "$WORK" checkout -q -b feature --track main 2>/dev/null
+run
+check "upstream 是本地分支（SHA 相同也一樣）→ exit 2 要求寫明基底" "$RC:$(grep -c '不是遠端分支' "$SANDBOX/err")" "2:1"
+
 git -C "$WORK" checkout -q --detach
 run
 check "detached HEAD → exit 2" "$RC" 2

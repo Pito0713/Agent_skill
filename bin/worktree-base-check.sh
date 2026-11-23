@@ -20,6 +20,14 @@ upstream_sha=$(git rev-parse -q --verify "${branch}@{upstream}" 2>/dev/null) || 
   exit 2
 }
 
+# upstream 必須是遠端追蹤分支：追蹤本地分支（git branch --track x main）時 SHA 可能相同，
+# 但 worktree 仍從遠端開，會漏掉未 push 的 commit 卻沒有第 0 步（codex 審查）
+upstream_ref=$(git rev-parse --symbolic-full-name "${branch}@{upstream}" 2>/dev/null)
+[[ "$upstream_ref" == refs/remotes/* ]] || {
+  echo "worktree-base-check: ${branch} 的 upstream（${upstream_ref}）不是遠端分支，無法判斷 worktree 的基底——請在工單寫明基底 sha ${local_sha}" >&2
+  exit 2
+}
+
 [[ "$local_sha" == "$upstream_sha" ]] && exit 0
 
 if ! git merge-base --is-ancestor "$upstream_sha" "$local_sha"; then
