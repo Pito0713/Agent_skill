@@ -36,7 +36,7 @@ metadata:
 2. **原生工具不可用時才 fallback 到 shell**：
 
 ```bash
-bash ~/Agent_skill/bin/detect-stack.sh   # 每行印一個要載入的 rules 檔；git.md 依任務自行判斷
+bash ~/Agent_skill/bin/detect-stack.sh <專案根目錄>   # 每行一個要載入的 rules 檔；git.md 依任務判斷
 ```
 
 > 原因：部分 harness（如 Antigravity）對 shell 指令逐次要求使用者核准，Phase 0 用 shell 會讓每個 session 開局就卡一次人工點擊；原生唯讀工具無此問題。
