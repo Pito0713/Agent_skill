@@ -77,23 +77,15 @@ echo "✅ vault：$OBSIDIAN_VAULT_PATH"
 
 ```bash
 KEYWORDS=("關鍵字1" "關鍵字2" "關鍵字3")
-
-# 依 Phase 0 決定要搜哪些根目錄（both 就兩個都放進來）
-ROOTS=()
-[ "$SOURCE" != "vault" ] && ROOTS+=("$HOME/Agent_skill/knowledge")
-[ "$SOURCE" != "knowledge" ] && [ -n "$OBSIDIAN_VAULT_PATH" ] && ROOTS+=("$OBSIDIAN_VAULT_PATH")
-
-HIT_FILES=()
-for root in "${ROOTS[@]}"; do
-  for kw in "${KEYWORDS[@]}"; do
-    while IFS= read -r f; do HIT_FILES+=("$f"); done \
-      < <(grep -r "$kw" "$root" --include="*.md" -l -i 2>/dev/null)
-  done
-done
-
-# 跨關鍵字命中次數越多越相關；去重後取前 5
-UNIQUE_FILES=($(printf '%s\n' "${HIT_FILES[@]}" | sort | uniq -c | sort -rn | awk '{print $2}' | head -5))
+# $SOURCE 來自 Phase 0。vault 路徑要明確傳入：Phase 0 的 source 不會 export 給子程序
+HITS=$(OBSIDIAN_VAULT_PATH="$OBSIDIAN_VAULT_PATH" ~/Agent_skill/bin/knowledge-grep.sh \
+  --source "$SOURCE" --top 5 "${KEYWORDS[@]}")
+GREP_EXIT=$?   # 0 有命中 / 1 無命中 / 2 設定或讀取錯誤
+UNIQUE_FILES=()
+while IFS= read -r f; do [ -n "$f" ] && UNIQUE_FILES+=("$f"); done <<< "$HITS"
 ```
+
+`GREP_EXIT=2` 是設定錯誤，照 stderr 回報，**不得當成「查無記錄」**。關鍵字當字面字串比對、不分大小寫；檔名含空格也安全（舊版內嵌寫法會切斷，2026-11-22 改用 script）。
 
 無命中 → 拆分關鍵字再搜一次；仍無命中 → 明確告知「查無記錄」，改用一般知識回答並標注。
 

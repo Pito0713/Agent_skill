@@ -30,6 +30,13 @@ set -u
 
 RED=$'\033[0;31m'; YELLOW=$'\033[1;33m'; NC=$'\033[0m'
 
+# 只用在「顯示」：awk 的 substr 在 macOS BWK awk 按 byte 截斷，會切壞中文字元。
+# 判斷一律用原始內容，不得用轉換後的結果——iconv 失敗時輸出可能不完整，拿來判斷會漏擋。
+to_valid_utf8() {
+  if command -v iconv >/dev/null 2>&1; then iconv -c -f UTF-8 -t UTF-8 2>/dev/null; else cat; fi
+  return 0
+}
+
 # 取 staged 的新增行；任何失敗一律放行（fail-open）
 # core.quotepath=false：否則非 ASCII 檔名會被 git 輸出成 `+++ "b/\350..."`，
 # 前置雙引號使檔頭 regex 失配，導致洩漏被歸屬到上一個檔名（2026-07-31 review 實測）
@@ -54,7 +61,7 @@ if [[ -n "$HITS" ]]; then
   echo "${RED}✖ pre-commit 擋下：staged 內容含個人絕對路徑${NC}"
   echo "${YELLOW}  公開 repo 會洩漏使用者名，且對他人斷鏈。${NC}"
   echo ""
-  printf '%s\n' "$HITS"
+  printf '%s\n' "$HITS" | to_valid_utf8
   echo ""
   echo "  修法：改為 ~ 開頭（如 ~/Agent_skill/...）或 \$HOME；確定要保留就在該行加 audit-ok 標記。"
   echo "  旁路：git commit --no-verify"
@@ -85,7 +92,7 @@ DEFERRED=$(printf '%s\n' "$DIFF" | awk '
 if [[ -n "$DEFERRED" ]]; then
   echo "" >&2
   echo "${YELLOW}⚠ pre-commit 提醒（不擋）：staged 新增行含延後註解${NC}" >&2
-  printf '%s\n' "$DEFERRED" >&2
+  printf '%s\n' "$DEFERRED" | to_valid_utf8 >&2
   echo "  延後不等於完成：要延後就記進專案待辦並告知使用者；誤報可在該行加 audit-ok 標記。" >&2
   echo "" >&2
 fi

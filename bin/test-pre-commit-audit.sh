@@ -10,6 +10,10 @@ HOOK="$SCRIPT_DIR/../hooks/pre-commit-audit.sh"
 SANDBOX=$(mktemp -d)
 trap 'rm -rf "$SANDBOX"' EXIT
 
+# hermetic：不吃使用者的全域 / 系統 git 設定（例如 core.excludesFile 忽略 *.py 會讓 fixture stage 不進去）
+export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE
+
 PASS_COUNT=0
 FAIL_COUNT=0
 pass() { PASS_COUNT=$((PASS_COUNT + 1)); echo "  PASS  $1"; }
@@ -24,9 +28,10 @@ DEFERRED_FOR_NOW=$(printf '%s %s' 'For' 'now')
 # run_case <名稱> <檔名> <內容>：建新 repo、stage 內容、跑 hook，結果在 RC / OUT
 run_case() {
   local repo="$SANDBOX/$1"
-  git init -q "$repo"
+  git init -q "$repo" || { echo "fixture 失敗：git init $1" >&2; exit 2; }
   printf '%s\n' "$3" >"$repo/$2"
-  git -C "$repo" add "$2"
+  git -C "$repo" add "$2" || { echo "fixture 失敗：git add $1" >&2; exit 2; }
+  git -C "$repo" diff --cached --quiet && { echo "fixture 失敗：$1 沒有 staged 內容" >&2; exit 2; }
   OUT=$(cd "$repo" && bash "$HOOK" 2>&1)
   RC=$?
 }
@@ -64,6 +69,13 @@ run_case todo-bypass a.py "# ${DEFERRED_WORD}: known  audit-ok"
 expect "延後註解加 audit-ok → 無提醒" 0 "延後註解" no
 run_case both a.py "# ${DEFERRED_WORD} cd ${PERSONAL_PATH}"
 expect "同行含路徑與延後註解 → 路徑優先擋下" 1 "staged 內容含個人絕對路徑" yes
+
+echo "[顯示：多位元組截斷]"
+LONG_ZH=$(printf '%.0s暫' $(seq 1 60))
+# 前綴 9 bytes（"# " + 4 + " ab"）讓第 100 byte 落在中文字元中間；前綴 7 bytes 會剛好對齊而驗不到
+run_case utf8 a.py "# ${DEFERRED_WORD} ab${LONG_ZH}"
+printf '%s' "$OUT" | iconv -f UTF-8 -t UTF-8 >/dev/null 2>&1 && pass "長中文行截斷後仍是合法 UTF-8" || fail "長中文行截斷後仍是合法 UTF-8"
+expect "長中文行仍正常提醒" 0 "延後註解" yes
 
 echo ""
 echo "結果：${PASS_COUNT} passed, ${FAIL_COUNT} failed"
