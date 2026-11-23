@@ -4,7 +4,7 @@
 > **建立**：2026-11-22
 > **發起人**：使用者
 > **基準 commit**：`59bc198`（main，工作區乾淨）
-> **狀態**：W1–W6 未開工
+> **狀態**：W1、W2、W3、W4、W5、W6 完成（2026-11-23）；W3 段 2 依使用者裁決改為安裝 skill-health 排程
 > **來源**：`plans/agent-env-trust-pyramid.md` T2 ① 候選表（6 條）；W3 另併入 T3 真模型二跑的發現（`test-skill-*.sh` 無自動執行入口，2026-11-22 已核實）
 
 ---
@@ -77,3 +77,20 @@ W6（隱私風險、獨立）→ W2（最小）→ W1 → W3 段 1 → W4 → W3
 ```
 
 W2 與 T5 都會建立 `bin/test-pre-commit-audit.sh`：先做的那張建檔，後做的補案例。
+
+---
+
+## 3. 執行結果（2026-11-23，orchestrator 直接實作 + 審查；codex 用量已滿，W6 審查改用 Claude subagent 冷啟動）
+
+| 單 | commit | 結果 |
+|---|---|---|
+| W6 | `0569cde` | `hooks/pre-push-email-audit.sh` + installer 裝 pre-push。審查 9 條全採納：擁有權改看固定檔頭、基準點預設 upstream tip（不用 HEAD）、只排除本 remote 已有 commit、檢查 annotated tag tagger、`GIT_NO_REPLACE_OBJECTS`、基準點只收 sha、信箱比對不分大小寫、linked worktree 路徑。測試 19 + 22（含真 `git push` 端到端），關鍵修補皆做變異驗證 |
+| W2 | `be6475b` | 警告級，`LC_ALL=C` awk 按 byte 判定（不依賴 `grep -P`）；全 repo 既有 `.sh` 掃描 0 誤報。實作期間在本輪新寫的 3 支測試裡抓到 3 處同類 bug（`72505e3` 等） |
+| W1 | `776651f` | validator 加目錄名檢查；選做的「舊名活引用 grep」未做 |
+| W3 段 1 | `be6475b` | pre-commit `TEST_MAP`：改到哪支跑哪支測試；故意改壞 knowledge-grep → hook exit 1。`test-skill-health` 約 34s（超過 30s 門檻，偏離：只在改到相關檔時跑，不拆子集）；`test-token-budget` 既有失敗，修好前不接 |
+| W3 段 2 | — | 盤點：全 repo 僅 2 處「必跑」——§8.6 已接 pre-commit；§7 由 skill-health A2–A5 實作但排程未裝。案例太少，不寫通用 script；**使用者裁決改為安裝 skill-health launchd 排程**（每週二、五 10:00，含 B 層，每次呼叫一次 claude） |
+| W4 | `36fc16a` | `bin/worktree-base-check.sh` + tech-lead-mode Path A 呼叫；7 案例。限制：仍靠模型記得呼叫（L1） |
+| W5 | `6874850` | `project-review.py --preflight`；12 案例。實證：Agent_skill `test-skill-usage.sh` 原地 PASS、快照 3 FAIL → 判定不要登記，重現 11-10。`--register` 架構選項未做 |
+
+**本 repo push 決策（使用者 2026-11-23）**：基準點之後的個人信箱 commit 這次以 `--no-verify` 推出，推完基準點移到新 HEAD；之後的 commit 由 W6 檢查。noreply 信箱設定待使用者執行 `git config user.email`。
+
