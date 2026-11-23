@@ -169,3 +169,10 @@
 - 修正：五條補回 R7／R8／handoff 品質標準，歸納表下加補正註記（`396f2a5`）。
 - 規則：**移除一條教訓前，它「規則」欄的每一個子句都要能在去處 grep 到對應文字**；只確認「主題對得上」不算歸納完成。
 - 下沉：cop——歸納是語意比對（同一規則常被改寫成不同字句），regex 判不出；架構層也無法讓「刪除前比對」不可能被跳過。做法：精簡時對「移除條目 × 去處檔案」派冷啟動 reviewer 逐子句比對，本次 codex R1 即此形式
+
+## 2026-11-23 NSPopover 關掉後 SwiftUI timer 動畫照跑，debug build 閒置吃 15–20% CPU
+- 情境：WakaWaka 的 popover 閒置畫面有 Pac-Man 動畫（`Timer.publish(every: 0.14)` 推進 `@State frame`）。popover 關掉後 hosting view 還活著。
+- 錯誤/風險：每秒約 7 次重新 layout 一個不在畫面上的視窗，開機 2.5 天累積 88 分鐘 CPU。看程式碼時以為 1 秒 poll 那類 timer 才是成本，實際上 `sample` 顯示 app 自己的 code 不到 1%，全在 SwiftUI display cycle。
+- 修正：view model 加 `isPopoverShown`（`NSPopoverDelegate` 更新），timer tick 時不可見就不改 state（`5c3e12b`），閒置 CPU 降到 <1%。
+- 規則：**常駐 app 的 CPU 問題先 `sample <pid>` 再看 code**；另外，任何 timer 驅動的 SwiftUI 動畫都要綁可見性，popover／隱藏視窗裡的 view 不會自己停。
+- 下沉：無——屬 SwiftUI 實作細節，靠 code review 時注意 `Timer.publish` + `@State` 是否有可見性守門
