@@ -140,6 +140,8 @@ assert_equals "$RC" "1" "找不到登記表 → exit 1"
 
 echo "== 10. --preflight（登記前在快照試跑，工單 W5）=="
 ENTRY="$SANDBOX/entry.json"
+# 整節 preflight 前後比對報告目錄：任何一次 preflight 寫入或改寫都抓得到
+REPORTS_BEFORE=$(find "$REPORTS" -print 2>/dev/null | sort; find "$REPORTS" -type f -exec cksum {} + 2>/dev/null | sort)
 preflight() { printf '%s\n' "$1" >"$ENTRY"; OUT=$(python3 "$SCRIPT_DIR/project-review.py" --preflight "$ENTRY" 2>&1); RC=$?; }
 preflight "{\"name\":\"demo\",\"path\":\"$REPO\",\"checks\":{\"test\":\"test -f app.txt\"}}"
 assert_equals "$RC" 0 "preflight：hermetic 的檢查 → exit 0"
@@ -158,9 +160,11 @@ assert_contains "不是合法 JSON" "preflight：壞 JSON 訊息清楚"
 FLAG="$SANDBOX/flaky-flag"; rm -f "$FLAG"
 preflight "{\"name\":\"demo\",\"path\":\"$REPO\",\"checks\":{\"test\":\"if [ -f $FLAG ]; then exit 0; else touch $FLAG; exit 1; fi\"}}"
 assert_equals "$RC" 1 "preflight：flaky 也不算通過"
-preflight "{\"name\":\"demo\",\"path\":\"$REPO\",\"setup\":\"echo setup-broke >&2; exit 3\",\"checks\":{\"test\":\"true\"}}"
-assert_contains "setup-broke" "preflight：setup 失敗時印出 setup log（暫存目錄刪除前）"
-[[ ! -e "$REPORTS/demo/logs/preflight" ]] && pass "preflight：不寫報告目錄" || fail "preflight：不寫報告目錄"
+# log 內容用執行時才算出的字串：指令文字（會出現在錯誤訊息）裡只有 $((40+2))，只有真的印出 log 才會有 setup-42-log
+preflight "{\"name\":\"demo\",\"path\":\"$REPO\",\"setup\":\"echo setup-\$((40+2))-log >&2; exit 3\",\"checks\":{\"test\":\"true\"}}"
+assert_contains "setup-42-log" "preflight：setup 失敗時印出 setup log（暫存目錄刪除前）"
+REPORTS_AFTER=$(find "$REPORTS" -print 2>/dev/null | sort; find "$REPORTS" -type f -exec cksum {} + 2>/dev/null | sort)
+[[ "$REPORTS_BEFORE" == "$REPORTS_AFTER" ]] && pass "preflight：整節跑完報告目錄完全沒被新增或改寫" || fail "preflight：整節跑完報告目錄完全沒被新增或改寫"
 
 echo "== 11. installer dry-run =="
 OUT=$(PROJECT_REVIEW_LAUNCH_AGENTS_DIR="$SANDBOX/agents" bash "$SCRIPT_DIR/install-project-review-schedule.sh" --dry-run 2>&1); RC=$?
