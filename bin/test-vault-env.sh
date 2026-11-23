@@ -76,6 +76,43 @@ printf 'OBSIDIAN_VAULT_PATH=%s' "$VAULT" >"$ENV_FILE"
 OUT=$(env -u OBSIDIAN_VAULT_PATH HOME="$SANDBOX/home" AGENT_SKILL_ENV_FILE="$ENV_FILE" bash "$TOOL" 2>/dev/null)
 check "最後一行沒有換行" "$OUT" "$VAULT_REAL"
 
+echo "[跳脫與邊界：與 source 一致（C1 codex 審查）]"
+# 字面的 $HOME / ~ 目錄真的存在，展開錯了就會選到另一個目錄
+mkdir -p "$SANDBOX/cwd2/\$HOME/n" "$SANDBOX/cwd2/~/n" "$SANDBOX/cwd2/a\"b"
+for content in \
+  'OBSIDIAN_VAULT_PATH=\$HOME/n' \
+  'OBSIDIAN_VAULT_PATH="\$HOME/n"' \
+  'OBSIDIAN_VAULT_PATH=\~/n' \
+  'OBSIDIAN_VAULT_PATH="a\"b"' \
+  'OBSIDIAN_VAULT_PATH="$HOME"/n' ; do
+  rm -f "$ENV_FILE"; printf '%s\n' "$content" >"$ENV_FILE"
+  OUT=$(cd "$SANDBOX/cwd2" && env -u OBSIDIAN_VAULT_PATH HOME="$SANDBOX/home" AGENT_SKILL_ENV_FILE="$ENV_FILE" bash "$TOOL" 2>/dev/null); RC=$?
+  expected=$(cd "$SANDBOX/cwd2" && source_value); expected_real=$(cd "$SANDBOX/cwd2" && cd "$expected" 2>/dev/null && pwd)
+  if [[ "$content" == *'"/n' ]]; then
+    check "引號接字串（${content}）→ 不猜、拒絕" "$RC" 1
+  else
+    check "與 source 一致：${content#OBSIDIAN_VAULT_PATH=}" "$RC:$OUT" "0:$expected_real"
+  fi
+done
+
+echo "[不支援的寫法：拒絕，不回傳另一個存在的目錄]"
+# 每個案例的「錯誤解讀」都指向真的存在的目錄：舊版會成功回傳它
+mkdir -p "$SANDBOX/tmpx" "$SANDBOX/home/n_BACKUP" "$SANDBOX/My"
+mkdir -p "$SANDBOX/home_BACKUP/n"
+for content in \
+  "OBSIDIAN_VAULT_PATH=\"$SANDBOX/tmpx\"/notes" \
+  "OBSIDIAN_VAULT_PATH='$SANDBOX/tmpx'/notes" \
+  'OBSIDIAN_VAULT_PATH=$HOME_BACKUP/n' \
+  "OBSIDIAN_VAULT_PATH=$SANDBOX/My Vault" \
+  'OBSIDIAN_VAULT_PATH=$OTHER/n' \
+  'OBSIDIAN_VAULT_PATH="`pwd`"' \
+  'OBSIDIAN_VAULT_PATH="unterminated' ; do
+  run "$content"
+  check "拒絕：$(printf '%s' "${content#OBSIDIAN_VAULT_PATH=}" | sed "s|$SANDBOX|…|g")" "$RC:$OUT:$(grep -c '格式不支援' <<<"$ERR")" "1::1"
+  run "$content" --optional
+  check "拒絕 + --optional → 靜默" "$RC:$OUT:$ERR" "0::"
+done
+
 echo "[環境變數與權限]"
 OUT=$(OBSIDIAN_VAULT_PATH="$VAULT" HOME="$SANDBOX/home" AGENT_SKILL_ENV_FILE="$SANDBOX/none" bash "$TOOL" --optional 2>/dev/null)
 check ".env 不存在但環境變數有設 → 沿用（同 source 2>/dev/null）" "$OUT" "$VAULT_REAL"
@@ -96,9 +133,31 @@ echo "[呼叫端寫法（SKILL.md 契約）]"
 SKILLS_ROOT="$SCRIPT_DIR/../skills"
 grep -qF 'VAULT_PATH=$(~/Agent_skill/bin/vault-env.sh) || exit 1' "$SKILLS_ROOT/productivity/obsidian-save/SKILL.md" \
   && pass "obsidian-save：必須有、缺設定就停" || fail "obsidian-save：必須有、缺設定就停"
-grep -qF 'OBSIDIAN_VAULT_PATH=$(~/Agent_skill/bin/vault-env.sh) || exit 1' "$SKILLS_ROOT/productivity/knowledge-search/SKILL.md" \
-  && grep -qF 'OBSIDIAN_VAULT_PATH=$(~/Agent_skill/bin/vault-env.sh --optional)' "$SKILLS_ROOT/productivity/knowledge-search/SKILL.md" \
-  && pass "knowledge-search：vault 必須、both 選用" || fail "knowledge-search：vault 必須、both 選用"
+# knowledge-search：不只看字串在不在，直接執行 SKILL.md 的前置＋Phase 2 兩段 bash，串到 knowledge-grep.sh
+KS_SKILL="$SKILLS_ROOT/productivity/knowledge-search/SKILL.md"
+ks_block() {   # 取出含指定字串的那個 ```bash 區塊
+  awk -v key="$1" '/^```bash/{buf=""; on=1; next} /^```/{if(on && index(buf,key)) printf "%s", buf; on=0; next} on{buf=buf $0 "\n"}' "$KS_SKILL"
+}
+KS_SCRIPT="$SANDBOX/ks.sh"
+{ echo 'set -u'
+  ks_block 'vault-env.sh' | sed "s|~/Agent_skill/bin/|$SCRIPT_DIR/|g"
+  ks_block 'knowledge-grep.sh' | sed "s|~/Agent_skill/bin/|$SCRIPT_DIR/|g; s|^KEYWORDS=.*|KEYWORDS=(needle)|"
+  echo 'echo "EXIT=$GREP_EXIT"; printf "HIT=%s\n" "${UNIQUE_FILES[@]+"${UNIQUE_FILES[@]}"}"'
+} >"$KS_SCRIPT"
+mkdir -p "$SANDBOX/kn" && echo needle >"$SANDBOX/kn/k.md" && echo needle >"$VAULT/v.md"
+ks_run() {   # ks_run <SOURCE> <.env 內容或 NONE>
+  rm -f "$ENV_FILE"; [[ "$2" == NONE ]] || printf '%s\n' "$2" >"$ENV_FILE"
+  OUT=$(env -u OBSIDIAN_VAULT_PATH HOME="$SANDBOX/home" AGENT_SKILL_ENV_FILE="$ENV_FILE" KNOWLEDGE_GREP_REPO_ROOT="$SANDBOX/kn" \
+    SOURCE="$1" bash "$KS_SCRIPT" 2>"$SANDBOX/kserr"); RC=$?
+}
+ks_run vault "OBSIDIAN_VAULT_PATH=$VAULT"
+check "knowledge-search vault：串到 knowledge-grep 找到 vault 筆記" "$RC:$(grep -c "HIT=.*v.md" <<<"$OUT")" "0:1"
+ks_run vault NONE
+check "knowledge-search vault：缺設定 → 停下（exit 1）並有設定步驟" "$RC:$(grep -c '設定步驟' "$SANDBOX/kserr")" "1:1"
+ks_run both NONE
+check "knowledge-search both：缺設定 → 降級只搜 knowledge，不停" "$RC:$(grep -c 'HIT=.*k.md' <<<"$OUT"):$(grep -c 'v.md' <<<"$OUT")" "0:1:0"
+ks_run both "OBSIDIAN_VAULT_PATH=$VAULT"
+check "knowledge-search both：有設定 → 兩邊都搜到" "$(grep -c 'HIT=' <<<"$OUT")" 2
 for f in learning/_shared/mentor-protocol.md lifestyle/cooking-flow/SKILL.md; do
   grep -qF 'vault-env.sh --optional' "$SKILLS_ROOT/$f" && pass "${f}：選用（靜默降級）" || fail "${f}：選用（靜默降級）"
 done

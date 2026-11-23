@@ -84,5 +84,5 @@ C4（安全、架構下沉）→ C1 → C3 → C5（常駐，最後做、單獨 
 **補審（2026-11-23 下午）**：
 - C3 codex 異模型審查 4 條全採納（`49f0ffe`）：不存在的日期（2026-02-30）整列變讀取失敗、無 git 時 traceback、git 繼承 `GIT_DIR` 讀錯 repo、展開名單缺「只有 Blocker」的斷言
 - C5 Claude subagent 冷啟動審查（codex 並行 7 路後 429）6 條採納 4（`31fa20e`）：`package.json` 掃兩層與 `has_file` 三層不一致（`apps/web` 漏 react / frontend-security）、5 個條件無 fixture（變異全綠）、防漂移只比 rules 名稱、未排除 dist / vendor。不採納：範圍比表的「根目錄」寬（刻意：多載便宜、漏載安全規範貴）、同名鍵在任何位置都算（與原生 Grep 路徑一致）。常駐 3,716 → 3,725 bytes
-- C1 異模型審查兩次都 429，**仍只有同模型審查**
+- C1 codex 異模型審查（第三次跑成功）5 條全採納：引號接字串（`"/tmp"/notes` 回傳 `/tmp`）、`\$HOME` / `\~` 跳脫後仍展開、`$HOME_BACKUP` 誤認為 HOME、無引號含空格且前綴目錄存在時會被接受、呼叫端測試只比字串。**修法改方向**：不再逐案模仿 `source`，支援範圍內對齊、範圍外 exit 1「格式不支援」（`--optional` 靜默）——每個拒絕案例的錯誤解讀都指向真實存在的目錄，舊版會成功回傳它。knowledge-search 測試改為直接執行 SKILL.md 的兩段 bash 串到 `knowledge-grep.sh`。66 案例；舊版解析器跑新測試 16 FAIL，4 個定點變異全抓到；真實 `.env` 實跑 exit 0
 
