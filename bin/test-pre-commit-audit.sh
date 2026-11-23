@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test-pre-commit-audit.sh — hooks/pre-commit-audit.sh 的回歸測試。
 # 每個案例在 mktemp -d 的臨時 repo 裡 stage 一行內容，直接執行 hook 檢查 exit code 與輸出。
-# 臨時 repo 沒有 skills/index.json，所以只會跑到「路徑 lint」與「延後註解提醒」兩段。
+# run_case 的臨時 repo 沒有 skills/index.json，只跑到 index 檢查之前的各段；TEST_MAP 段另用 run_map_case 建 stub。
 
 set -u
 
@@ -93,6 +93,32 @@ run_case ascii a.sh "echo \"${DOLLAR}hp, ok\"	${DOLLAR}x	y"
 expect "後接 ASCII 標點或 tab → 無提醒" 0 "shell 變數後面緊接多位元組字元" no
 run_case not-shell a.py "print(\"${DOLLAR}hp${ZH_COMMA}\")"
 expect "非 shell 檔 → 不檢查" 0 "shell 變數後面緊接多位元組字元" no
+run_case double-backslash a.sh "echo \"\\\\${DOLLAR}hp${ZH_COMMA}會崩\""
+expect "偶數個反斜線（\\\\\$VAR 仍會展開）→ 照樣提醒" 0 "shell 變數後面緊接多位元組字元" yes
+
+echo "[改到哪支跑哪支測試（W3 段 1）]"
+# 臨時 repo 要有 skills/index.json 與可執行的 validator 才會走到 TEST_MAP 段；validator 用 stub
+# run_map_case <名稱> <假測試的 exit code> <要 stage 的檔>：bin/test-codex-ro.sh 是假測試，會留下執行標記
+run_map_case() {
+  local repo="$SANDBOX/$1"
+  git init -q "$repo" || { echo "fixture 失敗：git init $1" >&2; exit 2; }
+  mkdir -p "$repo/skills" "$repo/bin"
+  printf '{"skills": []}\n' >"$repo/skills/index.json"
+  printf '#!/bin/sh\nexit 0\n' >"$repo/bin/validate-skill-index.py"; chmod +x "$repo/bin/validate-skill-index.py"
+  printf 'touch "%s/ran"\necho "  FAIL  假測試案例"\nexit %s\n' "$repo" "$2" >"$repo/bin/test-codex-ro.sh"
+  mkdir -p "$repo/$(dirname "$3")"; echo x >"$repo/$3"
+  git -C "$repo" add "$3" || { echo "fixture 失敗：git add $1" >&2; exit 2; }
+  OUT=$(cd "$repo" && bash "$HOOK" 2>&1); RC=$?
+  RAN=$([[ -e "$repo/ran" ]] && echo yes || echo no)
+}
+run_map_case map-fail 1 bin/codex-ro.sh
+expect "對應測試失敗 → 擋下並指出哪支" 1 "相關測試失敗 bin/test-codex-ro.sh" yes
+run_map_case map-pass 0 bin/codex-ro.sh
+expect "對應測試通過 → 放行並回報" 0 "bin/test-codex-ro.sh 通過" yes
+[[ "$RAN" == yes ]] && pass "對應測試真的被執行" || fail "對應測試真的被執行"
+run_map_case map-unrelated 1 bin/other.sh
+expect "沒碰到對照表的檔 → 不跑測試、放行" 0 "相關測試失敗" no
+[[ "$RAN" == no ]] && pass "無關檔案不觸發測試" || fail "無關檔案不觸發測試"
 
 echo ""
 echo "結果：${PASS_COUNT} passed, ${FAIL_COUNT} failed"

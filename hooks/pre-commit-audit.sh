@@ -105,7 +105,7 @@ fi
 #
 # 判定：LC_ALL=C 下按 byte 比，變數名後面不是 tab 也不是可列印 ASCII → 多位元組。
 # 不用 grep -P：macOS 舊版與部分下游環境沒有 PCRE。
-# 排除：註解行（# 開頭）、跳脫的字面 \$。只查 *.sh / *.bash。
+# 排除：註解行（# 開頭）、跳脫的字面 \$（前面奇數個反斜線；"\\$x" 是字面反斜線＋展開，照樣抓）。只查 *.sh / *.bash。
 
 BARE_VARS=$(printf '%s\n' "$DIFF" | LC_ALL=C awk '
   /^\+\+\+ "?b\// { sub(/^\+\+\+ "?b\//, ""); sub(/"$/, ""); file = $0; next }
@@ -113,7 +113,7 @@ BARE_VARS=$(printf '%s\n' "$DIFF" | LC_ALL=C awk '
     line = substr($0, 2)
     if (line ~ /^[[:space:]]*#/) next
     if (line ~ /(^|[^A-Za-z0-9_-])audit-ok([^A-Za-z0-9_-]|$)/) next
-    if (line ~ /(^|[^\\])\$[A-Za-z_][A-Za-z0-9_]*[^\t -~]/) printf "  %s: %s\n", file, substr(line, 1, 100)
+    if (line ~ /(^|[^\\])(\\\\)*\$[A-Za-z_][A-Za-z0-9_]*[^\t -~]/) printf "  %s: %s\n", file, substr(line, 1, 100)
   }
 ')
 
