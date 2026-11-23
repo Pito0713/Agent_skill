@@ -171,6 +171,7 @@ TEST_MAP='^bin/(skill-usage\.py|lib_skill_usage\.py|test-skill-usage\.sh)$ test-
 ^bin/(project-review\.py|project_review_[a-z]+\.py|install-project-review-schedule\.sh|test-project-review\.sh)$ test-project-review.sh
 ^bin/(scan-downstream\.sh|test-fix-3\.sh)$ test-fix-3.sh
 ^bin/(test-)?codex-ro\.sh$ test-codex-ro.sh
+^(bin/(test-)?detect-stack\.sh|skills/engineering/coding-workflow-core/SKILL\.md)$ test-detect-stack.sh
 ^(bin/(test-)?vault-env\.sh|skills/productivity/(obsidian-save|knowledge-search)/SKILL\.md|skills/learning/_shared/mentor-protocol\.md|skills/lifestyle/cooking-flow/SKILL\.md)$ test-vault-env.sh
 ^bin/(project-dashboard\.py|test-project-dashboard\.sh)$ test-project-dashboard.sh'
 
