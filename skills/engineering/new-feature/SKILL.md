@@ -162,7 +162,7 @@ Python → agents/02-language-specialists/python-expert.md（Python 專案）
 **y：**（codex 與安全設定依 `cli-delegate.md` 前置確認；codex 不可用時走模式 C 的 Claude Subagent Fallback）
 ```bash
 # Bash tool timeout 建議 570000 ms
-git diff HEAD | codex exec -s read-only -c project_doc_max_bytes=0 "
+git diff HEAD | ~/Agent_skill/bin/codex-ro.sh --stdin "
 這是一個新功能的實作 diff，請審查：
 1. 邏輯是否正確，有無邊界條件遺漏
 2. 安全風險（注入、權限、資料洩漏）

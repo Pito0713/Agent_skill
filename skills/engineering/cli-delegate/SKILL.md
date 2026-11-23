@@ -36,18 +36,23 @@ fi
 
 安裝方式問使用者是否要裝，不自行安裝：`npm i -g @openai/codex` 或 `brew install codex`。
 
-### Step 2：安全預設（每次呼叫都要帶）
+### Step 2：安全預設——一律經 `~/Agent_skill/bin/codex-ro.sh`
 
-codex 的安全邊界是**逐次旗標**，不是設定檔，所以每條指令都必須自帶：
+codex 的安全邊界是**逐次旗標**，不是設定檔。**不要直接寫 `codex exec`**，一律呼叫 wrapper，
+它固定帶下表的安全旗標，並在沒寫 `--stdin` 時接 `</dev/null`（2026-11-22 背景執行沒給 stdin，
+卡在等輸入 40 分鐘）。要餵資料就明寫 `--stdin`：`git diff | ~/Agent_skill/bin/codex-ro.sh --stdin "…"`。
 
-| 旗標 | 作用 |
-|------|------|
-| `-s read-only` | sandbox 唯讀，codex 不能寫檔、不能改 repo |
-| `-c project_doc_max_bytes=0` | **不載入 AGENTS.md**——見下方警告，在本 repo 內是必要旗標 |
-| `--skip-git-repo-check` | 允許在非 git 目錄執行（在 repo 內可省略）|
-| `-c tools.web_search=true` | **只有模式 A 才加**，開啟網路搜尋 |
+| wrapper 參數 | 實際帶給 codex | 作用 |
+|------|------|------|
+| （固定） | `-s read-only` | sandbox 唯讀，codex 不能寫檔、不能改 repo |
+| （固定） | `-c project_doc_max_bytes=0` | **不載入 AGENTS.md**——見下方警告 |
+| `--web` | `-c tools.web_search=true` | **只有模式 A 才加**，開啟網路搜尋 |
+| `--stdin` | 繼承 stdin | 沒寫就是 `</dev/null` |
+| `-o FILE` / `-C DIR` / `--skip-git-repo-check` | 原樣傳遞 | 其他旗標一律拒絕（exit 2）|
 
-⚠️ **在 `~/Agent_skill` 內委派一定要帶 `-c project_doc_max_bytes=0`。**
+找不到 codex → wrapper exit 127，改走下方 Claude Subagent Fallback。
+
+⚠️ **為什麼一定要 `project_doc_max_bytes=0`（wrapper 已固定帶）。**
 `setup-codex.sh` 把 `AGENTS.md` symlink 到 `~/.codex/AGENTS.md`、skill farm 掛到
 `~/.codex/skills/`，所以被委派的 codex session **會繼承整套制度**：它會先讀交接檔、
 載入 code-review／coding-workflow-core、跑 Phase 0，然後回合就結束了，任務一個字沒做。
@@ -102,7 +107,7 @@ Claude → 收到後 → 判斷可信度、翻譯整理、補充背景、標注�
 
 ```bash
 # Bash tool timeout 建議 360000 ms
-codex exec -s read-only -c project_doc_max_bytes=0 -c tools.web_search=true \
+~/Agent_skill/bin/codex-ro.sh --web \
   "搜尋：<具體問題或 English keywords>。
 只回 3-5 筆，每筆格式：標題 / 來源網址 / 一句摘要。
 不要下結論、不要建議。找不到就輸出 NOT FOUND。"
@@ -111,7 +116,7 @@ codex exec -s read-only -c project_doc_max_bytes=0 -c tools.web_search=true \
 只要最後一則訊息、不要 session 前導資訊時，加 `-o <檔案>`：
 
 ```bash
-codex exec -s read-only -c project_doc_max_bytes=0 -c tools.web_search=true -o /tmp/result.md "<prompt>"
+~/Agent_skill/bin/codex-ro.sh --web -o /tmp/result.md "<prompt>"
 ```
 
 **輸出格式（Claude 整理後）**：
@@ -162,11 +167,11 @@ Claude 分析整合：
 # Bash tool timeout 建議 570000 ms
 
 # 單一大檔案：stdin 會被當成 <stdin> 區塊附在 prompt 後面
-codex exec -s read-only -c project_doc_max_bytes=0 "閱讀 <stdin> 的檔案內容，提取：<架構概覽 / 核心邏輯 / 外部依賴>
+~/Agent_skill/bin/codex-ro.sh --stdin "閱讀 <stdin> 的檔案內容，提取：<架構概覽 / 核心邏輯 / 外部依賴>
 條列式輸出，不超過 20 行。不要建議修改。繁體中文。" < 檔案路徑
 
 # 讓 codex 自己在唯讀 sandbox 內讀檔（多檔案 / 整個目錄時用這個）
-codex exec -s read-only -c project_doc_max_bytes=0 "掃描 ./src 下的 TypeScript 檔案，條列主要模組與職責，
+~/Agent_skill/bin/codex-ro.sh "掃描 ./src 下的 TypeScript 檔案，條列主要模組與職責，
 不超過 20 行。不要建議修改。繁體中文。"
 ```
 
@@ -204,7 +209,7 @@ codex exec -s read-only -c project_doc_max_bytes=0 "掃描 ./src 下的 TypeScri
 # Bash tool timeout 建議 570000 ms
 
 # 審查 git diff
-git diff HEAD | codex exec -s read-only -c project_doc_max_bytes=0 "審查 <stdin> 的 diff，僅回報問題，不提供修改方案。
+git diff HEAD | ~/Agent_skill/bin/codex-ro.sh --stdin "審查 <stdin> 的 diff，僅回報問題，不提供修改方案。
 
 審查維度：邏輯漏洞、邊界條件缺失、安全風險
 每個問題格式：
@@ -215,7 +220,7 @@ git diff HEAD | codex exec -s read-only -c project_doc_max_bytes=0 "審查 <stdi
 繁體中文。"
 
 # 審查單一檔案
-codex exec -s read-only -c project_doc_max_bytes=0 "審查 <stdin> 的程式碼，僅回報問題，不提供修改方案。
+~/Agent_skill/bin/codex-ro.sh --stdin "審查 <stdin> 的程式碼，僅回報問題，不提供修改方案。
 [同上格式]" < 檔案路徑
 ```
 

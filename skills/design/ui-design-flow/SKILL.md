@@ -122,7 +122,7 @@ metadata:
 
 ```bash
 # Bash tool timeout 建議 570000 ms（cli-delegate 模式 C）
-codex exec -s read-only -c project_doc_max_bytes=0 "
+~/Agent_skill/bin/codex-ro.sh "
 以下是一個 UI 設計規劃，請從使用者體驗角度審查：
 
 [貼入模式 A 的 IA 結構 + 模式 B 的 wireframe]

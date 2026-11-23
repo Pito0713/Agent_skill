@@ -55,7 +55,7 @@ metadata:
 **y：**（codex 依 `cli-delegate.md` 前置確認偵測；副檔名依專案語言調整）
 ```bash
 # Bash tool timeout 建議 570000 ms（cli-delegate 模式 B）
-find ./src -name "*.ts" -o -name "*.tsx" -o -name "*.py" | xargs cat | codex exec -s read-only -c project_doc_max_bytes=0 "
+find ./src -name "*.ts" -o -name "*.tsx" -o -name "*.py" | xargs cat | ~/Agent_skill/bin/codex-ro.sh --stdin "
 定位以下問題的可能來源，條列相關模組與程式碼位置，不超過 15 行。
 問題描述：[貼入症狀與 error message]
 繁體中文。"
@@ -127,7 +127,7 @@ find ./src -name "*.ts" -o -name "*.tsx" -o -name "*.py" | xargs cat | codex exe
 **y：**（codex 依 `cli-delegate.md` 前置確認；codex 不可用時走模式 C 的 Claude Subagent Fallback）
 ```bash
 # Bash tool timeout 建議 570000 ms（cli-delegate 模式 C）
-git diff HEAD | codex exec -s read-only -c project_doc_max_bytes=0 "
+git diff HEAD | ~/Agent_skill/bin/codex-ro.sh --stdin "
 以下是一個 bug 修正的 diff。
 已知問題根因：[貼入根因描述]
 

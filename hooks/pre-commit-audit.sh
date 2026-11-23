@@ -169,7 +169,8 @@ TEST_MAP='^bin/(skill-usage\.py|lib_skill_usage\.py|test-skill-usage\.sh)$ test-
 ^bin/(validate-skill-index\.py|test-validate-skill-index\.sh)$ test-validate-skill-index.sh
 ^bin/(test-)?worktree-base-check\.sh$ test-worktree-base-check.sh
 ^bin/(project-review\.py|project_review_[a-z]+\.py|install-project-review-schedule\.sh|test-project-review\.sh)$ test-project-review.sh
-^bin/(scan-downstream\.sh|test-fix-3\.sh)$ test-fix-3.sh'
+^bin/(scan-downstream\.sh|test-fix-3\.sh)$ test-fix-3.sh
+^bin/(test-)?codex-ro\.sh$ test-codex-ro.sh'
 
 RELATED_TESTS=$(printf '%s\n' "$TEST_MAP" | while read -r pattern test_name; do
   printf '%s\n' "$STAGED" | grep -qE "$pattern" && echo "$test_name"

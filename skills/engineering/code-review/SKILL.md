@@ -138,7 +138,7 @@ metadata:
 # Bash tool timeout 建議 570000 ms
 
 # 範圍為 git diff
-git diff HEAD | codex exec -s read-only -c project_doc_max_bytes=0 "審查這個 diff，僅回報問題，不提供修改方案。
+git diff HEAD | ~/Agent_skill/bin/codex-ro.sh --stdin "審查這個 diff，僅回報問題，不提供修改方案。
 
 審查維度：邏輯漏洞、邊界條件缺失、安全風險、測試缺口
 每個問題格式：

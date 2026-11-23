@@ -49,7 +49,7 @@ wc -l $(find . -name "*.ts" -o -name "*.py" -o -name "*.go" 2>/dev/null) | tail 
 ```bash
 # Bash tool timeout 建議 570000 ms（cli-delegate 模式 B）
 find ./src -name "*.ts" -o -name "*.py" -o -name "*.go" | \
-  xargs cat | codex exec -s read-only -c project_doc_max_bytes=0 "
+  xargs cat | ~/Agent_skill/bin/codex-ro.sh --stdin "
 分析這個專案的整體架構，條列以下內容，每項不超過 5 行：
 1. 專案用途（一句話）
 2. 主要模組與職責（條列）

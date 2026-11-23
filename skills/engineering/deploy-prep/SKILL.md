@@ -153,7 +153,7 @@ git status            # 確認無未提交的變更
 RANGE="$(git describe --tags --abbrev=0 2>/dev/null || echo HEAD~1)..HEAD"
 
 # Bash tool timeout 建議 570000 ms（cli-delegate 模式 C）
-git diff "$RANGE" | codex exec -s read-only -c project_doc_max_bytes=0 "
+git diff "$RANGE" | ~/Agent_skill/bin/codex-ro.sh --stdin "
 這是準備上線的最終 diff。請從上線風險角度審查：
 1. 是否有可能導致 production 中斷的問題
 2. 是否有資料遺失風險（DB / 狀態）
