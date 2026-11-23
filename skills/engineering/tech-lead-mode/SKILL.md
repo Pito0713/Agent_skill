@@ -81,6 +81,8 @@ metadata:
 
 **委派參數依 harness 而異，發送前先對照 `governance/model-orchestration.md` 第 2 節適配表，禁止照抄非本環境的參數名。**
 
+**派 worktree 前先跑 `bash ~/Agent_skill/bin/worktree-base-check.sh`**：有輸出就原樣貼在工單最前面（worktree 是從 upstream 開的，本地領先時 executor 看不到未 push 的檔案）；exit 2 = 分歧或無 upstream，先處理再派。
+
 Claude Code 語法：
 
 ```

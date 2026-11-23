@@ -166,7 +166,8 @@ TEST_MAP='^bin/(skill-usage\.py|lib_skill_usage\.py|test-skill-usage\.sh)$ test-
 ^(hooks/pre-commit-audit\.sh|bin/test-pre-commit-audit\.sh)$ test-pre-commit-audit.sh
 ^(hooks/pre-push-email-audit\.sh|bin/test-pre-push-email-audit\.sh)$ test-pre-push-email-audit.sh
 ^(hooks/pre-(commit|push)-[a-z-]+\.sh|bin/(test-)?install-git-hooks\.sh)$ test-install-git-hooks.sh
-^bin/(validate-skill-index\.py|test-validate-skill-index\.sh)$ test-validate-skill-index.sh'
+^bin/(validate-skill-index\.py|test-validate-skill-index\.sh)$ test-validate-skill-index.sh
+^bin/(test-)?worktree-base-check\.sh$ test-worktree-base-check.sh'
 
 RELATED_TESTS=$(printf '%s\n' "$TEST_MAP" | while read -r pattern test_name; do
   printf '%s\n' "$STAGED" | grep -qE "$pattern" && echo "$test_name"
