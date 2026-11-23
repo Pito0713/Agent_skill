@@ -54,7 +54,7 @@ Script 失敗就據實回報失敗；references 沒有的就說沒有，再走�
 ### ① 讀 vault
 
 ```bash
-source "$HOME/Agent_skill/.env" 2>/dev/null
+OBSIDIAN_VAULT_PATH=$(~/Agent_skill/bin/vault-env.sh --optional)
 grep -rl "<關鍵字>" "$OBSIDIAN_VAULT_PATH/knowledge/cooking" --include="*.md" 2>/dev/null | head -5
 ```
 

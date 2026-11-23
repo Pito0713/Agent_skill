@@ -35,25 +35,12 @@ metadata:
 ## 前置：只有 `vault` 與 `both` 需要
 
 ```bash
-ENV_FILE="$HOME/Agent_skill/.env"
-
-if [ ! -f "$ENV_FILE" ]; then
-  echo "❌ 找不到 $ENV_FILE"
-  echo "  1. cp ~/Agent_skill/.env.example ~/Agent_skill/.env"
-  echo "  2. 填入 OBSIDIAN_VAULT_PATH=/your/vault/path"
-  echo "     （Obsidian 左下角 vault 名稱右鍵 → 在 Finder 中顯示）"
-  exit 1
+# vault：必須有，缺設定時 stderr 列出設定步驟，轉述後停止；both：取不到就降級（見下段）
+if [ "$SOURCE" = vault ]; then
+  OBSIDIAN_VAULT_PATH=$(~/Agent_skill/bin/vault-env.sh) || exit 1
+else
+  OBSIDIAN_VAULT_PATH=$(~/Agent_skill/bin/vault-env.sh --optional)
 fi
-
-source "$ENV_FILE"
-
-if [ -z "$OBSIDIAN_VAULT_PATH" ]; then
-  echo "❌ .env 中 OBSIDIAN_VAULT_PATH 尚未填入"; exit 1
-fi
-if [ ! -d "$OBSIDIAN_VAULT_PATH" ]; then
-  echo "❌ 找不到 vault 目錄：$OBSIDIAN_VAULT_PATH"; exit 1
-fi
-echo "✅ vault：$OBSIDIAN_VAULT_PATH"
 ```
 
 **`both` 模式下 vault 不可用不是錯誤**：降級成只搜 `knowledge/`，並在輸出中說明「vault 未設定，本次只涵蓋 repo 知識庫」——**必須說**，否則使用者會以為筆記裡真的沒有。

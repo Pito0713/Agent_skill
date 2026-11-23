@@ -51,7 +51,7 @@ society 3504→3295 (-209)   invest  3719→3596 (-123)   合計 17127→16158 (
 原始完整版（各 mentor 曾各存一份）：
 
 ```bash
-source "$HOME/Agent_skill/.env" 2>/dev/null
+OBSIDIAN_VAULT_PATH=$(~/Agent_skill/bin/vault-env.sh --optional)   # 未設定 → 空字串，下面自然走「目前為空」
 <DOMAIN_UPPER>_DIR="${OBSIDIAN_VAULT_PATH}/knowledge/<domain>"
 
 EXISTING_NOTES=$(ls "$<DOMAIN_UPPER>_DIR"/*.md 2>/dev/null | xargs -I{} basename {} .md)

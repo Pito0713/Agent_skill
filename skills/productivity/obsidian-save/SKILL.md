@@ -18,36 +18,8 @@ metadata:
 ## 前置：讀取 .env 取得 VAULT_PATH
 
 ```bash
-ENV_FILE="$HOME/Agent_skill/.env"
-
-if [ ! -f "$ENV_FILE" ]; then
-  echo "❌ 找不到 $ENV_FILE"
-  echo ""
-  echo "請依照以下步驟建立："
-  echo "  1. cp ~/Agent_skill/.env.example ~/Agent_skill/.env"
-  echo "  2. 開啟並填入你的 Obsidian vault 路徑："
-  echo "     （在 Obsidian 左下角 vault 名稱右鍵 → 在 Finder 中顯示）"
-  echo "     OBSIDIAN_VAULT_PATH=/Users/你的帳號/Documents/Obsidian/VaultName"
-  echo "  3. 儲存後重新執行此 skill"
-  exit 1
-fi
-
-source "$ENV_FILE"
-
-if [ -z "$OBSIDIAN_VAULT_PATH" ]; then
-  echo "❌ .env 中 OBSIDIAN_VAULT_PATH 尚未填入"
-  echo "   請開啟 ~/Agent_skill/.env 並設定："
-  echo "   OBSIDIAN_VAULT_PATH=/your/vault/path"
-  exit 1
-fi
-
-if [ ! -d "$OBSIDIAN_VAULT_PATH" ]; then
-  echo "❌ 找不到 vault 目錄：$OBSIDIAN_VAULT_PATH"
-  echo "   請確認路徑是否正確"
-  exit 1
-fi
-
-VAULT_PATH="$OBSIDIAN_VAULT_PATH"
+# 缺設定時 stderr 會列出原因與設定步驟：原樣轉述給使用者並停止，不要自己猜路徑
+VAULT_PATH=$(~/Agent_skill/bin/vault-env.sh) || exit 1
 echo "✅ vault：$VAULT_PATH"
 ```
 
