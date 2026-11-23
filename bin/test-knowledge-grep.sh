@@ -15,7 +15,7 @@ fail() { FAIL_COUNT=$((FAIL_COUNT + 1)); echo "  FAIL  $1"; }
 
 check() {
   local description="$1" actual="$2" expected="$3"
-  [[ "$actual" == "$expected" ]] && pass "$description" || fail "$description（實際：${actual//$'\n'/ | }）"
+  [[ "$actual" == "$expected" ]] && pass "$description" || fail "${description}（實際：${actual//$'\n'/ | }）"
 }
 
 KNOWLEDGE="$SANDBOX/knowledge"
