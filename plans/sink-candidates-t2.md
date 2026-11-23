@@ -94,3 +94,14 @@ W2 與 T5 都會建立 `bin/test-pre-commit-audit.sh`：先做的那張建檔，
 
 **本 repo push 決策（使用者 2026-11-23）**：基準點之後的個人信箱 commit 這次以 `--no-verify` 推出，推完基準點移到新 HEAD；之後的 commit 由 W6 檢查。noreply 信箱設定待使用者執行 `git config user.email`。
 
+### 補審（2026-11-23 下午，codex 異模型）
+
+| 單 | 發現 | 裁決 | commit |
+|---|---|---|---|
+| W1 | 測試複製真實 `skills/`，違反「不讀真實 repo 狀態」 | **不採納**：基準案例先驗證複本可通過，真實 repo 漂移會明確紅（不是假綠），且同一漂移本來就會被 pre-commit validator 擋 | — |
+| W2 | `"\\$hp，"`（偶數反斜線）仍會展開，bash 3.2 實測崩，regex 漏抓 | 採納：只排除奇數個反斜線 | `140bf9e` |
+| W3 | TEST_MAP 派送與失敗攔截沒有回歸測試（fixture 沒有 index.json，走不到） | 採納：`run_map_case` 3 案例，變異驗證 | `140bf9e` |
+| W3 | test-skill-health 34s 超過 30s 門檻 | 不採納：§3 已記為偏離 | — |
+| W4 | upstream 是本地分支時 SHA 相同即放行，worktree 仍從遠端開 | 採納：upstream 不是 `refs/remotes/*` → exit 2 | `4f0b3bc` |
+| W5 | setup log 斷言字串也出現在錯誤訊息；報告目錄檢查只看不存在的路徑 | 採納：執行時才算出的標記字串＋整節前後 cksum 比對（第一版快照範圍太窄，變異沒抓到，已修） | `822b583` |
+

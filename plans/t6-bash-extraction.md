@@ -81,5 +81,8 @@ C4（安全、架構下沉）→ C1 → C3 → C5（常駐，最後做、單獨 
 | C3 | `49eadde` | Claude subagent（9 條全採納） | `bin/project-dashboard.py`（**偏離：寫成 Python 不是 .sh**）；只有日期 = 00:00、欄位留空不跨行、「無法…」是真 Blocker、落後算所有本機分支、git 關 fsmonitor + timeout。28 案例，真實 9 個專案實跑 |
 | C5 | `4358264` | **未審查** | `bin/detect-stack.sh`；常駐 3,890 → 3,716 bytes（-174）；補了 monorepo（`frontend/package.json`）偵測——舊版 fallback 只看根目錄會漏 react。18 案例含 script ↔ SKILL 表防漂移 |
 
-**待補**：C5 與 W1 / W2 / W4 / W5 尚無第二意見；C1 / C3 是同模型審查，codex 恢復後可再補一輪異模型審查。
+**補審（2026-11-23 下午）**：
+- C3 codex 異模型審查 4 條全採納（`49f0ffe`）：不存在的日期（2026-02-30）整列變讀取失敗、無 git 時 traceback、git 繼承 `GIT_DIR` 讀錯 repo、展開名單缺「只有 Blocker」的斷言
+- C5 Claude subagent 冷啟動審查（codex 並行 7 路後 429）6 條採納 4（`31fa20e`）：`package.json` 掃兩層與 `has_file` 三層不一致（`apps/web` 漏 react / frontend-security）、5 個條件無 fixture（變異全綠）、防漂移只比 rules 名稱、未排除 dist / vendor。不採納：範圍比表的「根目錄」寬（刻意：多載便宜、漏載安全規範貴）、同名鍵在任何位置都算（與原生 Grep 路徑一致）。常駐 3,716 → 3,725 bytes
+- C1 異模型審查兩次都 429，**仍只有同模型審查**
 
