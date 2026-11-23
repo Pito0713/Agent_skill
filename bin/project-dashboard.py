@@ -13,7 +13,9 @@ latest.md 裡殘留的「最後 commit」「分支」是過期快取，一律不
 """
 
 import argparse
+import os
 import re
+import shutil
 import subprocess
 import sys
 from datetime import date, datetime
@@ -28,6 +30,10 @@ UPDATED_PATTERN = re.compile(r"^(\d{4}-\d{2}-\d{2})(?: (\d{2}:\d{2}))?$")
 GIT_TIMEOUT_SECONDS = 10
 # 路徑來自 latest.md，可能指向不受信任的 repo：關掉 fsmonitor 等會執行外部指令的設定
 GIT_SAFETY = ["-c", "core.fsmonitor=false", "-c", "core.untrackedCache=false"]
+# 從 git hook 或帶 GIT_DIR 的環境執行時，-C 蓋不過這些變數 → 每個專案都讀到同一個 repo（codex 審查）
+GIT_ENVIRONMENT = {key: value for key, value in os.environ.items()
+                   if key not in ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_PREFIX",
+                                  "GIT_COMMON_DIR", "GIT_OBJECT_DIRECTORY", "GIT_NAMESPACE")}
 
 
 def read_field(text: str, label: str) -> Optional[str]:
@@ -50,7 +56,8 @@ def truncate(text: str, limit: int) -> str:
 def git(repo: Path, *arguments: str) -> Optional[str]:
     try:
         completed = subprocess.run(["git", *GIT_SAFETY, "-C", str(repo), *arguments],
-                                   capture_output=True, text=True, timeout=GIT_TIMEOUT_SECONDS)
+                                   capture_output=True, text=True, timeout=GIT_TIMEOUT_SECONDS,
+                                   env=GIT_ENVIRONMENT)
     except (subprocess.TimeoutExpired, OSError, ValueError):
         return None
     return completed.stdout.strip() if completed.returncode == 0 else None
@@ -61,7 +68,10 @@ def parse_updated(updated: Optional[str]) -> Optional[float]:
     match = UPDATED_PATTERN.match(updated or "")
     if not match:
         return None
-    moment = datetime.strptime(f"{match.group(1)} {match.group(2) or '00:00'}", "%Y-%m-%d %H:%M")
+    try:   # 格式對但日期不存在（2026-02-30）也算解析不了，不能讓整列變成讀取失敗（codex 審查）
+        moment = datetime.strptime(f"{match.group(1)} {match.group(2) or '00:00'}", "%Y-%m-%d %H:%M")
+    except ValueError:
+        return None
     return moment.astimezone().timestamp()
 
 
@@ -136,7 +146,7 @@ def main() -> int:
     parser.add_argument("--sessions-dir", type=Path, default=Path("~/.agent-sessions").expanduser())
     parser.add_argument("--today", default=date.today().isoformat())
     arguments = parser.parse_args()
-    if subprocess.run(["git", "--version"], capture_output=True).returncode != 0:
+    if shutil.which("git") is None:
         print("project-dashboard: 找不到 git", file=sys.stderr)
         return 2
     files = sorted(arguments.sessions_dir.glob("*/latest.md"))

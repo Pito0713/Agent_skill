@@ -118,6 +118,24 @@ check "「無法連線…」是真的 Blocker" "$(cell realblock 8 | tr -d ' |')
 check "單一 latest.md 壞掉 → 整體仍 exit 0" "$RC" 0
 check "壞掉的那列標成讀取失敗、其他列照常" "$(row broken | grep -c '讀取失敗'):$(grep -c '^| [a-z]' <<<"$OUT")" "1:8"
 [[ ! -e "$SANDBOX/PWNED" ]] && pass "路徑指向的 repo 設了 fsmonitor 也不會被執行" || fail "路徑指向的 repo 設了 fsmonitor 也不會被執行"
+# realblock 只有 Blocker（狀態 🟢、落後 2）：名單有它才證明 Blocker 這條判斷真的在作用
+check "只有 Blocker 的專案也列入需要展開" "$(tail -n 1 <<<"$OUT" | grep -c 'realblock')" 1
+
+echo "[codex 審查補案例]"
+S3="$SANDBOX/sessions3"
+write3() { mkdir -p "$S3/$1"; printf '%s\n' "$2" >"$S3/$1/latest.md"; }
+write3 baddate "$(printf '# b\n\n> 路徑：%s\n> 最後更新：2026-02-30 10:00\n> 狀態：🔴 卡住\n\n## 卡住的點\n\n等 API\n' "$dateonly")"
+OUT=$(python3 "$TOOL" --sessions-dir "$S3" --today 2026-11-23 2>&1); RC=$?
+check "不存在的日期 → 落後 ?，其餘欄位照常（不變成讀取失敗）" "$(cell baddate 4):$(cell baddate 2):$(cell baddate 8 | tr -d ' |')" "?:🔴:有"
+check "不存在的日期的專案仍列入需要展開" "$(tail -n 1 <<<"$OUT")" "需要展開：baddate"
+
+write3 baddate "$(printf '# b\n\n> 路徑：%s\n> 最後更新：2026-11-05 10:00\n> 狀態：🟢 順暢\n' "$dateonly")"
+OUT=$(GIT_DIR="$multi/.git" python3 "$TOOL" --sessions-dir "$S3" --today 2026-11-23 2>&1)
+check "外部帶 GIT_DIR 也讀各自的 repo（分支 / 落後不被蓋掉）" "$(cell baddate 5):$(cell baddate 4)" "main:1"
+
+NOGIT="$SANDBOX/nogit-bin"; mkdir -p "$NOGIT"; ln -s "$(command -v python3)" "$NOGIT/python3"
+OUT=$(PATH="$NOGIT" "$NOGIT/python3" "$TOOL" --sessions-dir "$S3" 2>&1); RC=$?
+check "找不到 git → exit 2 並明講（不是 traceback）" "$RC:$(grep -c '找不到 git' <<<"$OUT"):$(grep -c Traceback <<<"$OUT")" "2:1:0"
 
 echo "[沒有紀錄]"
 OUT=$(python3 "$TOOL" --sessions-dir "$SANDBOX/empty" 2>&1); RC=$?
