@@ -97,6 +97,34 @@ if [[ -n "$DEFERRED" ]]; then
   echo "" >&2
 fi
 
+# ── shell 變數緊接多位元組字元（警告級，不擋；工單 W2，lessons 2026-07-31）────
+#
+# 為什麼需要它：bash 會把變數名後面緊接的多位元組字元（全形標點、中文）一起吃進
+# 變數名，配 set -u 直接 unbound variable。這條路徑常在錯誤分支裡，平常跑不到，
+# 2026-11-23 本 repo 新寫的三支測試又全部踩到。改寫成 ${VAR} 即可。
+#
+# 判定：LC_ALL=C 下按 byte 比，變數名後面不是 tab 也不是可列印 ASCII → 多位元組。
+# 不用 grep -P：macOS 舊版與部分下游環境沒有 PCRE。
+# 排除：註解行（# 開頭）、跳脫的字面 \$。只查 *.sh / *.bash。
+
+BARE_VARS=$(printf '%s\n' "$DIFF" | LC_ALL=C awk '
+  /^\+\+\+ "?b\// { sub(/^\+\+\+ "?b\//, ""); sub(/"$/, ""); file = $0; next }
+  /^\+/ && !/^\+\+\+/ && file ~ /\.(sh|bash)$/ {
+    line = substr($0, 2)
+    if (line ~ /^[[:space:]]*#/) next
+    if (line ~ /(^|[^A-Za-z0-9_-])audit-ok([^A-Za-z0-9_-]|$)/) next
+    if (line ~ /(^|[^\\])\$[A-Za-z_][A-Za-z0-9_]*[^\t -~]/) printf "  %s: %s\n", file, substr(line, 1, 100)
+  }
+')
+
+if [[ -n "$BARE_VARS" ]]; then
+  echo "" >&2
+  echo "${YELLOW}⚠ pre-commit 提醒（不擋）：shell 變數後面緊接多位元組字元${NC}" >&2
+  printf '%s\n' "$BARE_VARS" | to_valid_utf8 >&2
+  echo "  bash 會把後面的字元吃進變數名（set -u 下直接崩）：改寫成 \${VAR}；誤報可在該行加 audit-ok 標記。" >&2
+  echo "" >&2
+fi
+
 # ── skill index 三向同步（僅 Agent_skill 本身，計劃書目標 D'）──────────────
 #
 # 為什麼可以用 L2 攔截：三向逐字比對是**機械可判定、零誤報**，與上面的路徑 lint
@@ -122,6 +150,46 @@ VALIDATOR="$ROOT/bin/validate-skill-index.py"
 command -v python3 >/dev/null 2>&1 || exit 0
 
 STAGED=$(git diff --cached --name-only 2>/dev/null) || exit 0
+
+# ── 改到哪支就跑哪支的測試（僅本 repo；工單 W3 段 1，lessons 2026-09-30）──────
+#
+# 為什麼需要它：測試存在但沒有任何東西會自動執行它，紅了也沒人看到（09-30 實證兩週半）。
+# 範圍：staged 碰到對照表左欄 → 跑右欄的測試；對照表就是「哪支程式由哪支測試守」的正本。
+# 失敗策略：測試檔不存在 → 略過（fail-open）；測試非 0 → 擋（fail-closed）。
+# 已知限制：跟 validator 一樣測的是**工作區**不是 staged 內容。test-skill-health 約 34 秒，
+# 只在改到 skill-health 相關檔才跑。
+# git 執行 hook 時會 export GIT_INDEX_FILE 等變數，測試在臨時 repo 跑 git 會誤用 → 一律清掉。
+
+TEST_MAP='^bin/(skill-usage\.py|lib_skill_usage\.py|test-skill-usage\.sh)$ test-skill-usage.sh
+^bin/(skill[-_]health|test-skill-health) test-skill-health.sh
+^bin/(test-)?knowledge-grep\.sh$ test-knowledge-grep.sh
+^(hooks/pre-commit-audit\.sh|bin/test-pre-commit-audit\.sh)$ test-pre-commit-audit.sh
+^(hooks/pre-push-email-audit\.sh|bin/test-pre-push-email-audit\.sh)$ test-pre-push-email-audit.sh
+^(hooks/pre-(commit|push)-[a-z-]+\.sh|bin/(test-)?install-git-hooks\.sh)$ test-install-git-hooks.sh
+^bin/(validate-skill-index\.py|test-validate-skill-index\.sh)$ test-validate-skill-index.sh'
+
+RELATED_TESTS=$(printf '%s\n' "$TEST_MAP" | while read -r pattern test_name; do
+  printf '%s\n' "$STAGED" | grep -qE "$pattern" && echo "$test_name"
+done | sort -u)
+
+for test_name in $RELATED_TESTS; do
+  test_file="$ROOT/bin/$test_name"
+  [[ -f "$test_file" ]] || continue
+  TEST_OUT=$(cd "$ROOT" && env -u GIT_INDEX_FILE -u GIT_DIR -u GIT_WORK_TREE -u GIT_PREFIX \
+    bash "$test_file" 2>&1) || {
+    echo ""
+    echo "${RED}✖ pre-commit 擋下：相關測試失敗 bin/${test_name}${NC}"
+    echo ""
+    printf '%s\n' "$TEST_OUT" | grep -E 'FAIL|Error|錯誤' | head -n 15 | sed 's/^/  /'
+    echo ""
+    echo "  完整輸出：bash bin/${test_name}"
+    echo "  旁路：git commit --no-verify"
+    echo ""
+    exit 1
+  }
+  echo "✓ pre-commit：bin/${test_name} 通過" >&2
+done
+
 printf '%s\n' "$STAGED" | grep -q '^skills/' || exit 0
 
 VALIDATOR_OUT=$(python3 "$VALIDATOR" --repo "$ROOT" 2>&1) || {

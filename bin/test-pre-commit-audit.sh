@@ -38,11 +38,11 @@ run_case() {
 
 expect() {
   local description="$1" expected_rc="$2" pattern="$3" should_match="$4"
-  [[ "$RC" == "$expected_rc" ]] || { fail "$description（exit ${RC}，預期 ${expected_rc}）"; return; }
+  [[ "$RC" == "$expected_rc" ]] || { fail "${description}（exit ${RC}，預期 ${expected_rc}）"; return; }
   if [[ "$should_match" == yes ]]; then
-    grep -qF -- "$pattern" <<<"$OUT" && pass "$description" || fail "$description（輸出缺「${pattern}」）"
+    grep -qF -- "$pattern" <<<"$OUT" && pass "$description" || fail "${description}（輸出缺「${pattern}」）"
   else
-    grep -qF -- "$pattern" <<<"$OUT" && fail "$description（輸出不應含「${pattern}」）" || pass "$description"
+    grep -qF -- "$pattern" <<<"$OUT" && fail "${description}（輸出不應含「${pattern}」）" || pass "$description"
   fi
 }
 
@@ -76,6 +76,23 @@ LONG_ZH=$(printf '%.0s暫' $(seq 1 60))
 run_case utf8 a.py "# ${DEFERRED_WORD} ab${LONG_ZH}"
 printf '%s' "$OUT" | iconv -f UTF-8 -t UTF-8 >/dev/null 2>&1 && pass "長中文行截斷後仍是合法 UTF-8" || fail "長中文行截斷後仍是合法 UTF-8"
 expect "長中文行仍正常提醒" 0 "延後註解" yes
+
+echo "[shell 變數緊接多位元組字元（W2）]"
+# 用 printf 組字串，避免本檔自身的新增行觸發這條提醒
+DOLLAR='$'
+ZH_COMMA=$(printf '\357\274\214')   # 全形逗號「，」的 UTF-8 bytes
+run_case bare-hit a.sh "echo \"${DOLLAR}hp${ZH_COMMA}略過\""
+expect "裸 \$VAR 後接全形標點 → 提醒但 exit 0" 0 "shell 變數後面緊接多位元組字元" yes
+run_case braced a.sh "echo \"${DOLLAR}{hp}${ZH_COMMA}略過\""
+expect "\${VAR} 大括號寫法 → 無提醒" 0 "shell 變數後面緊接多位元組字元" no
+run_case comment a.sh "# 例：${DOLLAR}hp${ZH_COMMA}會崩"
+expect "註解行 → 無提醒" 0 "shell 變數後面緊接多位元組字元" no
+run_case escaped a.sh "echo \"\\${DOLLAR}HOME${ZH_COMMA}字面\""
+expect "跳脫的字面 \\\$ → 無提醒" 0 "shell 變數後面緊接多位元組字元" no
+run_case ascii a.sh "echo \"${DOLLAR}hp, ok\"	${DOLLAR}x	y"
+expect "後接 ASCII 標點或 tab → 無提醒" 0 "shell 變數後面緊接多位元組字元" no
+run_case not-shell a.py "print(\"${DOLLAR}hp${ZH_COMMA}\")"
+expect "非 shell 檔 → 不檢查" 0 "shell 變數後面緊接多位元組字元" no
 
 echo ""
 echo "結果：${PASS_COUNT} passed, ${FAIL_COUNT} failed"
