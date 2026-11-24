@@ -124,11 +124,27 @@ def load_review(results_dir: str) -> dict:
     return {"status": status, "output": output, "reason": reason}
 
 
+def high_confidence_findings(review: dict) -> list:
+    """B 層輸出中「信心：高」的發現（只取「- 發現：」那一行的描述），給「需要處理」與摘要行用。"""
+    if review["status"] != "ok":
+        return []
+    findings, current = [], None
+    for line in review["output"].splitlines():
+        stripped = line.strip()
+        if stripped.startswith("- 發現："):
+            current = stripped[len("- 發現："):].strip()
+        elif current and stripped.startswith("信心：") and stripped[len("信心："):].strip().startswith("高"):
+            findings.append(current)
+            current = None
+    return findings
+
+
 def review_summary(review: dict) -> str:
     if review["status"] == "skip":
         return B_LAYER_SUMMARY
     if review["status"] == "ok":
-        return "已執行"
+        high = len(high_confidence_findings(review))
+        return "已執行（信心高 %d 條）" % high if high else "已執行"
     return "💥 檢查失敗（%s）" % review["reason"].splitlines()[0]
 
 
@@ -185,6 +201,7 @@ def render_problem_report(heading, summary_line, results, comparison, note, revi
     for check_id, _title in CHECKS:
         if results[check_id]["status"] != "ok":
             lines.append("- " + describe(check_id, results[check_id]))
+    lines += ["- 🔎 B 層（信心高）：" + finding for finding in high_confidence_findings(review)]
     # 有執行 B 層就取代插入點；沒有則保留插入點
     lines += ["", B_LAYER_MARKER if review["status"] == "skip" else "\n".join(render_review_section(review)), ""]
     lines += render_comparison(results, comparison, note)
@@ -202,10 +219,15 @@ def render_green_report(heading, counts, comparison, review) -> str:
     if review["status"] == "crash":  # B 層 💥 時不得宣稱「全部通過」，只能說 A 層通過
         line = "%s — A 層全部通過（A 層 ✅ %d · B 層 %s）· 💥 B 層審查未完成，不可視為全部通過" % (
             heading, counts["ok"], review_summary(review))
+    elif high_confidence_findings(review):  # B 層有信心高的發現時不得宣稱「全部通過」
+        line = "%s — A 層全部通過（A 層 ✅ %d · B 層 %s）" % (heading, counts["ok"], review_summary(review))
     else:
         line = "%s — ✅ 全部通過（A 層 ✅ %d · B 層 %s）" % (heading, counts["ok"], review_summary(review))
     if comparison and comparison["resolved"]:
         line += " · 已解決：" + "、".join(comparison["resolved"])
+    high = high_confidence_findings(review)
+    if high:  # A 層全綠時，信心高的 B 層發現仍要在最上面看得到
+        line += "\n\n## 需要處理\n" + "\n".join("- 🔎 B 層（信心高）：" + finding for finding in high)
     if review["status"] != "skip":  # 全綠單行之後附 B 層段落，避免 B 層結果被吞掉
         line += "\n\n" + "\n".join(render_review_section(review))
     return line

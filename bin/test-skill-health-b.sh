@@ -7,12 +7,13 @@
 
 INSTALL_SCRIPT="$SCRIPT_DIR/install-skill-health-schedule.sh"
 
-# 假 claude：記錄參數與 stdin，印出一段 B 層輸出
+# 假 claude：記錄參數與 stdin，印出一段 B 層輸出（$WORLD/fake-output.txt 存在時改印它）
 make_fake_claude() {
   cat >"$WORLD/fake-claude.sh" <<EOF
 #!/usr/bin/env bash
 printf '%s\n' "\$@" >"$WORLD/claude-args.txt"
 cat >"$WORLD/claude-prompt.txt"
+if [[ -f "$WORLD/fake-output.txt" ]]; then cat "$WORLD/fake-output.txt"; exit 0; fi
 printf '## B1\n- 發現：假觸發詞重疊\n  證據：skills/llms.txt:3\n  信心：低\nB 層審查完成（B1：1 條、B2：0 條、B3：0 條觀測）\n'
 EOF
   printf '#!/usr/bin/env bash\necho "auth failed" >&2\nexit 3\n' >"$WORLD/fake-claude-fail.sh"
@@ -134,6 +135,51 @@ test_review_green_with_layer() {
   assert_contains "💥 檢查失敗 B" "全綠但 B 失敗：附 B 層失敗段落"
 }
 
+# 有一條信心高、一條信心低的 B 層輸出
+write_mixed_confidence_output() {
+  printf '%s\n' '## B1' '- 發現：高信心的格式違規 HIGH-ONE' '  證據：governance/lessons.md:1' '  信心：高' \
+    '- 發現：低信心的線索 LOW-ONE' '  證據：skills/llms.txt:3' '  信心：低' \
+    'B 層審查完成（B1：2 條、B2：0 條、B3：0 條觀測）' >"$WORLD/fake-output.txt"
+}
+
+test_review_decisions_in_prompt() {
+  echo "[B 層：已裁決清單進 prompt]"
+  review_world bdecide; mkdir -p "$FAKE_REPO/plans"
+  printf '%s\n' '# 計劃' '## 9. 體檢裁決紀錄' '### B1' '- DECIDED-KEEP 不改：理由' '## 10. 之後的段落' 'AFTER-SECTION' \
+    >"$FAKE_REPO/plans/skill-health-check.md"
+  run_review 2026-11-10 SKILL_HEALTH_CLAUDE_CMD="$WORLD/fake-claude.sh"
+  OUT=$(cat "$WORLD/claude-prompt.txt")
+  assert_contains "===== 資料開始（已裁決）" "已裁決資料段有起始界線"
+  assert_contains "DECIDED-KEEP 不改：理由" "裁決紀錄內容進 prompt"
+  assert_not_contains "AFTER-SECTION" "只擷取到下一個 ## 標題為止"
+  assert_contains "已裁決略過" "模板要求已裁決項目不再列為發現"
+  review_world bnodecide
+  run_review 2026-11-10 SKILL_HEALTH_CLAUDE_CMD="$WORLD/fake-claude.sh"
+  OUT=$(cat "$WORLD/claude-prompt.txt")
+  assert_contains "（無裁決紀錄：plans/skill-health-check.md 不存在）" "沒有裁決檔 → 明說無裁決紀錄"
+  mkdir -p "$FAKE_REPO/plans"; printf '# 計劃\n## 8. 使用方式\n' >"$FAKE_REPO/plans/skill-health-check.md"
+  run_review 2026-11-11 SKILL_HEALTH_CLAUDE_CMD="$WORLD/fake-claude.sh"
+  OUT=$(cat "$WORLD/claude-prompt.txt")
+  assert_contains "找不到「## 9. 體檢裁決紀錄」段" "有檔但沒有該節 → 明說找不到"
+}
+
+test_review_high_confidence_surfaced() {
+  echo "[B 層：信心高的發現列進「需要處理」]"
+  review_world bhigh; touch "$FAKE_REPO/.flag-a1-fail"; write_mixed_confidence_output
+  run_review 2026-11-10 SKILL_HEALTH_CLAUDE_CMD="$WORLD/fake-claude.sh"
+  assert_contains "- 🔎 B 層（信心高）：高信心的格式違規 HIGH-ONE" "信心高的發現列進需要處理"
+  assert_not_contains "🔎 B 層（信心高）：低信心的線索" "信心低的不列進需要處理"
+  assert_contains "B 層 已執行（信心高 1 條）" "摘要行帶信心高條數"
+  [[ "$(grep -n '🔎 B 層' "$FAKE_REPORTS/2026-11-10.md" | head -1 | cut -d: -f1)" -lt \
+     "$(grep -n '^## B 層模型審查' "$FAKE_REPORTS/2026-11-10.md" | cut -d: -f1)" ]] \
+    && pass "信心高的發現排在 B 層章節之前" || fail "信心高的發現排在 B 層章節之前"
+  review_world bhighgreen; write_mixed_confidence_output
+  run_review 2026-11-10 SKILL_HEALTH_CLAUDE_CMD="$WORLD/fake-claude.sh"
+  assert_contains "A 層全部通過（A 層 ✅ 10 · B 層 已執行（信心高 1 條））" "A 層全綠但 B 層有信心高 → 不寫全部通過"
+  assert_not_contains "✅ 全部通過" "A 層全綠但 B 層有信心高 → 不出現 ✅ 全部通過"
+  assert_contains "- 🔎 B 層（信心高）：高信心的格式違規 HIGH-ONE" "全綠時信心高的發現仍列出"
+}
+
 assert_review_failure() {
   local label="$1" reason="$2"
   assert_equals "$RC" 0 "${label}：exit 0（A 層照常）"
@@ -221,6 +267,8 @@ test_installer() {
 }
 
 test_review_success_in_problem_report
+test_review_decisions_in_prompt
+test_review_high_confidence_surfaced
 test_review_prompt_content
 test_review_first_run_prompt
 test_review_context_failures
