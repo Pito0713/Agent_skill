@@ -190,3 +190,10 @@
 - 修正：改成一次只跑一個，之後每個都成功。
 - 規則：**codex 審查一次最多同時跑 1–2 個**；送出後檢查每個輸出檔確實有內容，429 的那個就單獨重跑，不要整批重送。
 - 下沉：無——限流門檻由服務端決定且會變動，寫死並行上限的意義不大；目前記在交接檔與本條，若再發生就考慮讓 `bin/codex-ro.sh` 遇到 429 時以明確的 exit code 回報
+
+## 2026-11-24 只跑 install.sh 沒先 build，裝回兩週前的舊版還回報「已安裝新版」
+- 情境：Floating v0.14.2 改了行程轉提醒的時間門檻，commit 後跑 `scripts/install.sh` 就回報裝好；使用者隔天早上看到還是提前轉。
+- 錯誤/風險：`install.sh` 只把 `build/FloatingAgenda.app` 複製到 ~/Applications，不會重建；`build/` 停在 11/11，裝上去的仍是舊版。腳本照樣印「✅ installed」，`swift test` 綠燈也只證明原始碼對，證明不了裝上的 binary。結果舊版又寫入一次使用者資料（多建了一輪提醒）。
+- 修正：`build.sh && install.sh`，比對 binary mtime 是剛剛，並實際觀察行為（06:37 啟動後未轉換）。
+- 規則：**回報「已安裝」前，確認裝上的產物比最後一個 source commit 新**（看 binary mtime 或版本字串），不能只看安裝腳本的成功訊息；安裝腳本不含 build 時一律 `build && install` 串著跑。
+- 下沉：script——install.sh 開頭比對 `build/` 執行檔 mtime 與 `git log -1 --format=%ct`，產物比 HEAD 舊就拒絕安裝並提示先跑 build.sh
