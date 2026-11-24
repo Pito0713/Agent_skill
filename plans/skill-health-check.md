@@ -4,7 +4,7 @@
 > **建立**：2026-11-05
 > **發起人**：使用者（wits）
 > **基準 commit**：`a83f644`（本機 main；origin/main 另有 12 個 tw-stock-tracker commit 未 pull，與本計劃無檔案重疊）
-> **狀態**：§7 已裁決，T1–T5 未開工
+> **狀態**：T1–T5 完成（2026-11-09，`51d0ee8` / `940b8b1` / `b753112`）；排程已安裝（2026-11-23，W3 段 2），首份自動報告 2026-11-24 10:02 產出。剩使用者確認報告可讀性與通知（§5）
 
 ---
 
@@ -148,13 +148,13 @@ B 層模型的工具權限限定 `Read`、`Grep`、`Glob`，**不給 `Edit`、`W
 
 ## 5. 完成判準
 
-- [ ] `bash bin/test-skill-health.sh` 全過（貼輸出）
-- [ ] 手動跑 `bash bin/skill-health.sh --with-review` 一次，產出的報告由使用者看過、確認格式可讀
-- [ ] 故意製造一個漂移（暫存分支改 GEMINI.md 一個字）→ 報告出現 ❌ A4 → 還原後下一份報告列在「已解決」
-- [ ] 跑完後 `git status` 乾淨（證明真的只讀）
-- [ ] 手動跑完會跳出 macOS 通知
-- [ ] 安裝腳本以 `--dry-run` 印出的 plist 內容正確（週二、五 10:00、絕對路徑）；**實際安裝延後**，裝的時候再驗 `launchctl list | grep agent-skill.health` 與第一份自動報告
-- [ ] 實作經 codex 冷啟動審查（驗證不自驗）
+- [x] `bash bin/test-skill-health.sh` 全過（貼輸出）——2026-11-24 重跑 155 passed, 0 failed
+- [ ] 手動跑 `bash bin/skill-health.sh --with-review` 一次，產出的報告由使用者看過、確認格式可讀——報告已產出（11-09 手動、11-24 排程），**待使用者確認可讀性**
+- [x] 故意製造一個漂移（暫存分支改 GEMINI.md 一個字）→ 報告出現 ❌ A4 → 還原後下一份報告列在「已解決」——11-09 暫存 worktree 演練通過（`memory/handoff-20261109.md`）
+- [x] 跑完後 `git status` 乾淨（證明真的只讀）——11-24 排程報告 A10「未 commit 變更 0 項」
+- [ ] 手動跑完會跳出 macOS 通知——`notify.log` 無錯誤（只記失敗），**畫面是否跳出待使用者確認**
+- [x] 安裝腳本以 `--dry-run` 印出的 plist 內容正確（週二、五 10:00、絕對路徑）；**實際安裝延後**，裝的時候再驗 `launchctl list | grep agent-skill.health` 與第一份自動報告——11-23 已安裝，`launchctl list` 有 `local.agent-skill.health`，11-24（週二）10:02 首份自動報告產出
+- [x] 實作經 codex 冷啟動審查（驗證不自驗）——13 條：10 CONFIRMED / 3 REJECTED，Round 2 `b753112` 修正
 
 ---
 
