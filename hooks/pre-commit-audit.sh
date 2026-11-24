@@ -203,7 +203,7 @@ STAGED=$(git diff --cached --name-only 2>/dev/null) || exit 0
 # 範圍：staged 碰到對照表左欄 → 跑右欄的測試；對照表就是「哪支程式由哪支測試守」的正本。
 # 失敗策略：測試檔不存在 → 略過（fail-open）；測試非 0 → 擋（fail-closed）。
 # 已知限制：跟 validator 一樣測的是**工作區**不是 staged 內容。test-skill-health 約 34 秒，
-# 只在改到 skill-health 相關檔才跑。test-token-budget.sh 目前既有失敗（未查根因），修好前不接，否則改到預算檔就被擋。
+# 只在改到 skill-health 相關檔才跑。（test-token-budget.sh 已於 2026-11-24 依使用者裁決移除；預算本身仍由下方 --strict 把關。）
 # git 執行 hook 時會 export GIT_INDEX_FILE 等變數，測試在臨時 repo 跑 git 會誤用 → 一律清掉。
 
 TEST_MAP='^bin/(skill-usage\.py|lib_skill_usage\.py|test-skill-usage\.sh)$ test-skill-usage.sh
