@@ -176,3 +176,17 @@
 - 修正：view model 加 `isPopoverShown`（`NSPopoverDelegate` 更新），timer tick 時不可見就不改 state（`bfb877c`），閒置 CPU 降到 <1%。
 - 規則：**常駐 app 的 CPU 問題先 `sample <pid>` 再看 code**；另外，任何 timer 驅動的 SwiftUI 動畫都要綁可見性，popover／隱藏視窗裡的 view 不會自己停。
 - 下沉：無——屬 SwiftUI 實作細節，靠 code review 時注意 `Timer.publish` + `@State` 是否有可見性守門
+
+## 2026-11-23 改 noreply 後 `--reset-author` 沒改到任何 commit，也沒報錯
+- 情境：全域 `user.email` 換成 noreply 後，對 Agent_skill 未 push 的 15 個 commit 跑 `git rebase --exec 'git commit --amend --no-edit --reset-author'`。
+- 錯誤/風險：repo 層級 `.git/config` 還留著個人 Gmail，它的優先順序比全域高，所以改寫後作者照舊是 Gmail。rebase 正常結束、沒有任何警告，看起來就像改好了；如果沒有回頭查，下一次 push 會把個人信箱公開。
+- 修正：`git config --unset user.email`（repo 層級）後重跑 rebase，再用 `git log --format='%ae / %ce' origin/main..HEAD` 確認每個 commit 都是 noreply。另外 3 個 repo 的 repo 層級 Gmail 一起移除。
+- 規則：**改 git 身分前先跑 `git config --show-origin --get-all user.email`，確認實際生效的是哪一層**；改寫完一定要列出作者信箱逐筆核對，不能把「指令沒報錯」當成改好了。
+- 下沉：script——Agent_skill 的 pre-push 信箱檢查（W6）會擋住非 noreply 的 commit；其他 repo 依使用者裁決不安裝
+
+## 2026-11-23 codex 同時跑 7 個審查，大部分被 429 限流
+- 情境：codex 用量恢復後，把 C1、C3、C5、W1–W5 的第二意見審查一次並行送出 7 個。
+- 錯誤/風險：多數因 429 失敗，C5 只好改用 Claude subagent 審查，C1 到第三次單獨跑才成功。失敗的那幾個要逐個檢查輸出檔才知道沒有結果，並行並沒有省到時間。
+- 修正：改成一次只跑一個，之後每個都成功。
+- 規則：**codex 審查一次最多同時跑 1–2 個**；送出後檢查每個輸出檔確實有內容，429 的那個就單獨重跑，不要整批重送。
+- 下沉：無——限流門檻由服務端決定且會變動，寫死並行上限的意義不大；目前記在交接檔與本條，若再發生就考慮讓 `bin/codex-ro.sh` 遇到 429 時以明確的 exit code 回報
