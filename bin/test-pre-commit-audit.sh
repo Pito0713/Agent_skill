@@ -120,6 +120,36 @@ run_map_case map-unrelated 1 bin/other.sh
 expect "沒碰到對照表的檔 → 不跑測試、放行" 0 "相關測試失敗" no
 [[ "$RAN" == no ]] && pass "無關檔案不觸發測試" || fail "無關檔案不觸發測試"
 
+echo "[skill 裡直接寫 codex exec（skill 體檢 B2）]"
+# 跟 TEST_MAP 段一樣要有 skills/index.json 與 validator stub 才會走到本段；stage 的是 skills/ 檔，
+# hook 會用 python3 真的執行 validator，所以 stub 要是合法 Python
+# run_codex_case <名稱> <檔名> <內容>
+CODEX_EXEC=$(printf '%s %s' 'codex' 'exec')
+run_codex_case() {
+  local repo="$SANDBOX/$1"
+  git init -q "$repo" || { echo "fixture 失敗：git init $1" >&2; exit 2; }
+  mkdir -p "$repo/skills" "$repo/bin" "$repo/$(dirname "$2")"
+  printf '{"skills": []}\n' >"$repo/skills/index.json"
+  printf 'import sys\nsys.exit(0)\n' >"$repo/bin/validate-skill-index.py"; chmod +x "$repo/bin/validate-skill-index.py"
+  printf '%s\n' "$3" >"$repo/$2"
+  git -C "$repo" add "$2" || { echo "fixture 失敗：git add $1" >&2; exit 2; }
+  OUT=$(cd "$repo" && bash "$HOOK" 2>&1); RC=$?
+}
+run_codex_case codex-pipe skills/x/SKILL.md "git diff | ${CODEX_EXEC} -s read-only \"審查\""
+expect "skill 內 pipe 給 codex exec → 擋" 1 "直接寫 codex exec" yes
+run_codex_case codex-template governance/delegation-templates.md "${CODEX_EXEC} \"prompt\""
+expect "派工模板直接呼叫 → 擋" 1 "直接寫 codex exec" yes
+run_codex_case codex-eol skills/x/SKILL.md "最後跑 ${CODEX_EXEC}"
+expect "行尾的 codex exec（沒有反引號）→ 擋" 1 "直接寫 codex exec" yes
+run_codex_case codex-backtick skills/x/SKILL.md "**不要直接寫 \`${CODEX_EXEC}\`**，一律呼叫 wrapper"
+expect "反引號包住的說明文字 → 放行" 0 "直接寫 codex exec" no
+run_codex_case codex-bypass skills/x/SKILL.md "${CODEX_EXEC} -s read-only  # audit-ok"
+expect "audit-ok 標記 → 放行" 0 "直接寫 codex exec" no
+run_codex_case codex-wrapper skills/x/SKILL.md "git diff | ~/Agent_skill/bin/codex-ro.sh --stdin -- \"審查\""
+expect "經 wrapper 呼叫 → 放行" 0 "直接寫 codex exec" no
+run_codex_case codex-outside governance/model-orchestration.md "${CODEX_EXEC} -s read-only \"x\""
+expect "範圍外的制度檔 → 不檢查" 0 "直接寫 codex exec" no
+
 echo ""
 echo "結果：${PASS_COUNT} passed, ${FAIL_COUNT} failed"
 [[ "$FAIL_COUNT" -eq 0 ]]

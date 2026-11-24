@@ -260,5 +260,5 @@ launchctl list | grep agent-skill.health               # 確認已載入
 
 ### B2 裁決
 
-- 「裸寫 `codex exec` 沒有守門」→ 做：pre-commit 檢查（見下方 commit）
+- 「裸寫 `codex exec` 沒有守門」→ 做：`hooks/pre-commit-audit.sh` 擋 skills/ 與 `governance/delegation-templates.md` 新增行直接寫 codex exec（反引號包住的說明文字與 audit-ok 放行）；7 案例、5 個變異全抓到
 - 「project-review 登記前未強制 preflight」、「AppKit 主選單未實作」→ 本輪不做

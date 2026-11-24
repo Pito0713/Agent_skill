@@ -151,6 +151,36 @@ command -v python3 >/dev/null 2>&1 || exit 0
 
 STAGED=$(git diff --cached --name-only 2>/dev/null) || exit 0
 
+# ── skill 裡直接寫 codex exec（僅本 repo；skill 體檢 B2，lessons 2026-11-22）──────
+#
+# 為什麼需要它：codex 唯讀委派的安全旗標與 </dev/null 都收在 bin/codex-ro.sh（T6 C4），
+# 但沒有東西擋住 skill 或派工模板重新出現直接寫的 codex exec——一處漏改就繞過 wrapper。
+# 判定：skills/ 與 governance/delegation-templates.md 的新增行含 `codex exec`，且後面
+# 不是緊接反引號（`codex exec` 用反引號包起來是在講這個指令，不是在呼叫它）。
+# 失敗策略：命中即擋（fail-closed）；說明文字誤報可在該行加 audit-ok 標記。
+
+RAW_CODEX=$(printf '%s\n' "$DIFF" | awk '
+  /^\+\+\+ "?b\// { sub(/^\+\+\+ "?b\//, ""); sub(/"$/, ""); file = $0; next }
+  /^\+/ && !/^\+\+\+/ && (file ~ /^skills\// || file == "governance/delegation-templates.md") {
+    line = substr($0, 2)
+    if (line ~ /(^|[^A-Za-z0-9_-])audit-ok([^A-Za-z0-9_-]|$)/) next
+    if (line ~ /codex[[:space:]]+exec([^`]|$)/) printf "  %s: %s\n", file, substr(line, 1, 100)
+  }
+')
+
+if [[ -n "$RAW_CODEX" ]]; then
+  echo ""
+  echo "${RED}✖ pre-commit 擋下：skill / 派工模板直接寫 codex exec${NC}"
+  echo ""
+  printf '%s\n' "$RAW_CODEX" | to_valid_utf8
+  echo ""
+  echo "  修法：改用 ~/Agent_skill/bin/codex-ro.sh [--web] [--stdin] [-o 檔] -- \"<prompt>\""
+  echo "        （固定帶唯讀旗標、沒帶 --stdin 自動接 /dev/null）；只是在說明指令就用反引號包住或加 audit-ok"
+  echo "  旁路：git commit --no-verify"
+  echo ""
+  exit 1
+fi
+
 # ── 改到哪支就跑哪支的測試（僅本 repo；工單 W3 段 1，lessons 2026-09-30）──────
 #
 # 為什麼需要它：測試存在但沒有任何東西會自動執行它，紅了也沒人看到（09-30 實證兩週半）。
