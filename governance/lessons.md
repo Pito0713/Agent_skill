@@ -175,7 +175,7 @@
 - 錯誤/風險：每秒約 7 次重新 layout 一個不在畫面上的視窗，開機 2.5 天累積 88 分鐘 CPU。看程式碼時以為 1 秒 poll 那類 timer 才是成本，實際上 `sample` 顯示 app 自己的 code 不到 1%，全在 SwiftUI display cycle。
 - 修正：view model 加 `isPopoverShown`（`NSPopoverDelegate` 更新），timer tick 時不可見就不改 state（`bfb877c`），閒置 CPU 降到 <1%。
 - 規則：**常駐 app 的 CPU 問題先 `sample <pid>` 再看 code**；另外，任何 timer 驅動的 SwiftUI 動畫都要綁可見性，popover／隱藏視窗裡的 view 不會自己停。
-- 下沉：無——屬 SwiftUI 實作細節，靠 code review 時注意 `Timer.publish` + `@State` 是否有可見性守門
+- 下沉：不能——架構：timer 綁可見性要寫在每個 view 裡，沒有共用範本可以內建；script：regex 判斷不了某個 `Timer.publish` 所在的 view 在不可見時會不會還活著；test：要量閒置 CPU，屬 profiling，不適合單元測試；cop：沒有固定的觸發點能強制喚醒。只能靠 code review 時注意 `Timer.publish` + `@State` 有沒有可見性守門
 
 ## 2026-11-23 改 noreply 後 `--reset-author` 沒改到任何 commit，也沒報錯
 - 情境：全域 `user.email` 換成 noreply 後，對 Agent_skill 未 push 的 15 個 commit 跑 `git rebase --exec 'git commit --amend --no-edit --reset-author'`。
@@ -189,7 +189,7 @@
 - 錯誤/風險：多數因 429 失敗，C5 只好改用 Claude subagent 審查，C1 到第三次單獨跑才成功。失敗的那幾個要逐個檢查輸出檔才知道沒有結果，並行並沒有省到時間。
 - 修正：改成一次只跑一個，之後每個都成功。
 - 規則：**codex 審查一次最多同時跑 1–2 個**；送出後檢查每個輸出檔確實有內容，429 的那個就單獨重跑，不要整批重送。
-- 下沉：無——限流門檻由服務端決定且會變動，寫死並行上限的意義不大；目前記在交接檔與本條，若再發生就考慮讓 `bin/codex-ro.sh` 遇到 429 時以明確的 exit code 回報
+- 下沉：不能——架構：限流發生在服務端，wrapper 無法讓它不發生；script：並行上限寫死會隨服務端調整而失準；test／cop：問題只在執行期出現，靜態檢查看不到。若再發生，就讓 `bin/codex-ro.sh` 遇到 429 時以明確的 exit code 回報（屬可觀測性，不是攔截）
 
 ## 2026-11-24 只跑 install.sh 沒先 build，裝回兩週前的舊版還回報「已安裝新版」
 - 情境：Floating v0.14.2 改了行程轉提醒的時間門檻，commit 後跑 `scripts/install.sh` 就回報裝好；使用者隔天早上看到還是提前轉。
