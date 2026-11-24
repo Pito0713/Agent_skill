@@ -279,3 +279,4 @@ launchctl list | grep agent-skill.health               # 確認已載入
 
 - B 層 prompt 加「已裁決輸入」：擷取本節餵給模型，已裁決的不再列為發現（`已裁決略過：…` 一行帶過）
 - B 層信心「高」的發現列進「需要處理」，摘要行與通知帶條數；A 層全綠但有信心高的發現時不寫「✅ 全部通過」
+- 「11-23 精簡 lessons 的逐子句比對規則沒寫回 maintenance-protocol §4」（B2-4）→ 寫回 §4 第 2 步
