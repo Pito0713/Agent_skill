@@ -262,3 +262,10 @@ launchctl list | grep agent-skill.health               # 確認已載入
 
 - 「裸寫 `codex exec` 沒有守門」→ 做：`hooks/pre-commit-audit.sh` 擋 skills/ 與 `governance/delegation-templates.md` 新增行直接寫 codex exec（反引號包住的說明文字與 audit-ok 放行）；7 案例、5 個變異全抓到
 - 「project-review 登記前未強制 preflight」、「AppKit 主選單未實作」→ 本輪不做
+- codex 審查（2026-11-24）5 條採納 4：
+  - 檢查原本排在 python3／validator 閘門後，基礎設施異常會連帶跳過 → 移到閘門前
+  - 新增內容 `++ b/x` 在 diff 中變成 `+++ b/x`，被當檔頭 → awk 改為只在 `diff --git` 與 `@@` 之間認檔頭（四段共用，順修既有三段）
+  - `diff.noprefix`／`diff.mnemonicPrefix` 使檔頭不是 `b/` → `git diff` 固定 `--src-prefix=a/ --dst-prefix=b/`（同樣修到既有三段）
+  - `mycodex execute` 誤擋 → 補字邊界
+  - 不採納：`codex \` 換行 `exec` 拆兩行可繞過——本檢查防的是改漏，不防蓄意繞過（蓄意者加 audit-ok 即可）
+  - 測試 36 案例；4 個修正各自還原後對應案例轉紅

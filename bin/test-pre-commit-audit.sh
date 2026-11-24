@@ -123,14 +123,17 @@ expect "沒碰到對照表的檔 → 不跑測試、放行" 0 "相關測試失�
 echo "[skill 裡直接寫 codex exec（skill 體檢 B2）]"
 # 跟 TEST_MAP 段一樣要有 skills/index.json 與 validator stub 才會走到本段；stage 的是 skills/ 檔，
 # hook 會用 python3 真的執行 validator，所以 stub 要是合法 Python
-# run_codex_case <名稱> <檔名> <內容>
+# run_codex_case <名稱> <檔名> <內容>；CASE_GIT_CONFIG="key value" 先寫進該 repo 設定、CASE_NO_VALIDATOR=1 不建 validator stub
 CODEX_EXEC=$(printf '%s %s' 'codex' 'exec')
 run_codex_case() {
   local repo="$SANDBOX/$1"
   git init -q "$repo" || { echo "fixture 失敗：git init $1" >&2; exit 2; }
   mkdir -p "$repo/skills" "$repo/bin" "$repo/$(dirname "$2")"
   printf '{"skills": []}\n' >"$repo/skills/index.json"
-  printf 'import sys\nsys.exit(0)\n' >"$repo/bin/validate-skill-index.py"; chmod +x "$repo/bin/validate-skill-index.py"
+  [[ -n "${CASE_NO_VALIDATOR:-}" ]] || {
+    printf 'import sys\nsys.exit(0)\n' >"$repo/bin/validate-skill-index.py"; chmod +x "$repo/bin/validate-skill-index.py"
+  }
+  [[ -z "${CASE_GIT_CONFIG:-}" ]] || git -C "$repo" config ${CASE_GIT_CONFIG}
   printf '%s\n' "$3" >"$repo/$2"
   git -C "$repo" add "$2" || { echo "fixture 失敗：git add $1" >&2; exit 2; }
   OUT=$(cd "$repo" && bash "$HOOK" 2>&1); RC=$?
@@ -149,6 +152,17 @@ run_codex_case codex-wrapper skills/x/SKILL.md "git diff | ~/Agent_skill/bin/cod
 expect "經 wrapper 呼叫 → 放行" 0 "直接寫 codex exec" no
 run_codex_case codex-outside governance/model-orchestration.md "${CODEX_EXEC} -s read-only \"x\""
 expect "範圍外的制度檔 → 不檢查" 0 "直接寫 codex exec" no
+# 以下為 2026-11-24 codex 審查補的案例
+run_codex_case codex-fake-header skills/x/SKILL.md "$(printf '++ b/other.md\n%s -s read-only' "$CODEX_EXEC")"
+expect "內容行長得像檔頭（++ b/other.md）不會改掉檔名 → 照樣擋" 1 "直接寫 codex exec" yes
+CASE_GIT_CONFIG="diff.noprefix true" run_codex_case codex-noprefix skills/x/SKILL.md "${CODEX_EXEC} -s read-only"
+expect "使用者設 diff.noprefix → 照樣擋" 1 "直接寫 codex exec" yes
+CASE_GIT_CONFIG="diff.mnemonicPrefix true" run_codex_case codex-mnemonic skills/x/SKILL.md "${CODEX_EXEC} -s read-only"
+expect "使用者設 diff.mnemonicPrefix → 照樣擋" 1 "直接寫 codex exec" yes
+CASE_NO_VALIDATOR=1 run_codex_case codex-no-validator skills/x/SKILL.md "${CODEX_EXEC} -s read-only"
+expect "validator 不存在也照樣擋（本檢查不依賴它）" 1 "直接寫 codex exec" yes
+run_codex_case codex-word-boundary skills/x/SKILL.md "run my$(printf '%s' "$CODEX_EXEC")ute now"
+expect "mycodex execute 這類子字串 → 不擋" 0 "直接寫 codex exec" no
 
 echo ""
 echo "結果：${PASS_COUNT} passed, ${FAIL_COUNT} failed"

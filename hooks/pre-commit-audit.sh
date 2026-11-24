@@ -40,13 +40,18 @@ to_valid_utf8() {
 # 取 staged 的新增行；任何失敗一律放行（fail-open）
 # core.quotepath=false：否則非 ASCII 檔名會被 git 輸出成 `+++ "b/\350..."`，
 # 前置雙引號使檔頭 regex 失配，導致洩漏被歸屬到上一個檔名（2026-07-31 review 實測）
-DIFF=$(git -c core.quotepath=false diff --cached --unified=0 --no-color -- . 2>/dev/null) || exit 0
+# --src-prefix/--dst-prefix：使用者設了 diff.noprefix 或 diff.mnemonicPrefix 時，檔頭不會是 b/，
+# 下面的 awk 會認不出檔名（2026-11-24 codex 審查）
+DIFF=$(git -c core.quotepath=false diff --cached --unified=0 --no-color --src-prefix=a/ --dst-prefix=b/ -- . 2>/dev/null) || exit 0
 [[ -z "$DIFF" ]] && exit 0
 
 # 只看新增行（+ 開頭，排除 +++ 檔頭）；附上所屬檔名
 HITS=$(printf '%s\n' "$DIFF" | awk '
-  /^\+\+\+ "?b\// { sub(/^\+\+\+ "?b\//, ""); sub(/"$/, ""); file = $0; next }
-  /^\+/ && !/^\+\+\+/ {
+  /^diff --git / { in_header = 1; next }
+  /^@@/ { in_header = 0; next }
+  in_header && /^\+\+\+ "?b\// { sub(/^\+\+\+ "?b\//, ""); sub(/"$/, ""); file = $0; next }
+  in_header { next }
+  /^\+/ {
     line = substr($0, 2)
     # 明示放行標記：必須是獨立 token，避免 audit-oklahoma 這類子字串靜默旁路
     if (line ~ /(^|[^A-Za-z0-9_-])audit-ok([^A-Za-z0-9_-]|$)/) next
@@ -79,8 +84,11 @@ fi
 # 旁路：同上，該行加獨立的 audit-ok 標記。
 
 DEFERRED=$(printf '%s\n' "$DIFF" | awk '
-  /^\+\+\+ "?b\// { sub(/^\+\+\+ "?b\//, ""); sub(/"$/, ""); file = $0; next }
-  /^\+/ && !/^\+\+\+/ {
+  /^diff --git / { in_header = 1; next }
+  /^@@/ { in_header = 0; next }
+  in_header && /^\+\+\+ "?b\// { sub(/^\+\+\+ "?b\//, ""); sub(/"$/, ""); file = $0; next }
+  in_header { next }
+  /^\+/ {
     line = substr($0, 2)
     if (line ~ /(^|[^A-Za-z0-9_-])audit-ok([^A-Za-z0-9_-]|$)/) next
     if (line ~ /(^|[^A-Za-z])(TODO|FIXME)([^A-Za-z]|$)/ || line ~ /之後補|暫時/ || tolower(line) ~ /for now/) {  # audit-ok
@@ -108,8 +116,11 @@ fi
 # 排除：註解行（# 開頭）、跳脫的字面 \$（前面奇數個反斜線；"\\$x" 是字面反斜線＋展開，照樣抓）。只查 *.sh / *.bash。
 
 BARE_VARS=$(printf '%s\n' "$DIFF" | LC_ALL=C awk '
-  /^\+\+\+ "?b\// { sub(/^\+\+\+ "?b\//, ""); sub(/"$/, ""); file = $0; next }
-  /^\+/ && !/^\+\+\+/ && file ~ /\.(sh|bash)$/ {
+  /^diff --git / { in_header = 1; next }
+  /^@@/ { in_header = 0; next }
+  in_header && /^\+\+\+ "?b\// { sub(/^\+\+\+ "?b\//, ""); sub(/"$/, ""); file = $0; next }
+  in_header { next }
+  /^\+/ && file ~ /\.(sh|bash)$/ {
     line = substr($0, 2)
     if (line ~ /^[[:space:]]*#/) next
     if (line ~ /(^|[^A-Za-z0-9_-])audit-ok([^A-Za-z0-9_-]|$)/) next
@@ -145,13 +156,9 @@ fi
 # 成本與風險都高於這個限制本身。
 
 ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
-VALIDATOR="$ROOT/bin/validate-skill-index.py"
-[[ -f "$ROOT/skills/index.json" && -x "$VALIDATOR" ]] || exit 0
-command -v python3 >/dev/null 2>&1 || exit 0
+[[ -f "$ROOT/skills/index.json" ]] || exit 0
 
-STAGED=$(git diff --cached --name-only 2>/dev/null) || exit 0
-
-# ── skill 裡直接寫 codex exec（僅本 repo；skill 體檢 B2，lessons 2026-11-22）──────
+# ── skill 裡直接寫 codex exec（僅本 repo，不依賴 python3 / validator；skill 體檢 B2，lessons 2026-11-22）──────
 #
 # 為什麼需要它：codex 唯讀委派的安全旗標與 </dev/null 都收在 bin/codex-ro.sh（T6 C4），
 # 但沒有東西擋住 skill 或派工模板重新出現直接寫的 codex exec——一處漏改就繞過 wrapper。
@@ -160,11 +167,14 @@ STAGED=$(git diff --cached --name-only 2>/dev/null) || exit 0
 # 失敗策略：命中即擋（fail-closed）；說明文字誤報可在該行加 audit-ok 標記。
 
 RAW_CODEX=$(printf '%s\n' "$DIFF" | awk '
-  /^\+\+\+ "?b\// { sub(/^\+\+\+ "?b\//, ""); sub(/"$/, ""); file = $0; next }
-  /^\+/ && !/^\+\+\+/ && (file ~ /^skills\// || file == "governance/delegation-templates.md") {
+  /^diff --git / { in_header = 1; next }
+  /^@@/ { in_header = 0; next }
+  in_header && /^\+\+\+ "?b\// { sub(/^\+\+\+ "?b\//, ""); sub(/"$/, ""); file = $0; next }
+  in_header { next }
+  /^\+/ && (file ~ /^skills\// || file == "governance/delegation-templates.md") {
     line = substr($0, 2)
     if (line ~ /(^|[^A-Za-z0-9_-])audit-ok([^A-Za-z0-9_-]|$)/) next
-    if (line ~ /codex[[:space:]]+exec([^`]|$)/) printf "  %s: %s\n", file, substr(line, 1, 100)
+    if (line ~ /(^|[^A-Za-z0-9_-])codex[[:space:]]+exec([^A-Za-z0-9_`-]|$)/) printf "  %s: %s\n", file, substr(line, 1, 100)
   }
 ')
 
@@ -180,6 +190,12 @@ if [[ -n "$RAW_CODEX" ]]; then
   echo ""
   exit 1
 fi
+
+VALIDATOR="$ROOT/bin/validate-skill-index.py"
+[[ -x "$VALIDATOR" ]] || exit 0
+command -v python3 >/dev/null 2>&1 || exit 0
+
+STAGED=$(git diff --cached --name-only 2>/dev/null) || exit 0
 
 # ── 改到哪支就跑哪支的測試（僅本 repo；工單 W3 段 1，lessons 2026-09-30）──────
 #
