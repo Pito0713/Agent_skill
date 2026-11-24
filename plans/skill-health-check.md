@@ -240,3 +240,25 @@ launchctl list | grep agent-skill.health               # 確認已載入
 - launchd 的 stdout／stderr 寫到 `~/.agent-reports/skill-health/launchd.log`。
 - 只在一台機器安裝（見 §6）。更新 repo 位置後要重裝，因為 plist 內是絕對路徑。
 - 測試：`bash bin/test-skill-health.sh`（含 `bin/test-skill-health-b.sh`，全用假 claude／假 launchctl）。
+
+---
+
+## 9. 首份排程報告處理（2026-11-24）
+
+### B1 觸發詞重疊裁決（使用者 2026-11-24，照建議）
+
+| # | 重疊 | 裁決 |
+|---|------|------|
+| 1 | mentor-tech「效能優化」vs「優化」要反問 | 改：`llms.txt` 模糊觸發詞段加例外——問概念／選型／tradeoff 走 mentor-tech，指著具體 code 才反問 A–D |
+| 2 | 「API」分散在 mentor-tech / coding-workflow-ref / ui-design-flow / documentation | 不改：動詞即可區分（設計概念／怎麼寫／路由結構／寫 docs）；ui-design-flow 模式 A 本來就做 endpoint 結構（`references/design-patterns.md:53`） |
+| 3 | code-review「幫我看一下」太泛 | 改：觸發詞改為「幫我看一下這段 code」（llms.txt / index.json / SKILL.md 三處） |
+| 4 | cli-delegate「掃一下整個專案」vs onboarding | 不改：cli-delegate 模式 B 觸發後先問 y/n 才委派，誤觸發成本低 |
+| 5 | 「查一下最新」vs「查一下我們的規範」 | 不改：受詞已可區分 |
+| 6 | obsidian-save「結束並儲存」近似收工 | 改：`llms.txt` 收工段加一行——提到存檔／Obsidian／記錄走 obsidian-save，不算 handoff 近似說法 |
+
+之後報告再出現 #2 / #4 / #5 視為已裁決，不必再提。
+
+### B2 裁決
+
+- 「裸寫 `codex exec` 沒有守門」→ 做：pre-commit 檢查（見下方 commit）
+- 「project-review 登記前未強制 preflight」、「AppKit 主選單未實作」→ 本輪不做

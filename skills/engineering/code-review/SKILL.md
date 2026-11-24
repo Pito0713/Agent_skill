@@ -1,7 +1,7 @@
 ---
 name: code-review
 description: |
-  Code Review 協調器，自動偵測專案類型，依序執行邏輯→安全→測試→PR 格式審查。 觸發：code review、PR review、審查這段 code、有沒有問題、幫我看一下、merge 前
+  Code Review 協調器，自動偵測專案類型，依序執行邏輯→安全→測試→PR 格式審查。 觸發：code review、PR review、審查這段 code、有沒有問題、幫我看一下這段 code、merge 前
 metadata:
   trigger: PR review / 程式碼品質審查 / merge 前確認
   version: "1.0"

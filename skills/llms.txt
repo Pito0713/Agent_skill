@@ -54,7 +54,7 @@ description: 未知矩陣判斷程序：先判斷「未知的答案在誰手上�
 
 name: code-review
 path: skills/engineering/code-review/SKILL.md
-triggers: code review、PR review、審查這段 code、有沒有問題、幫我看一下、merge 前
+triggers: code review、PR review、審查這段 code、有沒有問題、幫我看一下這段 code、merge 前
 description: Code Review 協調器，自動偵測專案類型，依序執行邏輯→安全→測試→PR 格式審查。
 
 name: security-review
@@ -230,6 +230,7 @@ description: 將 GitHub 原始 workflow/prompt 文件轉換為本專案標準 sk
       → **反問**「要一併寫 handoff 嗎？」，等回答才執行；**禁止**逕自寫 latest.md
     → 完成一段工作、session 自然結束、剛 commit 完 → **都不觸發**。可在回應末尾提醒一次
       「要 handoff 嗎？」（每 session 最多一次，除非之後又有新 commit），寫不寫由使用者決定
+    → 提到存檔、Obsidian、記錄（如「結束並儲存」）→ obsidian-save，不算 handoff 的近似說法
 
 模糊觸發詞（需詢問使用者意圖）：
 「完善」、「優化」、「讓它更好」、「改進這個功能」、「怎麼讓這個更好」、「有什麼可以加強的」
@@ -237,3 +238,4 @@ description: 將 GitHub 原始 workflow/prompt 文件轉換為本專案標準 sk
   C. 新增功能（new-feature）D. 連「要改什麼」都還不確定，想先把未知攤開
   （unknown-matrix-navigation：盲點掃描 / 極端原型 / 訪談）
 → 使用者答不出 A–C 是哪個，本身就是 D 的訊號——別逼他從 A–C 硬選一個。
+→ 例外：「效能優化」「架構優化」問的是概念、選型或 tradeoff（沒指著具體 code）→ mentor-tech；指著具體 code 才照上面 A–D 反問
